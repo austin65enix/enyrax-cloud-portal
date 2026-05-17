@@ -1,12 +1,439 @@
 <!doctype html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="utf-8">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>ENYRAX ServiceOps</title>
+  <style>
+    :root {
+      --bg: #080a18;
+      --panel: rgba(13, 17, 38, .86);
+      --panel2: rgba(17, 24, 55, .92);
+      --line: rgba(255, 215, 130, .22);
+      --gold: #f5d37a;
+      --cyan: #73f4df;
+      --green: #8ff7b2;
+      --orange: #ffb86b;
+      --red: #ff6b86;
+      --text: #f7f2df;
+      --muted: rgba(247, 242, 223, .68);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at 12% 8%, rgba(115, 244, 223, .13), transparent 30%),
+        radial-gradient(circle at 88% 8%, rgba(245, 211, 122, .14), transparent 28%),
+        linear-gradient(135deg, #080a18 0%, #121842 55%, #070813 100%);
+    }
+
+    .wrap {
+      width: min(1160px, calc(100% - 36px));
+      margin: 0 auto;
+      padding: 44px 0;
+    }
+
+    .top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 20px;
+      flex-wrap: wrap;
+      margin-bottom: 26px;
+    }
+
+    .badge {
+      display: inline-flex;
+      gap: 10px;
+      align-items: center;
+      padding: 8px 14px;
+      border: 1px solid rgba(115, 244, 223, .32);
+      border-radius: 999px;
+      color: var(--cyan);
+      background: rgba(115, 244, 223, .06);
+      font-size: 14px;
+      font-weight: 900;
+    }
+
+    h1 {
+      margin: 18px 0 10px;
+      font-size: clamp(36px, 6vw, 68px);
+      line-height: 1;
+      letter-spacing: .04em;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 18px;
+      line-height: 1.6;
+      max-width: 780px;
+    }
+
+    .back {
+      text-decoration: none;
+      color: #081018;
+      background: linear-gradient(135deg, var(--gold), #fff0b8);
+      padding: 12px 16px;
+      border-radius: 14px;
+      font-weight: 900;
+      box-shadow: 0 16px 48px rgba(245, 211, 122, .16);
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin: 26px 0;
+    }
+
+    .metric {
+      padding: 20px;
+      border-radius: 22px;
+      border: 1px solid var(--line);
+      background: var(--panel);
+      box-shadow: 0 20px 70px rgba(0, 0, 0, .24);
+    }
+
+    .metric .label {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+
+    .metric .num {
+      margin-top: 10px;
+      font-size: 34px;
+      font-weight: 950;
+    }
+
+    .metric .hint {
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 1.05fr .95fr;
+      gap: 16px;
+    }
+
+    .card {
+      padding: 22px;
+      border-radius: 24px;
+      border: 1px solid var(--line);
+      background: var(--panel);
+      box-shadow: 0 20px 70px rgba(0, 0, 0, .24);
+    }
+
+    .card h2 {
+      margin: 0 0 16px;
+      color: var(--gold);
+      font-size: 22px;
+    }
+
+    .ticket {
+      padding: 16px;
+      border-radius: 18px;
+      background: var(--panel2);
+      border: 1px solid rgba(255, 255, 255, .08);
+      margin-bottom: 12px;
+    }
+
+    .ticket:last-child { margin-bottom: 0; }
+
+    .ticket-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .title {
+      font-weight: 950;
+      font-size: 17px;
+    }
+
+    .pill {
+      padding: 5px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 950;
+      white-space: nowrap;
+    }
+
+    .doing { color: #061c16; background: var(--cyan); }
+    .pending { color: #241203; background: var(--orange); }
+    .risk { color: #26060c; background: var(--red); }
+    .done { color: #062014; background: var(--green); }
+
+    .meta {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.55;
+    }
+
+    .roles {
+      display: grid;
+      gap: 12px;
+    }
+
+    .role {
+      padding: 16px;
+      border-radius: 18px;
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(255,255,255,.08);
+    }
+
+    .role h3 {
+      margin: 0 0 8px;
+      font-size: 17px;
+      color: var(--cyan);
+    }
+
+    .role p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .wide {
+      grid-column: span 2;
+      margin-top: 16px;
+    }
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+    }
+
+    .step {
+      padding: 16px;
+      border-radius: 18px;
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(115, 244, 223, .16);
+      min-height: 132px;
+    }
+
+    .step .k {
+      color: var(--cyan);
+      font-size: 13px;
+      font-weight: 950;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+
+    .step .name {
+      font-weight: 950;
+      margin-bottom: 8px;
+    }
+
+    .step .desc {
+      color: var(--muted);
+      line-height: 1.5;
+      font-size: 14px;
+    }
+
+    .footer {
+      margin-top: 30px;
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      flex-wrap: wrap;
+      color: rgba(247, 242, 223, .52);
+      font-size: 14px;
+      border-top: 1px solid rgba(255,255,255,.08);
+      padding-top: 18px;
+    }
+
+    @media (max-width: 960px) {
+      .metrics { grid-template-columns: 1fr 1fr; }
+      .layout { grid-template-columns: 1fr; }
+      .wide { grid-column: span 1; }
+      .flow { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 560px) {
+      .metrics { grid-template-columns: 1fr; }
+      .ticket-top { align-items: flex-start; flex-direction: column; }
+    }
+  </style>
 </head>
 <body>
-  <h1>ENYRAX ServiceOps</h1>
-  <p>Infra Work Orders / Time / Project Cost Demo</p>
-  <a href="/">Back to Portal</a>
+  <main class="wrap">
+    <section class="top">
+      <div>
+        <div class="badge">ServiceOps · Infra Work Orders · Labor Time · Project Cost</div>
+        <h1>ENYRAX ServiceOps</h1>
+        <p class="subtitle">
+          A lightweight operation layer for infrastructure teams: daily tickets, work reports,
+          labor time, supervisor overview and future project cost mapping.
+        </p>
+      </div>
+      <a class="back" href="/">Back to Portal</a>
+    </section>
+
+    <section class="metrics">
+      <div class="metric">
+        <div class="label">Today Tickets</div>
+        <div class="num">18</div>
+        <div class="hint">6 active / 9 pending / 3 done</div>
+      </div>
+      <div class="metric">
+        <div class="label">Team Hours</div>
+        <div class="num">42.5</div>
+        <div class="hint">Infra daily worklog summary</div>
+      </div>
+      <div class="metric">
+        <div class="label">Project Linked</div>
+        <div class="num">11</div>
+        <div class="hint">Tickets mapped to project cost</div>
+      </div>
+      <div class="metric">
+        <div class="label">Risk Items</div>
+        <div class="num">3</div>
+        <div class="hint">Delay or cost overrun warning</div>
+      </div>
+    </section>
+
+    <section class="layout">
+      <div class="card">
+        <h2>Today's Infra Work Queue</h2>
+
+        <div class="ticket">
+          <div class="ticket-top">
+            <div class="title">VM Request · ERP Test Environment</div>
+            <div class="pill doing">IN PROGRESS</div>
+          </div>
+          <div class="meta">
+            Owner: atn · Project: ERP Upgrade · Estimate: 3.5h · Actual: 2.0h<br>
+            Task: Provision VM, assign network, prepare OS baseline and handover checklist.
+          </div>
+        </div>
+
+        <div class="ticket">
+          <div class="ticket-top">
+            <div class="title">Firewall Policy Review · Vendor VPN</div>
+            <div class="pill pending">PENDING APPROVAL</div>
+          </div>
+          <div class="meta">
+            Owner: Infra Team · Project: Vendor Access Control · Estimate: 1.5h<br>
+            Task: Review source/destination, service ports, business owner and expiry date.
+          </div>
+        </div>
+
+        <div class="ticket">
+          <div class="ticket-top">
+            <div class="title">Storage Capacity Alert · Backup Volume</div>
+            <div class="pill risk">RISK</div>
+          </div>
+          <div class="meta">
+            Owner: Storage Admin · Project: Backup Improvement · Actual: 4.0h<br>
+            Task: Analyze growth trend, clean expired backup and report expansion risk.
+          </div>
+        </div>
+
+        <div class="ticket">
+          <div class="ticket-top">
+            <div class="title">Nginx Portal Deployment · ENYRAX Demo</div>
+            <div class="pill done">DONE</div>
+          </div>
+          <div class="meta">
+            Owner: atn · Project: ENYRAX Cloud Demo · Actual: 1.0h<br>
+            Task: Deploy portal, verify firewall, confirm public route and status page.
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Role-Based Operation View</h2>
+
+        <div class="roles">
+          <div class="role">
+            <h3>Infra Member View</h3>
+            <p>
+              Members only see their own tickets, worklog, today's progress, notes and pending reports.
+              This keeps the interface simple and avoids exposing unnecessary team data.
+            </p>
+          </div>
+
+          <div class="role">
+            <h3>Infra Supervisor View</h3>
+            <p>
+              Supervisors see team workload, member status, total labor hours, blocked tickets and
+              project-linked operation cost.
+            </p>
+          </div>
+
+          <div class="role">
+            <h3>Executive / Higher-Level View</h3>
+            <p>
+              Higher-level managers can review cross-team capacity, project overrun risk and service
+              delivery trends without entering low-level ticket details.
+            </p>
+          </div>
+
+          <div class="role">
+            <h3>ProjectOps Connection</h3>
+            <p>
+              Each ticket can be linked to a project, so infra labor time becomes part of real project
+              cost instead of disappearing inside daily operations.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card wide">
+        <h2>ServiceOps Flow</h2>
+
+        <div class="flow">
+          <div class="step">
+            <div class="k">Step 01</div>
+            <div class="name">Request</div>
+            <div class="desc">VM, network, storage, account, firewall or system support request enters the queue.</div>
+          </div>
+
+          <div class="step">
+            <div class="k">Step 02</div>
+            <div class="name">Assign</div>
+            <div class="desc">Supervisor assigns owner, priority, due date and project relationship.</div>
+          </div>
+
+          <div class="step">
+            <div class="k">Step 03</div>
+            <div class="name">Worklog</div>
+            <div class="desc">Member records actions, time spent, blockers and completion notes.</div>
+          </div>
+
+          <div class="step">
+            <div class="k">Step 04</div>
+            <div class="name">Cost Map</div>
+            <div class="desc">Labor time is mapped back to project budget, delivery cost and resource usage.</div>
+          </div>
+
+          <div class="step">
+            <div class="k">Step 05</div>
+            <div class="name">Review</div>
+            <div class="desc">Supervisor reviews team workload, risk items and project operation status.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <span>ENYRAX ServiceOps Demo</span>
+      <span>Ticket → Worklog → Labor Time → Project Cost → Supervisor View</span>
+    </footer>
+  </main>
 </body>
 </html>
