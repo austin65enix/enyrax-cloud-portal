@@ -1,12 +1,522 @@
 <!doctype html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="utf-8">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>ENYRAX ProjectOps</title>
+  <style>
+    :root {
+      --bg: #080a18;
+      --panel: rgba(13, 17, 38, .86);
+      --panel2: rgba(17, 24, 55, .92);
+      --line: rgba(255, 215, 130, .22);
+      --gold: #f5d37a;
+      --cyan: #73f4df;
+      --green: #8ff7b2;
+      --orange: #ffb86b;
+      --red: #ff6b86;
+      --text: #f7f2df;
+      --muted: rgba(247, 242, 223, .68);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at 12% 8%, rgba(245, 211, 122, .14), transparent 30%),
+        radial-gradient(circle at 88% 8%, rgba(115, 244, 223, .13), transparent 28%),
+        linear-gradient(135deg, #080a18 0%, #121842 55%, #070813 100%);
+    }
+
+    .wrap {
+      width: min(1160px, calc(100% - 36px));
+      margin: 0 auto;
+      padding: 44px 0;
+    }
+
+    .top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 20px;
+      flex-wrap: wrap;
+      margin-bottom: 26px;
+    }
+
+    .badge {
+      display: inline-flex;
+      gap: 10px;
+      align-items: center;
+      padding: 8px 14px;
+      border: 1px solid rgba(115, 244, 223, .32);
+      border-radius: 999px;
+      color: var(--cyan);
+      background: rgba(115, 244, 223, .06);
+      font-size: 14px;
+      font-weight: 900;
+    }
+
+    h1 {
+      margin: 18px 0 10px;
+      font-size: clamp(36px, 6vw, 68px);
+      line-height: 1;
+      letter-spacing: .04em;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 18px;
+      line-height: 1.6;
+      max-width: 780px;
+    }
+
+    .back {
+      text-decoration: none;
+      color: #081018;
+      background: linear-gradient(135deg, var(--gold), #fff0b8);
+      padding: 12px 16px;
+      border-radius: 14px;
+      font-weight: 900;
+      box-shadow: 0 16px 48px rgba(245, 211, 122, .16);
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin: 26px 0;
+    }
+
+    .metric {
+      padding: 20px;
+      border-radius: 22px;
+      border: 1px solid var(--line);
+      background: var(--panel);
+      box-shadow: 0 20px 70px rgba(0, 0, 0, .24);
+    }
+
+    .metric .label {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+
+    .metric .num {
+      margin-top: 10px;
+      font-size: 34px;
+      font-weight: 950;
+    }
+
+    .metric .hint {
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 1.05fr .95fr;
+      gap: 16px;
+    }
+
+    .card {
+      padding: 22px;
+      border-radius: 24px;
+      border: 1px solid var(--line);
+      background: var(--panel);
+      box-shadow: 0 20px 70px rgba(0, 0, 0, .24);
+    }
+
+    .card h2 {
+      margin: 0 0 16px;
+      color: var(--gold);
+      font-size: 22px;
+    }
+
+    .project {
+      padding: 16px;
+      border-radius: 18px;
+      background: var(--panel2);
+      border: 1px solid rgba(255, 255, 255, .08);
+      margin-bottom: 12px;
+    }
+
+    .project:last-child { margin-bottom: 0; }
+
+    .project-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .title {
+      font-weight: 950;
+      font-size: 17px;
+    }
+
+    .pill {
+      padding: 5px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 950;
+      white-space: nowrap;
+    }
+
+    .ontrack { color: #062014; background: var(--green); }
+    .watch { color: #241203; background: var(--orange); }
+    .risk { color: #26060c; background: var(--red); }
+
+    .meta {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.55;
+    }
+
+    .bar {
+      margin-top: 12px;
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, .08);
+      overflow: hidden;
+    }
+
+    .fill {
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--cyan), var(--gold));
+    }
+
+    .gantt {
+      display: grid;
+      gap: 12px;
+    }
+
+    .phase {
+      display: grid;
+      grid-template-columns: 150px 1fr 70px;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .phase-name {
+      color: var(--muted);
+      font-weight: 800;
+      font-size: 14px;
+    }
+
+    .lane {
+      height: 18px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.07);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .lane span {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--cyan), var(--gold));
+    }
+
+    .pct {
+      color: var(--cyan);
+      font-weight: 900;
+      font-size: 13px;
+      text-align: right;
+    }
+
+    .wide {
+      grid-column: span 2;
+      margin-top: 16px;
+    }
+
+    .cost-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+    }
+
+    .cost {
+      padding: 16px;
+      border-radius: 18px;
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(115, 244, 223, .16);
+    }
+
+    .cost .k {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 900;
+      margin-bottom: 8px;
+    }
+
+    .cost .v {
+      font-size: 24px;
+      font-weight: 950;
+    }
+
+    .cost .d {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+      margin-top: 8px;
+    }
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .step {
+      padding: 16px;
+      border-radius: 18px;
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(255,255,255,.08);
+      min-height: 128px;
+    }
+
+    .step .k {
+      color: var(--cyan);
+      font-size: 13px;
+      font-weight: 950;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+
+    .step .name {
+      font-weight: 950;
+      margin-bottom: 8px;
+    }
+
+    .step .desc {
+      color: var(--muted);
+      line-height: 1.5;
+      font-size: 14px;
+    }
+
+    .footer {
+      margin-top: 30px;
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      flex-wrap: wrap;
+      color: rgba(247, 242, 223, .52);
+      font-size: 14px;
+      border-top: 1px solid rgba(255,255,255,.08);
+      padding-top: 18px;
+    }
+
+    @media (max-width: 960px) {
+      .metrics { grid-template-columns: 1fr 1fr; }
+      .layout { grid-template-columns: 1fr; }
+      .wide { grid-column: span 1; }
+      .cost-grid { grid-template-columns: 1fr 1fr; }
+      .flow { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 620px) {
+      .metrics { grid-template-columns: 1fr; }
+      .cost-grid { grid-template-columns: 1fr; }
+      .project-top { align-items: flex-start; flex-direction: column; }
+      .phase { grid-template-columns: 1fr; }
+      .pct { text-align: left; }
+    }
+  </style>
 </head>
 <body>
-  <h1>ENYRAX ProjectOps</h1>
-  <p>Project Timeline / Budget / Resource View</p>
-  <a href="/">Back to Portal</a>
+  <main class="wrap">
+    <section class="top">
+      <div>
+        <div class="badge">ProjectOps · Timeline · Budget · Labor Cost · Risk View</div>
+        <h1>ENYRAX ProjectOps</h1>
+        <p class="subtitle">
+          A project operation layer that connects delivery timeline, infrastructure work,
+          labor hours, budget usage and overrun risk into one management view.
+        </p>
+      </div>
+      <a class="back" href="/">Back to Portal</a>
+    </section>
+
+    <section class="metrics">
+      <div class="metric">
+        <div class="label">Active Projects</div>
+        <div class="num">7</div>
+        <div class="hint">3 on track / 2 watch / 2 risk</div>
+      </div>
+      <div class="metric">
+        <div class="label">Budget Used</div>
+        <div class="num">68%</div>
+        <div class="hint">Across active project portfolio</div>
+      </div>
+      <div class="metric">
+        <div class="label">ServiceOps Hours</div>
+        <div class="num">126</div>
+        <div class="hint">Worklogs mapped to projects</div>
+      </div>
+      <div class="metric">
+        <div class="label">Overrun Risk</div>
+        <div class="num">2</div>
+        <div class="hint">Projects require management review</div>
+      </div>
+    </section>
+
+    <section class="layout">
+      <div class="card">
+        <h2>Project Portfolio</h2>
+
+        <div class="project">
+          <div class="project-top">
+            <div class="title">ERP Test Environment Upgrade</div>
+            <div class="pill ontrack">ON TRACK</div>
+          </div>
+          <div class="meta">
+            Owner: IT / Infra · Budget: 120h · Actual: 76h · ServiceOps linked tickets: 11<br>
+            Scope: VM build, network policy, backup baseline, UAT support.
+          </div>
+          <div class="bar"><div class="fill" style="width: 63%"></div></div>
+        </div>
+
+        <div class="project">
+          <div class="project-top">
+            <div class="title">Vendor VPN Access Control Review</div>
+            <div class="pill watch">WATCH</div>
+          </div>
+          <div class="meta">
+            Owner: Security / Infra · Budget: 80h · Actual: 61h · Approval pending: 4<br>
+            Scope: Firewall rule cleanup, expiry date, owner mapping and audit evidence.
+          </div>
+          <div class="bar"><div class="fill" style="width: 76%"></div></div>
+        </div>
+
+        <div class="project">
+          <div class="project-top">
+            <div class="title">Backup Storage Improvement</div>
+            <div class="pill risk">RISK</div>
+          </div>
+          <div class="meta">
+            Owner: Infra / Storage · Budget: 100h · Actual: 94h · Forecast: 128h<br>
+            Scope: Capacity review, retention cleanup, expansion planning and recovery test.
+          </div>
+          <div class="bar"><div class="fill" style="width: 94%"></div></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Gantt Snapshot</h2>
+
+        <div class="gantt">
+          <div class="phase">
+            <div class="phase-name">Requirement</div>
+            <div class="lane"><span style="left: 0%; width: 100%;"></span></div>
+            <div class="pct">Done</div>
+          </div>
+
+          <div class="phase">
+            <div class="phase-name">Infra Build</div>
+            <div class="lane"><span style="left: 10%; width: 78%;"></span></div>
+            <div class="pct">78%</div>
+          </div>
+
+          <div class="phase">
+            <div class="phase-name">Security Review</div>
+            <div class="lane"><span style="left: 34%; width: 42%;"></span></div>
+            <div class="pct">42%</div>
+          </div>
+
+          <div class="phase">
+            <div class="phase-name">UAT Support</div>
+            <div class="lane"><span style="left: 62%; width: 24%;"></span></div>
+            <div class="pct">24%</div>
+          </div>
+
+          <div class="phase">
+            <div class="phase-name">Go-Live</div>
+            <div class="lane"><span style="left: 82%; width: 8%;"></span></div>
+            <div class="pct">Ready</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card wide">
+        <h2>Budget / Labor Cost View</h2>
+
+        <div class="cost-grid">
+          <div class="cost">
+            <div class="k">Planned Budget</div>
+            <div class="v">300h</div>
+            <div class="d">Initial project labor estimate across infra, security and support tasks.</div>
+          </div>
+
+          <div class="cost">
+            <div class="k">Actual Worklog</div>
+            <div class="v">231h</div>
+            <div class="d">Real work hours imported from ServiceOps tickets and member reports.</div>
+          </div>
+
+          <div class="cost">
+            <div class="k">Forecast</div>
+            <div class="v">346h</div>
+            <div class="d">Predicted total effort based on current burn rate and pending tasks.</div>
+          </div>
+
+          <div class="cost">
+            <div class="k">Risk Signal</div>
+            <div class="v" style="color: var(--orange);">+15%</div>
+            <div class="d">Potential overrun if unresolved tickets and approvals continue to delay delivery.</div>
+          </div>
+        </div>
+
+        <div class="flow">
+          <div class="step">
+            <div class="k">Step 01</div>
+            <div class="name">Project Card</div>
+            <div class="desc">Project owner creates scope, budget, phase and delivery target.</div>
+          </div>
+
+          <div class="step">
+            <div class="k">Step 02</div>
+            <div class="name">ServiceOps Link</div>
+            <div class="desc">Infra tickets are attached to the project instead of becoming isolated tasks.</div>
+          </div>
+
+          <div class="step">
+            <div class="k">Step 03</div>
+            <div class="name">Worklog Import</div>
+            <div class="desc">Member work hours and notes become real project execution data.</div>
+          </div>
+
+          <div class="step">
+            <div class="k">Step 04</div>
+            <div class="name">Risk Forecast</div>
+            <div class="desc">Budget usage, delay, blockers and approval wait time create overrun signals.</div>
+          </div>
+
+          <div class="step">
+            <div class="k">Step 05</div>
+            <div class="name">Manager View</div>
+            <div class="desc">Supervisors see project health, labor cost and execution risk in one dashboard.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <span>ENYRAX ProjectOps Demo</span>
+      <span>Project → Ticket → Worklog → Cost → Risk Forecast → Management View</span>
+    </footer>
+  </main>
 </body>
 </html>
