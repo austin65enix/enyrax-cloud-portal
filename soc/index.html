@@ -1,12 +1,396 @@
 <!doctype html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="utf-8">
-  <title>ENYRAX SOC</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ENYRAX SOC Monitoring</title>
+  <style>
+    :root {
+      --bg: #070914;
+      --panel: rgba(13, 17, 38, .86);
+      --panel2: rgba(17, 24, 55, .92);
+      --line: rgba(255, 215, 130, .22);
+      --gold: #f5d37a;
+      --cyan: #73f4df;
+      --red: #ff6b86;
+      --orange: #ffb86b;
+      --green: #8ff7b2;
+      --text: #f7f2df;
+      --muted: rgba(247, 242, 223, .68);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at 10% 10%, rgba(115, 244, 223, .14), transparent 30%),
+        radial-gradient(circle at 90% 0%, rgba(255, 107, 134, .12), transparent 28%),
+        linear-gradient(135deg, #070914 0%, #11183c 55%, #070813 100%);
+    }
+
+    .wrap {
+      width: min(1160px, calc(100% - 36px));
+      margin: 0 auto;
+      padding: 44px 0;
+    }
+
+    .top {
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      margin-bottom: 26px;
+    }
+
+    .badge {
+      display: inline-flex;
+      gap: 10px;
+      align-items: center;
+      padding: 8px 14px;
+      border: 1px solid rgba(115, 244, 223, .32);
+      border-radius: 999px;
+      color: var(--cyan);
+      background: rgba(115, 244, 223, .06);
+      font-size: 14px;
+      font-weight: 900;
+    }
+
+    h1 {
+      margin: 18px 0 10px;
+      font-size: clamp(36px, 6vw, 68px);
+      line-height: 1;
+      letter-spacing: .04em;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 18px;
+      line-height: 1.6;
+      max-width: 760px;
+    }
+
+    .back {
+      text-decoration: none;
+      color: #081018;
+      background: linear-gradient(135deg, var(--gold), #fff0b8);
+      padding: 12px 16px;
+      border-radius: 14px;
+      font-weight: 900;
+      box-shadow: 0 16px 48px rgba(245, 211, 122, .16);
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin: 26px 0;
+    }
+
+    .metric {
+      padding: 20px;
+      border-radius: 22px;
+      border: 1px solid var(--line);
+      background: var(--panel);
+      box-shadow: 0 20px 70px rgba(0, 0, 0, .24);
+    }
+
+    .metric .label {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+
+    .metric .num {
+      margin-top: 10px;
+      font-size: 34px;
+      font-weight: 950;
+    }
+
+    .metric .hint {
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 1.05fr .95fr;
+      gap: 16px;
+    }
+
+    .card {
+      padding: 22px;
+      border-radius: 24px;
+      border: 1px solid var(--line);
+      background: var(--panel);
+      box-shadow: 0 20px 70px rgba(0, 0, 0, .24);
+    }
+
+    .card h2 {
+      margin: 0 0 16px;
+      color: var(--gold);
+      font-size: 22px;
+    }
+
+    .incident {
+      padding: 16px;
+      border-radius: 18px;
+      background: var(--panel2);
+      border: 1px solid rgba(255, 255, 255, .08);
+      margin-bottom: 12px;
+    }
+
+    .incident:last-child { margin-bottom: 0; }
+
+    .incident-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .title {
+      font-weight: 950;
+      font-size: 17px;
+    }
+
+    .sev {
+      padding: 5px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 950;
+    }
+
+    .critical { color: #26060c; background: var(--red); }
+    .high { color: #241203; background: var(--orange); }
+    .medium { color: #062014; background: var(--green); }
+
+    .meta {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.55;
+    }
+
+    .timeline {
+      position: relative;
+      padding-left: 18px;
+    }
+
+    .timeline::before {
+      content: "";
+      position: absolute;
+      left: 5px;
+      top: 6px;
+      bottom: 6px;
+      width: 1px;
+      background: rgba(115, 244, 223, .28);
+    }
+
+    .event {
+      position: relative;
+      padding: 0 0 18px 14px;
+    }
+
+    .event::before {
+      content: "";
+      position: absolute;
+      left: -17px;
+      top: 5px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--cyan);
+      box-shadow: 0 0 18px rgba(115, 244, 223, .72);
+    }
+
+    .event .time {
+      color: var(--cyan);
+      font-size: 13px;
+      font-weight: 900;
+    }
+
+    .event .desc {
+      margin-top: 5px;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    .ai-box {
+      margin-top: 16px;
+      padding: 18px;
+      border-radius: 20px;
+      border: 1px solid rgba(115, 244, 223, .24);
+      background: rgba(115, 244, 223, .06);
+    }
+
+    .ai-box strong {
+      color: var(--cyan);
+    }
+
+    .actions {
+      display: grid;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .action {
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(255,255,255,.07);
+      color: var(--muted);
+    }
+
+    .footer {
+      margin-top: 30px;
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      flex-wrap: wrap;
+      color: rgba(247, 242, 223, .52);
+      font-size: 14px;
+      border-top: 1px solid rgba(255,255,255,.08);
+      padding-top: 18px;
+    }
+
+    @media (max-width: 900px) {
+      .metrics { grid-template-columns: 1fr 1fr; }
+      .layout { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 560px) {
+      .metrics { grid-template-columns: 1fr; }
+      .incident-top { align-items: flex-start; flex-direction: column; }
+    }
+  </style>
 </head>
 <body>
-  <h1>ENYRAX SOC Monitoring</h1>
-  <p>AI-Assisted Investigation Platform</p>
-  <a href="/">Back to Portal</a>
+  <main class="wrap">
+    <section class="top">
+      <div>
+        <div class="badge">SOC Monitoring · AI-Assisted Investigation</div>
+        <h1>ENYRAX SOC</h1>
+        <p class="subtitle">
+          From raw alerts to correlated incidents, attack timeline, MITRE mapping and AI-generated
+          response recommendations.
+        </p>
+      </div>
+      <a class="back" href="/">Back to Portal</a>
+    </section>
+
+    <section class="metrics">
+      <div class="metric">
+        <div class="label">Open Incidents</div>
+        <div class="num">12</div>
+        <div class="hint">3 critical / 5 high / 4 medium</div>
+      </div>
+      <div class="metric">
+        <div class="label">Correlated Alerts</div>
+        <div class="num">428</div>
+        <div class="hint">Grouped by IP, host and behavior</div>
+      </div>
+      <div class="metric">
+        <div class="label">AI Confidence</div>
+        <div class="num">91%</div>
+        <div class="hint">Evidence-backed decision output</div>
+      </div>
+      <div class="metric">
+        <div class="label">MITRE Coverage</div>
+        <div class="num">7</div>
+        <div class="hint">Techniques mapped in demo data</div>
+      </div>
+    </section>
+
+    <section class="layout">
+      <div class="card">
+        <h2>Hot Incidents</h2>
+
+        <div class="incident">
+          <div class="incident-top">
+            <div class="title">Suspicious SSH Brute Force Pattern</div>
+            <div class="sev critical">CRITICAL</div>
+          </div>
+          <div class="meta">
+            Source IP: 185.220.101.42 · Target: web-portal-01 · Duplicate Count: 36<br>
+            Analysis Type: failed_login_cluster · MITRE: T1110 Brute Force
+          </div>
+        </div>
+
+        <div class="incident">
+          <div class="incident-top">
+            <div class="title">Privilege Escalation After Successful Login</div>
+            <div class="sev high">HIGH</div>
+          </div>
+          <div class="meta">
+            User: svc-backup · Host: infra-node-03 · Sequence: login → sudo → config access<br>
+            Analysis Type: attack_story · MITRE: T1068 Privilege Escalation
+          </div>
+        </div>
+
+        <div class="incident">
+          <div class="incident-top">
+            <div class="title">Wazuh Agent Disconnected and Reconnected</div>
+            <div class="sev medium">MEDIUM</div>
+          </div>
+          <div class="meta">
+            Agent: endpoint-07 · Status changed during suspicious activity window<br>
+            Analysis Type: agent_state_change · MITRE: Defense Evasion Review
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Attack Timeline</h2>
+
+        <div class="timeline">
+          <div class="event">
+            <div class="time">07:02</div>
+            <div class="desc">Multiple failed SSH login attempts from external IP.</div>
+          </div>
+          <div class="event">
+            <div class="time">07:04</div>
+            <div class="desc">Successful login detected after repeated failures.</div>
+          </div>
+          <div class="event">
+            <div class="time">07:05</div>
+            <div class="desc">Sudo command executed by newly authenticated session.</div>
+          </div>
+          <div class="event">
+            <div class="time">07:06</div>
+            <div class="desc">Agent heartbeat interruption observed on target host.</div>
+          </div>
+        </div>
+
+        <div class="ai-box">
+          <strong>AI Decision Summary</strong>
+          <p>
+            The event chain suggests a potential credential-based intrusion followed by privilege
+            escalation. Confidence is high because login failures, successful authentication and
+            sudo execution occurred within the same short time window.
+          </p>
+
+          <div class="actions">
+            <div class="action">1. Temporarily block source IP at firewall layer.</div>
+            <div class="action">2. Review successful login session and related commands.</div>
+            <div class="action">3. Force password rotation for affected user account.</div>
+            <div class="action">4. Preserve logs for incident timeline reconstruction.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <span>ENYRAX SOC Monitoring Demo</span>
+      <span>Alert → Incident → Timeline → AI Decision → Response</span>
+    </footer>
+  </main>
 </body>
 </html>
