@@ -1,51 +1,285 @@
 <!doctype html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>ENYRAX Cloud Portal</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ENYRAX Orbit Portal</title>
   <style>
+    :root {
+      --bg: #080a18;
+      --panel: rgba(13, 17, 38, .78);
+      --line: rgba(255, 215, 130, .22);
+      --gold: #f5d37a;
+      --cyan: #73f4df;
+      --text: #f7f2df;
+      --muted: rgba(247, 242, 223, .68);
+      --danger: #ff7a90;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
     body {
       margin: 0;
       min-height: 100vh;
-      display: grid;
-      place-items: center;
-      background: radial-gradient(circle at top, #1e2b68, #090b18 65%);
-      color: #f5f0dc;
+      color: var(--text);
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at 20% 10%, rgba(115, 244, 223, .14), transparent 30%),
+        radial-gradient(circle at 80% 20%, rgba(245, 211, 122, .16), transparent 28%),
+        linear-gradient(135deg, #080a18 0%, #11163b 52%, #070813 100%);
+      overflow-x: hidden;
     }
-    .card {
-      padding: 42px;
-      border: 1px solid rgba(255, 215, 120, .28);
-      border-radius: 24px;
-      background: rgba(10, 13, 30, .72);
-      box-shadow: 0 24px 80px rgba(0,0,0,.45);
-      text-align: center;
-      max-width: 720px;
+
+    .wrap {
+      width: min(1120px, calc(100% - 36px));
+      margin: 0 auto;
+      padding: 56px 0;
     }
+
+    .hero {
+      display: grid;
+      grid-template-columns: 1.1fr .9fr;
+      gap: 28px;
+      align-items: center;
+      min-height: 54vh;
+    }
+
+    .badge {
+      display: inline-flex;
+      gap: 10px;
+      align-items: center;
+      padding: 8px 14px;
+      border: 1px solid rgba(115, 244, 223, .32);
+      border-radius: 999px;
+      color: var(--cyan);
+      background: rgba(115, 244, 223, .06);
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: .03em;
+    }
+
     h1 {
-      margin: 0 0 12px;
-      font-size: 42px;
+      margin: 22px 0 14px;
+      font-size: clamp(44px, 7vw, 86px);
+      line-height: .92;
       letter-spacing: .08em;
     }
-    p {
-      margin: 8px 0;
-      color: rgba(245,240,220,.78);
-      font-size: 18px;
+
+    .subtitle {
+      font-size: clamp(18px, 2.4vw, 26px);
+      color: var(--muted);
+      line-height: 1.55;
+      max-width: 720px;
     }
-    .tag {
-      margin-top: 22px;
-      color: #73f4df;
-      font-weight: 700;
+
+    .highlight {
+      color: var(--gold);
+      font-weight: 800;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      margin-top: 30px;
+    }
+
+    .btn {
+      text-decoration: none;
+      color: var(--text);
+      padding: 13px 18px;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, .05);
+      font-weight: 800;
+      transition: .2s ease;
+    }
+
+    .btn.primary {
+      color: #081018;
+      background: linear-gradient(135deg, var(--gold), #fff0b8);
+      box-shadow: 0 16px 48px rgba(245, 211, 122, .18);
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      border-color: rgba(245, 211, 122, .6);
+    }
+
+    .orb {
+      position: relative;
+      aspect-ratio: 1;
+      border-radius: 50%;
+      border: 1px solid rgba(245, 211, 122, .18);
+      background:
+        radial-gradient(circle at 50% 50%, rgba(115, 244, 223, .2), transparent 22%),
+        radial-gradient(circle at 45% 45%, rgba(245, 211, 122, .14), transparent 38%),
+        rgba(255, 255, 255, .03);
+      box-shadow:
+        inset 0 0 60px rgba(115, 244, 223, .08),
+        0 0 80px rgba(115, 244, 223, .08);
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+    }
+
+    .orb::before,
+    .orb::after {
+      content: "";
+      position: absolute;
+      inset: 13%;
+      border-radius: 50%;
+      border: 1px dashed rgba(115, 244, 223, .32);
+      animation: spin 22s linear infinite;
+    }
+
+    .orb::after {
+      inset: 27%;
+      border-color: rgba(245, 211, 122, .35);
+      animation-duration: 16s;
+      animation-direction: reverse;
+    }
+
+    .orb-core {
+      position: relative;
+      width: 42%;
+      aspect-ratio: 1;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 25%, #fff7d6, var(--gold) 28%, #1bd7c7 72%, #0b122b);
+      box-shadow: 0 0 46px rgba(115, 244, 223, .38);
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-top: 34px;
+    }
+
+    .card {
+      min-height: 190px;
+      padding: 22px;
+      border-radius: 24px;
+      border: 1px solid var(--line);
+      background: var(--panel);
+      box-shadow: 0 20px 70px rgba(0, 0, 0, .24);
+      text-decoration: none;
+      color: var(--text);
+      transition: .2s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(115, 244, 223, .48);
+      background: rgba(18, 24, 54, .86);
+    }
+
+    .card .kicker {
+      color: var(--cyan);
+      font-size: 13px;
+      font-weight: 900;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .card h2 {
+      margin: 14px 0 10px;
+      font-size: 24px;
+    }
+
+    .card p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    .footer {
+      margin-top: 40px;
+      color: rgba(247, 242, 223, .52);
+      font-size: 14px;
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+      border-top: 1px solid rgba(255, 255, 255, .08);
+      padding-top: 20px;
+    }
+
+    @media (max-width: 860px) {
+      .hero {
+        grid-template-columns: 1fr;
+      }
+
+      .orb {
+        max-width: 360px;
+        margin: 0 auto;
+      }
+
+      .grid {
+        grid-template-columns: 1fr;
+      }
     }
   </style>
 </head>
 <body>
-  <main class="card">
-    <h1>ENYRAX</h1>
-    <p>Cloud Demo Portal</p>
-    <p>SOC × ServiceOps × ProjectOps × AI Decision Engine</p>
-    <div class="tag">Akamai Tokyo 3 / Ubuntu 24.04 / Nginx Online</div>
-  </main>
+  <div class="wrap">
+    <section class="hero">
+      <div>
+        <div class="badge">Akamai Tokyo 3 · Ubuntu 24.04 · Nginx Online</div>
+        <h1>ENYRAX<br>Orbit Portal</h1>
+        <p class="subtitle">
+          A cloud demo entrance for <span class="highlight">SOC Monitoring</span>,
+          <span class="highlight">ServiceOps</span>, ProjectOps and AI-assisted decision workflows.
+        </p>
+
+        <div class="actions">
+          <a class="btn primary" href="/soc/">Enter SOC Demo</a>
+          <a class="btn" href="/serviceops/">ServiceOps</a>
+          <a class="btn" href="/status/">Server Status</a>
+        </div>
+      </div>
+
+      <div class="orb" aria-label="ENYRAX orbit visual">
+        <div class="orb-core"></div>
+      </div>
+    </section>
+
+    <section class="grid">
+      <a class="card" href="/soc/">
+        <div class="kicker">Security</div>
+        <h2>SOC Monitoring</h2>
+        <p>Alert correlation, incident timeline and AI-assisted investigation demo.</p>
+      </a>
+
+      <a class="card" href="/serviceops/">
+        <div class="kicker">Operations</div>
+        <h2>ServiceOps</h2>
+        <p>Infra work orders, labor time, reporting and team-level operation view.</p>
+      </a>
+
+      <a class="card" href="/projectops/">
+        <div class="kicker">Delivery</div>
+        <h2>ProjectOps</h2>
+        <p>Project timeline, cost tracking, budget risk and resource visibility.</p>
+      </a>
+
+      <a class="card" href="/status/">
+        <div class="kicker">Cloud</div>
+        <h2>Server Status</h2>
+        <p>Cloud host, Nginx, firewall and deployment checkpoint information.</p>
+      </a>
+    </section>
+
+    <footer class="footer">
+      <span>ENYRAX Cloud Demo Server v1</span>
+      <span>SOC × ServiceOps × ProjectOps × AI Decision Engine</span>
+    </footer>
+  </div>
 </body>
 </html>
