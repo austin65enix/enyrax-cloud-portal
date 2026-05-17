@@ -199,6 +199,56 @@
       line-height: 1.55;
     }
 
+
+    .platform-flow {
+      margin-top: 18px;
+      padding: 22px;
+      border-radius: 24px;
+      border: 1px solid rgba(115, 244, 223, .18);
+      background: rgba(13, 17, 38, .72);
+      box-shadow: 0 20px 70px rgba(0, 0, 0, .2);
+    }
+
+    .platform-flow h2 {
+      margin: 0 0 14px;
+      color: var(--gold);
+      font-size: 22px;
+    }
+
+    .flow-row {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+    }
+
+    .flow-step {
+      padding: 15px;
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,.08);
+      background: rgba(255,255,255,.04);
+      min-height: 120px;
+    }
+
+    .flow-step .k {
+      color: var(--cyan);
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .flow-step .name {
+      font-weight: 950;
+      margin-bottom: 8px;
+    }
+
+    .flow-step .desc {
+      color: var(--muted);
+      line-height: 1.5;
+      font-size: 14px;
+    }
+
     .footer {
       margin-top: 40px;
       color: rgba(247, 242, 223, .52);
@@ -221,7 +271,8 @@
         margin: 0 auto;
       }
 
-      .grid {
+      .grid,
+      .flow-row {
         grid-template-columns: 1fr;
       }
     }
@@ -234,7 +285,7 @@
         <div class="badge">Akamai Tokyo 3 · Ubuntu 24.04 · Nginx Online</div>
         <h1>ENYRAX<br>Orbit Portal</h1>
         <p class="subtitle">
-          A cloud demo entrance for <span class="highlight">SOC Monitoring</span>,
+          A cloud-native enterprise operation prototype connecting <span class="highlight">SOC Monitoring</span>,
           <span class="highlight">ServiceOps</span>, ProjectOps and AI-assisted decision workflows.
         </p>
 
@@ -254,30 +305,63 @@
       <a class="card" href="/soc/">
         <div class="kicker">Security</div>
         <h2>SOC Monitoring</h2>
-        <p>Alert correlation, incident timeline and AI-assisted investigation demo.</p>
+        <p>Security alerts become correlated incidents, attack timelines, MITRE mapping and AI response decisions.</p>
       </a>
 
       <a class="card" href="/serviceops/">
         <div class="kicker">Operations</div>
         <h2>ServiceOps</h2>
-        <p>Infra work orders, labor time, reporting and team-level operation view.</p>
+        <p>Infrastructure tickets, member worklogs, supervisor overview and labor-cost visibility.</p>
       </a>
 
       <a class="card" href="/projectops/">
         <div class="kicker">Delivery</div>
         <h2>ProjectOps</h2>
-        <p>Project timeline, cost tracking, budget risk and resource visibility.</p>
+        <p>Project schedule, ServiceOps-linked work hours, budget usage and overrun risk forecast.</p>
       </a>
 
       <a class="card" href="/status/">
         <div class="kicker">Cloud</div>
         <h2>Server Status</h2>
-        <p>Cloud host, Nginx, firewall and deployment checkpoint information.</p>
+        <p>Akamai Tokyo 3 cloud host, Ubuntu runtime, firewall status and deployment checkpoints.</p>
       </a>
     </section>
 
+
+    <section class="platform-flow">
+      <h2>Platform Decision Flow</h2>
+      <div class="flow-row">
+        <div class="flow-step">
+          <div class="k">Signal</div>
+          <div class="name">SOC Alert</div>
+          <div class="desc">Security events are normalized and grouped into incidents.</div>
+        </div>
+        <div class="flow-step">
+          <div class="k">Operation</div>
+          <div class="name">Service Ticket</div>
+          <div class="desc">Infra tasks are assigned, worked on and recorded as worklogs.</div>
+        </div>
+        <div class="flow-step">
+          <div class="k">Delivery</div>
+          <div class="name">Project Link</div>
+          <div class="desc">Tickets and work hours flow back into project timeline and budget.</div>
+        </div>
+        <div class="flow-step">
+          <div class="k">Risk</div>
+          <div class="name">AI Decision</div>
+          <div class="desc">Evidence, cost, delay and risk signals are summarized for review.</div>
+        </div>
+        <div class="flow-step">
+          <div class="k">View</div>
+          <div class="name">Manager Dashboard</div>
+          <div class="desc">Supervisors see security, service and project health together.</div>
+        </div>
+      </div>
+    </section>
+
+
     <footer class="footer">
-      <span>ENYRAX Cloud Demo Server v1</span>
+      <span>ENYRAX Enterprise Operation Platform · Cloud Demo v1</span>
       <span>SOC × ServiceOps × ProjectOps × AI Decision Engine</span>
     </footer>
   </div>
