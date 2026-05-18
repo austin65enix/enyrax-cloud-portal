@@ -25,6 +25,16 @@ Check API service:
 ```bash
 sudo systemctl status enyrax-api
 
+## Seed Demo Database
+
+Run all seed scripts:
+
+```bash
+cd /var/www/enyrax-portal/backend
+source venv/bin/activate
+source .env
+python seed_all.py
+
 
 ## Health Check
 

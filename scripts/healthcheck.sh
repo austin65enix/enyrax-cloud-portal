@@ -53,4 +53,18 @@ echo "[10] ProjectOps Summary API"
 curl -s https://portal.soc-monitoring.dev/api/projectops/summary | head -c 300
 echo
 
+echo
+echo "[11] DB-backed API Sources"
+echo -n "modules: "
+curl -s https://portal.soc-monitoring.dev/api/modules | jq -r '.source'
+
+echo -n "soc: "
+curl -s https://portal.soc-monitoring.dev/api/soc/summary | jq -r '.source'
+
+echo -n "serviceops: "
+curl -s https://portal.soc-monitoring.dev/api/serviceops/summary | jq -r '.source'
+
+echo -n "projectops: "
+curl -s https://portal.soc-monitoring.dev/api/projectops/summary | jq -r '.source'
+
 echo "== Done =="
