@@ -314,6 +314,75 @@
       font-size: 14px;
     }
 
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .form-full {
+      grid-column: span 2;
+    }
+
+    label {
+      display: grid;
+      gap: 6px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      border: 1px solid rgba(115, 244, 223, .18);
+      border-radius: 14px;
+      padding: 11px 12px;
+      color: var(--text);
+      background: rgba(255,255,255,.05);
+      outline: none;
+      font: inherit;
+    }
+
+    textarea {
+      min-height: 88px;
+      resize: vertical;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      border-color: rgba(115, 244, 223, .55);
+      box-shadow: 0 0 0 3px rgba(115, 244, 223, .08);
+    }
+
+    .submit-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 14px;
+      flex-wrap: wrap;
+    }
+
+    .submit-btn {
+      border: 0;
+      cursor: pointer;
+      color: #081018;
+      background: linear-gradient(135deg, var(--gold), #fff0b8);
+      padding: 12px 16px;
+      border-radius: 14px;
+      font-weight: 950;
+      box-shadow: 0 16px 48px rgba(245, 211, 122, .16);
+    }
+
+    .form-message {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
     .footer {
       margin-top: 30px;
       display: flex;
@@ -332,6 +401,8 @@
       .wide { grid-column: span 1; }
       .cost-grid { grid-template-columns: 1fr 1fr; }
       .flow { grid-template-columns: 1fr; }
+      .form-grid { grid-template-columns: 1fr; }
+      .form-full { grid-column: span 1; }
     }
 
     @media (max-width: 620px) {
@@ -389,6 +460,69 @@
             <div class="meta">Loading project portfolio...</div>
           </div>
         </div>
+      </div>
+
+      
+        <div class="project" style="margin-top: 16px;">
+          <div class="project-top">
+            <div class="title">Add ProjectOps Project</div>
+            <div class="pill watch">CREATE</div>
+          </div>
+
+          <form id="project-form">
+            <div class="form-grid">
+              <label>
+                Title
+                <input id="project-title" name="title" required maxlength="200" placeholder="Example: ServiceOps Workflow Expansion">
+              </label>
+
+              <label>
+                Status
+                <select id="project-status" name="status">
+                  <option value="watch">Watch</option>
+                  <option value="ontrack">On Track</option>
+                  <option value="risk">Risk</option>
+                </select>
+              </label>
+
+              <label>
+                Owner
+                <input id="project-owner" name="owner" required maxlength="120" value="ENYRAX / Infra">
+              </label>
+
+              <label>
+                Progress
+                <input id="project-progress" name="progress" type="number" min="0" max="100" value="10">
+              </label>
+
+              <label>
+                Budget Hours
+                <input id="project-budget" name="budget_hours" type="number" step="1" min="0" value="60">
+              </label>
+
+              <label>
+                Actual Hours
+                <input id="project-actual" name="actual_hours" type="number" step="1" min="0" value="0">
+              </label>
+
+              <label>
+                Linked Tickets
+                <input id="project-linked" name="linked_tickets" type="number" step="1" min="0" value="0">
+              </label>
+
+              <label class="form-full">
+                Scope
+                <textarea id="project-scope" name="scope" required placeholder="Describe the project scope..."></textarea>
+              </label>
+            </div>
+
+            <div class="submit-row">
+              <button class="submit-btn" type="submit">Create Project</button>
+              <span class="form-message" id="project-form-message">Ready.</span>
+            </div>
+          </form>
+        </div>
+
       </div>
 
       <div class="card">
@@ -551,6 +685,65 @@
         console.error("Failed to load ProjectOps summary:", err);
       }
     }
+
+
+    async function createProjectOpsProject(event) {
+      event.preventDefault();
+
+      const message = document.getElementById("project-form-message");
+      const form = document.getElementById("project-form");
+
+      const payload = {
+        title: document.getElementById("project-title").value.trim(),
+        status: document.getElementById("project-status").value,
+        owner: document.getElementById("project-owner").value.trim(),
+        budget_hours: Number(document.getElementById("project-budget").value || 0),
+        actual_hours: Number(document.getElementById("project-actual").value || 0),
+        linked_tickets: Number(document.getElementById("project-linked").value || 0),
+        scope: document.getElementById("project-scope").value.trim(),
+        progress: Number(document.getElementById("project-progress").value || 0)
+      };
+
+      if (!payload.title || !payload.owner || !payload.scope) {
+        message.textContent = "Please fill title, owner and scope.";
+        message.style.color = "#ff6b86";
+        return;
+      }
+
+      message.textContent = "Creating project...";
+      message.style.color = "rgba(247, 242, 223, .68)";
+
+      try {
+        const res = await fetch("/api/projectops/projects", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) {
+          throw new Error("Create project failed: " + res.status);
+        }
+
+        const data = await res.json();
+        message.textContent = `Created project #${data.project.id}`;
+        message.style.color = "#8ff7b2";
+
+        form.reset();
+        document.getElementById("project-owner").value = "ENYRAX / Infra";
+        document.getElementById("project-budget").value = "60";
+        document.getElementById("project-actual").value = "0";
+        document.getElementById("project-linked").value = "0";
+        document.getElementById("project-progress").value = "10";
+
+        await loadProjectOpsSummary();
+      } catch (err) {
+        message.textContent = "Create failed. Check API or console.";
+        message.style.color = "#ff6b86";
+        console.error("Create ProjectOps project failed:", err);
+      }
+    }
+
+    document.getElementById("project-form").addEventListener("submit", createProjectOpsProject);
 
     loadProjectOpsSummary();
   </script>
