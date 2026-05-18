@@ -398,51 +398,109 @@ def serviceops_summary():
 
 @app.get("/api/projectops/summary")
 def projectops_summary():
-    return {
+    fallback_projects = [
+        {
+            "title": "ERP Test Environment Upgrade",
+            "status": "ontrack",
+            "owner": "IT / Infra",
+            "budget_hours": 120,
+            "actual_hours": 76,
+            "linked_tickets": 11,
+            "scope": "VM build, network policy, backup baseline, UAT support.",
+            "progress": 63,
+        },
+        {
+            "title": "Vendor VPN Access Control Review",
+            "status": "watch",
+            "owner": "Security / Infra",
+            "budget_hours": 80,
+            "actual_hours": 61,
+            "linked_tickets": 7,
+            "scope": "Firewall rule cleanup, expiry date, owner mapping and audit evidence.",
+            "progress": 76,
+        },
+        {
+            "title": "Backup Storage Improvement",
+            "status": "risk",
+            "owner": "Infra / Storage",
+            "budget_hours": 100,
+            "actual_hours": 94,
+            "linked_tickets": 9,
+            "scope": "Capacity review, retention cleanup, expansion planning and recovery test.",
+            "progress": 94,
+        },
+    ]
+
+    source = "fallback"
+    projects = fallback_projects
+    db_error = None
+
+    if engine is not None:
+        try:
+            with engine.connect() as conn:
+                rows = conn.execute(
+                    text("""
+                        SELECT
+                            title,
+                            status,
+                            owner,
+                            budget_hours,
+                            actual_hours,
+                            linked_tickets,
+                            scope,
+                            progress
+                        FROM projectops_projects
+                        ORDER BY display_order ASC, id ASC
+                    """)
+                ).mappings().all()
+
+            projects = [
+                {
+                    "title": row["title"],
+                    "status": row["status"],
+                    "owner": row["owner"],
+                    "budget_hours": float(row["budget_hours"]),
+                    "actual_hours": float(row["actual_hours"]),
+                    "linked_tickets": int(row["linked_tickets"]),
+                    "scope": row["scope"],
+                    "progress": int(row["progress"]),
+                }
+                for row in rows
+            ]
+            source = "postgresql"
+
+        except SQLAlchemyError as exc:
+            projects = fallback_projects
+            source = "fallback"
+            db_error = str(exc)
+    else:
+        db_error = "DATABASE_URL not configured"
+
+    active_projects = len(projects)
+    on_track = sum(1 for item in projects if item["status"] == "ontrack")
+    watch = sum(1 for item in projects if item["status"] == "watch")
+    risk = sum(1 for item in projects if item["status"] == "risk")
+    total_budget = sum(float(item["budget_hours"]) for item in projects)
+    total_actual = sum(float(item["actual_hours"]) for item in projects)
+    budget_used = round((total_actual / total_budget) * 100) if total_budget else 0
+    serviceops_hours = int(total_actual)
+    overrun_risk = risk
+
+    response = {
         "status": "ok",
         "service": "enyrax-projectops-demo",
+        "source": source,
         "time_utc": now_utc(),
         "metrics": {
-            "active_projects": 7,
-            "on_track": 3,
-            "watch": 2,
-            "risk": 2,
-            "budget_used": 68,
-            "serviceops_hours": 126,
-            "overrun_risk": 2,
+            "active_projects": active_projects,
+            "on_track": on_track,
+            "watch": watch,
+            "risk": risk,
+            "budget_used": budget_used,
+            "serviceops_hours": serviceops_hours,
+            "overrun_risk": overrun_risk,
         },
-        "projects": [
-            {
-                "title": "ERP Test Environment Upgrade",
-                "status": "ontrack",
-                "owner": "IT / Infra",
-                "budget_hours": 120,
-                "actual_hours": 76,
-                "linked_tickets": 11,
-                "scope": "VM build, network policy, backup baseline, UAT support.",
-                "progress": 63,
-            },
-            {
-                "title": "Vendor VPN Access Control Review",
-                "status": "watch",
-                "owner": "Security / Infra",
-                "budget_hours": 80,
-                "actual_hours": 61,
-                "linked_tickets": 7,
-                "scope": "Firewall rule cleanup, expiry date, owner mapping and audit evidence.",
-                "progress": 76,
-            },
-            {
-                "title": "Backup Storage Improvement",
-                "status": "risk",
-                "owner": "Infra / Storage",
-                "budget_hours": 100,
-                "actual_hours": 94,
-                "linked_tickets": 9,
-                "scope": "Capacity review, retention cleanup, expansion planning and recovery test.",
-                "progress": 94,
-            },
-        ],
+        "projects": projects,
         "gantt": [
             {"phase": "Requirement", "offset": 0, "width": 100, "status": "Done"},
             {"phase": "Infra Build", "offset": 10, "width": 78, "status": "78%"},
@@ -451,10 +509,10 @@ def projectops_summary():
             {"phase": "Go-Live", "offset": 82, "width": 8, "status": "Ready"},
         ],
         "cost": {
-            "planned_budget": "300h",
-            "actual_worklog": "231h",
+            "planned_budget": f"{int(total_budget)}h",
+            "actual_worklog": f"{int(total_actual)}h",
             "forecast": "346h",
-            "risk_signal": "+15%",
+            "risk_signal": "+15%" if risk else "Normal",
             "description": "Potential overrun if unresolved tickets and approvals continue to delay delivery.",
         },
         "flow": [
@@ -485,3 +543,9 @@ def projectops_summary():
             },
         ],
     }
+
+    if db_error:
+        response["db_error"] = db_error
+
+    return response
+
