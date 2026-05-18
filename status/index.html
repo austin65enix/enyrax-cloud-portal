@@ -12,6 +12,7 @@
       --gold: #f5d37a;
       --cyan: #73f4df;
       --green: #8ff7b2;
+      --red: #ff6b86;
       --text: #f7f2df;
       --muted: rgba(247, 242, 223, .68);
     }
@@ -120,6 +121,16 @@
       font-weight: 900;
     }
 
+    .warn {
+      color: var(--gold);
+      font-weight: 900;
+    }
+
+    .bad {
+      color: var(--red);
+      font-weight: 900;
+    }
+
     .wide {
       grid-column: span 3;
     }
@@ -158,6 +169,16 @@
       margin-right: 8px;
     }
 
+    .dot.warn {
+      background: var(--gold);
+      box-shadow: 0 0 18px rgba(245, 211, 122, .65);
+    }
+
+    .dot.bad {
+      background: var(--red);
+      box-shadow: 0 0 18px rgba(255, 107, 134, .65);
+    }
+
     code {
       color: var(--cyan);
       background: rgba(115,244,223,.08);
@@ -179,7 +200,7 @@
   <main class="wrap">
     <section class="top">
       <div>
-        <div class="badge"><span class="dot"></span> Cloud Demo Server Online</div>
+        <div class="badge"><span class="dot" id="top-dot"></span> Cloud Demo Server Online</div>
         <h1>ENYRAX Server Status</h1>
         <p class="subtitle">
           Deployment checkpoint for ENYRAX Orbit Portal, SOC Monitoring, ServiceOps,
@@ -204,12 +225,16 @@
         <div class="row"><span class="key">Web Server</span><span class="value">Nginx</span></div>
         <div class="row"><span class="key">Portal Path</span><span class="value"><code>/var/www/enyrax-portal</code></span></div>
         <div class="row"><span class="key">Status</span><span class="value ok">ONLINE</span></div>
+        <div class="row"><span class="key">API Status</span><span class="value warn" id="api-status">CHECKING</span></div>
+        <div class="row"><span class="key">API Host</span><span class="value" id="api-host">-</span></div>
+        <div class="row"><span class="key">API Service</span><span class="value" id="api-service">-</span></div>
+        <div class="row"><span class="key">API Time</span><span class="value" id="api-time">-</span></div>
       </div>
 
       <div class="card">
         <h2>Network</h2>
         <div class="row"><span class="key">HTTP</span><span class="value ok">80 OPEN</span></div>
-        <div class="row"><span class="key">HTTPS</span><span class="value">443 READY</span></div>
+        <div class="row"><span class="key">HTTPS</span><span class="value ok">443 ACTIVE</span></div>
         <div class="row"><span class="key">SSH</span><span class="value">22 RESTRICTED</span></div>
         <div class="row"><span class="key">Firewall</span><span class="value">Akamai + UFW</span></div>
       </div>
@@ -237,5 +262,49 @@
       </div>
     </section>
   </main>
+
+  <script>
+    async function loadApiHealth() {
+      const statusEl = document.getElementById("api-status");
+      const hostEl = document.getElementById("api-host");
+      const serviceEl = document.getElementById("api-service");
+      const timeEl = document.getElementById("api-time");
+      const topDot = document.getElementById("top-dot");
+
+      try {
+        const res = await fetch("/api/health", { cache: "no-store" });
+
+        if (!res.ok) {
+          throw new Error("API returned " + res.status);
+        }
+
+        const data = await res.json();
+
+        if (data.status === "ok") {
+          statusEl.textContent = "ONLINE";
+          statusEl.className = "value ok";
+          topDot.className = "dot";
+        } else {
+          statusEl.textContent = "DEGRADED";
+          statusEl.className = "value warn";
+          topDot.className = "dot warn";
+        }
+
+        hostEl.textContent = data.host || "-";
+        serviceEl.textContent = data.service || "-";
+        timeEl.textContent = data.time_utc || "-";
+      } catch (err) {
+        statusEl.textContent = "OFFLINE";
+        statusEl.className = "value bad";
+        topDot.className = "dot bad";
+        hostEl.textContent = "-";
+        serviceEl.textContent = "-";
+        timeEl.textContent = "-";
+        console.error("API health check failed:", err);
+      }
+    }
+
+    loadApiHealth();
+  </script>
 </body>
 </html>
