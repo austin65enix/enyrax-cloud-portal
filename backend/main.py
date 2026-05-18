@@ -10,7 +10,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 app = FastAPI(
     title="ENYRAX Cloud API",
-    version="0.3.0",
+    version="0.4.0",
 )
 
 
@@ -28,6 +28,10 @@ def load_env() -> None:
 
         key, value = line.split("=", 1)
         os.environ.setdefault(key.strip(), value.strip())
+
+
+def now_utc() -> str:
+    return datetime.now(timezone.utc).isoformat()
 
 
 load_env()
@@ -73,10 +77,6 @@ MODULES = [
         "description": "Cloud host, Nginx, HTTPS, API health and deployment checkpoint.",
     },
 ]
-
-
-def now_utc() -> str:
-    return datetime.now(timezone.utc).isoformat()
 
 
 @app.get("/api/health")
@@ -236,57 +236,113 @@ def soc_summary():
 
 @app.get("/api/serviceops/summary")
 def serviceops_summary():
-    return {
+    fallback_work_queue = [
+        {
+            "title": "VM Request · ERP Test Environment",
+            "status": "in_progress",
+            "owner": "atn",
+            "project": "ERP Upgrade",
+            "estimate_hours": 3.5,
+            "actual_hours": 2.0,
+            "task": "Provision VM, assign network, prepare OS baseline and handover checklist.",
+        },
+        {
+            "title": "Firewall Policy Review · Vendor VPN",
+            "status": "pending_approval",
+            "owner": "Infra Team",
+            "project": "Vendor Access Control",
+            "estimate_hours": 1.5,
+            "actual_hours": 0.5,
+            "task": "Review source/destination, service ports, business owner and expiry date.",
+        },
+        {
+            "title": "Storage Capacity Alert · Backup Volume",
+            "status": "risk",
+            "owner": "Storage Admin",
+            "project": "Backup Improvement",
+            "estimate_hours": 2.0,
+            "actual_hours": 4.0,
+            "task": "Analyze growth trend, clean expired backup and report expansion risk.",
+        },
+        {
+            "title": "Nginx Portal Deployment · ENYRAX Demo",
+            "status": "done",
+            "owner": "atn",
+            "project": "ENYRAX Cloud Demo",
+            "estimate_hours": 1.0,
+            "actual_hours": 1.0,
+            "task": "Deploy portal, verify firewall, confirm public route and status page.",
+        },
+    ]
+
+    source = "fallback"
+    work_queue = fallback_work_queue
+    db_error = None
+
+    if engine is not None:
+        try:
+            with engine.connect() as conn:
+                rows = conn.execute(
+                    text(
+                        """
+                        SELECT
+                            title,
+                            status,
+                            owner,
+                            project,
+                            estimate_hours,
+                            actual_hours,
+                            task
+                        FROM serviceops_tickets
+                        ORDER BY display_order ASC, id ASC
+                        """
+                    )
+                ).mappings().all()
+
+            work_queue = [
+                {
+                    "title": row["title"],
+                    "status": row["status"],
+                    "owner": row["owner"],
+                    "project": row["project"],
+                    "estimate_hours": float(row["estimate_hours"]),
+                    "actual_hours": float(row["actual_hours"]),
+                    "task": row["task"],
+                }
+                for row in rows
+            ]
+            source = "postgresql"
+
+        except SQLAlchemyError as exc:
+            work_queue = fallback_work_queue
+            source = "fallback"
+            db_error = str(exc)
+    else:
+        db_error = "DATABASE_URL not configured"
+
+    today_tickets = len(work_queue)
+    active = sum(1 for item in work_queue if item["status"] == "in_progress")
+    pending = sum(1 for item in work_queue if item["status"] == "pending_approval")
+    done = sum(1 for item in work_queue if item["status"] == "done")
+    risk_items = sum(1 for item in work_queue if item["status"] == "risk")
+    team_hours = sum(float(item["actual_hours"]) for item in work_queue)
+    project_linked = len({item["project"] for item in work_queue if item["project"]})
+
+    response = {
         "status": "ok",
         "service": "enyrax-serviceops-demo",
+        "source": source,
         "time_utc": now_utc(),
         "metrics": {
-            "today_tickets": 18,
-            "active": 6,
-            "pending": 9,
-            "done": 3,
-            "team_hours": 42.5,
-            "project_linked": 11,
-            "risk_items": 3,
+            "today_tickets": today_tickets,
+            "active": active,
+            "pending": pending,
+            "done": done,
+            "team_hours": team_hours,
+            "project_linked": project_linked,
+            "risk_items": risk_items,
         },
-        "work_queue": [
-            {
-                "title": "VM Request · ERP Test Environment",
-                "status": "in_progress",
-                "owner": "atn",
-                "project": "ERP Upgrade",
-                "estimate_hours": 3.5,
-                "actual_hours": 2.0,
-                "task": "Provision VM, assign network, prepare OS baseline and handover checklist.",
-            },
-            {
-                "title": "Firewall Policy Review · Vendor VPN",
-                "status": "pending_approval",
-                "owner": "Infra Team",
-                "project": "Vendor Access Control",
-                "estimate_hours": 1.5,
-                "actual_hours": 0.5,
-                "task": "Review source/destination, service ports, business owner and expiry date.",
-            },
-            {
-                "title": "Storage Capacity Alert · Backup Volume",
-                "status": "risk",
-                "owner": "Storage Admin",
-                "project": "Backup Improvement",
-                "estimate_hours": 2.0,
-                "actual_hours": 4.0,
-                "task": "Analyze growth trend, clean expired backup and report expansion risk.",
-            },
-            {
-                "title": "Nginx Portal Deployment · ENYRAX Demo",
-                "status": "done",
-                "owner": "atn",
-                "project": "ENYRAX Cloud Demo",
-                "estimate_hours": 1.0,
-                "actual_hours": 1.0,
-                "task": "Deploy portal, verify firewall, confirm public route and status page.",
-            },
-        ],
+        "work_queue": work_queue,
         "roles": [
             {
                 "title": "Infra Member View",
@@ -333,6 +389,11 @@ def serviceops_summary():
             },
         ],
     }
+
+    if db_error:
+        response["db_error"] = db_error
+
+    return response
 
 
 @app.get("/api/projectops/summary")
