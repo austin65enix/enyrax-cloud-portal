@@ -74,6 +74,12 @@
       max-width: 780px;
     }
 
+    .api-line {
+      margin-top: 8px;
+      color: rgba(247, 242, 223, .48);
+      font-size: 13px;
+    }
+
     .back {
       text-decoration: none;
       color: #081018;
@@ -168,10 +174,11 @@
       font-size: 12px;
       font-weight: 950;
       white-space: nowrap;
+      text-transform: uppercase;
     }
 
-    .doing { color: #061c16; background: var(--cyan); }
-    .pending { color: #241203; background: var(--orange); }
+    .in_progress { color: #061c16; background: var(--cyan); }
+    .pending_approval { color: #241203; background: var(--orange); }
     .risk { color: #26060c; background: var(--red); }
     .done { color: #062014; background: var(--green); }
 
@@ -273,12 +280,13 @@
   <main class="wrap">
     <section class="top">
       <div>
-        <div class="badge">ServiceOps · Infra Work Orders · Labor Time · Project Cost</div>
+        <div class="badge">ServiceOps · API-Driven Demo · Infra Work Orders</div>
         <h1>ENYRAX ServiceOps</h1>
         <p class="subtitle">
           A lightweight operation layer for infrastructure teams: daily tickets, work reports,
           labor time, supervisor overview and future project cost mapping.
         </p>
+        <div class="api-line" id="api-time">Loading ServiceOps summary from API...</div>
       </div>
       <a class="back" href="/">Back to Portal</a>
     </section>
@@ -286,22 +294,22 @@
     <section class="metrics">
       <div class="metric">
         <div class="label">Today Tickets</div>
-        <div class="num">18</div>
-        <div class="hint">6 active / 9 pending / 3 done</div>
+        <div class="num" id="metric-today-tickets">-</div>
+        <div class="hint" id="metric-ticket-summary">Loading ticket summary...</div>
       </div>
       <div class="metric">
         <div class="label">Team Hours</div>
-        <div class="num">42.5</div>
+        <div class="num" id="metric-team-hours">-</div>
         <div class="hint">Infra daily worklog summary</div>
       </div>
       <div class="metric">
         <div class="label">Project Linked</div>
-        <div class="num">11</div>
+        <div class="num" id="metric-project-linked">-</div>
         <div class="hint">Tickets mapped to project cost</div>
       </div>
       <div class="metric">
         <div class="label">Risk Items</div>
-        <div class="num">3</div>
+        <div class="num" id="metric-risk-items">-</div>
         <div class="hint">Delay or cost overrun warning</div>
       </div>
     </section>
@@ -309,122 +317,30 @@
     <section class="layout">
       <div class="card">
         <h2>Today's Infra Work Queue</h2>
-
-        <div class="ticket">
-          <div class="ticket-top">
-            <div class="title">VM Request · ERP Test Environment</div>
-            <div class="pill doing">IN PROGRESS</div>
-          </div>
-          <div class="meta">
-            Owner: atn · Project: ERP Upgrade · Estimate: 3.5h · Actual: 2.0h<br>
-            Task: Provision VM, assign network, prepare OS baseline and handover checklist.
-          </div>
-        </div>
-
-        <div class="ticket">
-          <div class="ticket-top">
-            <div class="title">Firewall Policy Review · Vendor VPN</div>
-            <div class="pill pending">PENDING APPROVAL</div>
-          </div>
-          <div class="meta">
-            Owner: Infra Team · Project: Vendor Access Control · Estimate: 1.5h<br>
-            Task: Review source/destination, service ports, business owner and expiry date.
-          </div>
-        </div>
-
-        <div class="ticket">
-          <div class="ticket-top">
-            <div class="title">Storage Capacity Alert · Backup Volume</div>
-            <div class="pill risk">RISK</div>
-          </div>
-          <div class="meta">
-            Owner: Storage Admin · Project: Backup Improvement · Actual: 4.0h<br>
-            Task: Analyze growth trend, clean expired backup and report expansion risk.
-          </div>
-        </div>
-
-        <div class="ticket">
-          <div class="ticket-top">
-            <div class="title">Nginx Portal Deployment · ENYRAX Demo</div>
-            <div class="pill done">DONE</div>
-          </div>
-          <div class="meta">
-            Owner: atn · Project: ENYRAX Cloud Demo · Actual: 1.0h<br>
-            Task: Deploy portal, verify firewall, confirm public route and status page.
+        <div id="work-queue">
+          <div class="ticket">
+            <div class="meta">Loading work queue...</div>
           </div>
         </div>
       </div>
 
       <div class="card">
         <h2>Role-Based Operation View</h2>
-
-        <div class="roles">
+        <div class="roles" id="roles">
           <div class="role">
-            <h3>Infra Member View</h3>
-            <p>
-              Members only see their own tickets, worklog, today's progress, notes and pending reports.
-              This keeps the interface simple and avoids exposing unnecessary team data.
-            </p>
-          </div>
-
-          <div class="role">
-            <h3>Infra Supervisor View</h3>
-            <p>
-              Supervisors see team workload, member status, total labor hours, blocked tickets and
-              project-linked operation cost.
-            </p>
-          </div>
-
-          <div class="role">
-            <h3>Executive / Higher-Level View</h3>
-            <p>
-              Higher-level managers can review cross-team capacity, project overrun risk and service
-              delivery trends without entering low-level ticket details.
-            </p>
-          </div>
-
-          <div class="role">
-            <h3>ProjectOps Connection</h3>
-            <p>
-              Each ticket can be linked to a project, so infra labor time becomes part of real project
-              cost instead of disappearing inside daily operations.
-            </p>
+            <h3>Loading</h3>
+            <p>Fetching role views from API...</p>
           </div>
         </div>
       </div>
 
       <div class="card wide">
         <h2>ServiceOps Flow</h2>
-
-        <div class="flow">
+        <div class="flow" id="service-flow">
           <div class="step">
-            <div class="k">Step 01</div>
-            <div class="name">Request</div>
-            <div class="desc">VM, network, storage, account, firewall or system support request enters the queue.</div>
-          </div>
-
-          <div class="step">
-            <div class="k">Step 02</div>
-            <div class="name">Assign</div>
-            <div class="desc">Supervisor assigns owner, priority, due date and project relationship.</div>
-          </div>
-
-          <div class="step">
-            <div class="k">Step 03</div>
-            <div class="name">Worklog</div>
-            <div class="desc">Member records actions, time spent, blockers and completion notes.</div>
-          </div>
-
-          <div class="step">
-            <div class="k">Step 04</div>
-            <div class="name">Cost Map</div>
-            <div class="desc">Labor time is mapped back to project budget, delivery cost and resource usage.</div>
-          </div>
-
-          <div class="step">
-            <div class="k">Step 05</div>
-            <div class="name">Review</div>
-            <div class="desc">Supervisor reviews team workload, risk items and project operation status.</div>
+            <div class="k">Loading</div>
+            <div class="name">Fetching</div>
+            <div class="desc">Loading ServiceOps flow from API...</div>
           </div>
         </div>
       </div>
@@ -435,5 +351,91 @@
       <span>Ticket → Worklog → Labor Time → Project Cost → Supervisor View</span>
     </footer>
   </main>
+
+  <script>
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function formatStatus(status) {
+      return String(status || "")
+        .replaceAll("_", " ")
+        .toUpperCase();
+    }
+
+    async function loadServiceOpsSummary() {
+      const apiTime = document.getElementById("api-time");
+
+      try {
+        const res = await fetch("/api/serviceops/summary", { cache: "no-store" });
+
+        if (!res.ok) {
+          throw new Error("ServiceOps summary API returned " + res.status);
+        }
+
+        const data = await res.json();
+        const metrics = data.metrics || {};
+
+        document.getElementById("metric-today-tickets").textContent = metrics.today_tickets ?? "-";
+        document.getElementById("metric-team-hours").textContent = metrics.team_hours ?? "-";
+        document.getElementById("metric-project-linked").textContent = metrics.project_linked ?? "-";
+        document.getElementById("metric-risk-items").textContent = metrics.risk_items ?? "-";
+        document.getElementById("metric-ticket-summary").textContent =
+          `${metrics.active ?? 0} active / ${metrics.pending ?? 0} pending / ${metrics.done ?? 0} done`;
+
+        apiTime.textContent = `API Source: /api/serviceops/summary · ${data.time_utc || ""}`;
+
+        const queue = Array.isArray(data.work_queue) ? data.work_queue : [];
+        document.getElementById("work-queue").innerHTML = queue.map((item) => {
+          const status = String(item.status || "pending_approval");
+          const statusClass = ["in_progress", "pending_approval", "risk", "done"].includes(status)
+            ? status
+            : "pending_approval";
+
+          return `
+            <div class="ticket">
+              <div class="ticket-top">
+                <div class="title">${escapeHtml(item.title)}</div>
+                <div class="pill ${statusClass}">${escapeHtml(formatStatus(status))}</div>
+              </div>
+              <div class="meta">
+                Owner: ${escapeHtml(item.owner)} · Project: ${escapeHtml(item.project)}
+                · Estimate: ${escapeHtml(item.estimate_hours)}h · Actual: ${escapeHtml(item.actual_hours)}h<br>
+                Task: ${escapeHtml(item.task)}
+              </div>
+            </div>
+          `;
+        }).join("");
+
+        const roles = Array.isArray(data.roles) ? data.roles : [];
+        document.getElementById("roles").innerHTML = roles.map((role) => `
+          <div class="role">
+            <h3>${escapeHtml(role.title)}</h3>
+            <p>${escapeHtml(role.description)}</p>
+          </div>
+        `).join("");
+
+        const flow = Array.isArray(data.flow) ? data.flow : [];
+        document.getElementById("service-flow").innerHTML = flow.map((step) => `
+          <div class="step">
+            <div class="k">${escapeHtml(step.step)}</div>
+            <div class="name">${escapeHtml(step.name)}</div>
+            <div class="desc">${escapeHtml(step.description)}</div>
+          </div>
+        `).join("");
+      } catch (err) {
+        apiTime.textContent = "API Source: /api/serviceops/summary · OFFLINE";
+        apiTime.style.color = "#ff6b86";
+        console.error("Failed to load ServiceOps summary:", err);
+      }
+    }
+
+    loadServiceOpsSummary();
+  </script>
 </body>
 </html>
