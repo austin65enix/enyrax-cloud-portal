@@ -74,6 +74,12 @@
       max-width: 780px;
     }
 
+    .api-line {
+      margin-top: 8px;
+      color: rgba(247, 242, 223, .48);
+      font-size: 13px;
+    }
+
     .back {
       text-decoration: none;
       color: #081018;
@@ -168,6 +174,7 @@
       font-size: 12px;
       font-weight: 950;
       white-space: nowrap;
+      text-transform: uppercase;
     }
 
     .ontrack { color: #062014; background: var(--green); }
@@ -340,12 +347,13 @@
   <main class="wrap">
     <section class="top">
       <div>
-        <div class="badge">ProjectOps · Timeline · Budget · Labor Cost · Risk View</div>
+        <div class="badge">ProjectOps · API-Driven Demo · Timeline · Budget · Risk View</div>
         <h1>ENYRAX ProjectOps</h1>
         <p class="subtitle">
           A project operation layer that connects delivery timeline, infrastructure work,
           labor hours, budget usage and overrun risk into one management view.
         </p>
+        <div class="api-line" id="api-time">Loading ProjectOps summary from API...</div>
       </div>
       <a class="back" href="/">Back to Portal</a>
     </section>
@@ -353,22 +361,22 @@
     <section class="metrics">
       <div class="metric">
         <div class="label">Active Projects</div>
-        <div class="num">7</div>
-        <div class="hint">3 on track / 2 watch / 2 risk</div>
+        <div class="num" id="metric-active-projects">-</div>
+        <div class="hint" id="metric-project-summary">Loading project summary...</div>
       </div>
       <div class="metric">
         <div class="label">Budget Used</div>
-        <div class="num">68%</div>
+        <div class="num" id="metric-budget-used">-</div>
         <div class="hint">Across active project portfolio</div>
       </div>
       <div class="metric">
         <div class="label">ServiceOps Hours</div>
-        <div class="num">126</div>
+        <div class="num" id="metric-serviceops-hours">-</div>
         <div class="hint">Worklogs mapped to projects</div>
       </div>
       <div class="metric">
         <div class="label">Overrun Risk</div>
-        <div class="num">2</div>
+        <div class="num" id="metric-overrun-risk">-</div>
         <div class="hint">Projects require management review</div>
       </div>
     </section>
@@ -376,76 +384,20 @@
     <section class="layout">
       <div class="card">
         <h2>Project Portfolio</h2>
-
-        <div class="project">
-          <div class="project-top">
-            <div class="title">ERP Test Environment Upgrade</div>
-            <div class="pill ontrack">ON TRACK</div>
+        <div id="project-list">
+          <div class="project">
+            <div class="meta">Loading project portfolio...</div>
           </div>
-          <div class="meta">
-            Owner: IT / Infra · Budget: 120h · Actual: 76h · ServiceOps linked tickets: 11<br>
-            Scope: VM build, network policy, backup baseline, UAT support.
-          </div>
-          <div class="bar"><div class="fill" style="width: 63%"></div></div>
-        </div>
-
-        <div class="project">
-          <div class="project-top">
-            <div class="title">Vendor VPN Access Control Review</div>
-            <div class="pill watch">WATCH</div>
-          </div>
-          <div class="meta">
-            Owner: Security / Infra · Budget: 80h · Actual: 61h · Approval pending: 4<br>
-            Scope: Firewall rule cleanup, expiry date, owner mapping and audit evidence.
-          </div>
-          <div class="bar"><div class="fill" style="width: 76%"></div></div>
-        </div>
-
-        <div class="project">
-          <div class="project-top">
-            <div class="title">Backup Storage Improvement</div>
-            <div class="pill risk">RISK</div>
-          </div>
-          <div class="meta">
-            Owner: Infra / Storage · Budget: 100h · Actual: 94h · Forecast: 128h<br>
-            Scope: Capacity review, retention cleanup, expansion planning and recovery test.
-          </div>
-          <div class="bar"><div class="fill" style="width: 94%"></div></div>
         </div>
       </div>
 
       <div class="card">
         <h2>Gantt Snapshot</h2>
-
-        <div class="gantt">
+        <div class="gantt" id="gantt-list">
           <div class="phase">
-            <div class="phase-name">Requirement</div>
-            <div class="lane"><span style="left: 0%; width: 100%;"></span></div>
-            <div class="pct">Done</div>
-          </div>
-
-          <div class="phase">
-            <div class="phase-name">Infra Build</div>
-            <div class="lane"><span style="left: 10%; width: 78%;"></span></div>
-            <div class="pct">78%</div>
-          </div>
-
-          <div class="phase">
-            <div class="phase-name">Security Review</div>
-            <div class="lane"><span style="left: 34%; width: 42%;"></span></div>
-            <div class="pct">42%</div>
-          </div>
-
-          <div class="phase">
-            <div class="phase-name">UAT Support</div>
-            <div class="lane"><span style="left: 62%; width: 24%;"></span></div>
-            <div class="pct">24%</div>
-          </div>
-
-          <div class="phase">
-            <div class="phase-name">Go-Live</div>
-            <div class="lane"><span style="left: 82%; width: 8%;"></span></div>
-            <div class="pct">Ready</div>
+            <div class="phase-name">Loading</div>
+            <div class="lane"><span style="left: 0%; width: 10%;"></span></div>
+            <div class="pct">...</div>
           </div>
         </div>
       </div>
@@ -453,61 +405,19 @@
       <div class="card wide">
         <h2>Budget / Labor Cost View</h2>
 
-        <div class="cost-grid">
+        <div class="cost-grid" id="cost-grid">
           <div class="cost">
-            <div class="k">Planned Budget</div>
-            <div class="v">300h</div>
-            <div class="d">Initial project labor estimate across infra, security and support tasks.</div>
-          </div>
-
-          <div class="cost">
-            <div class="k">Actual Worklog</div>
-            <div class="v">231h</div>
-            <div class="d">Real work hours imported from ServiceOps tickets and member reports.</div>
-          </div>
-
-          <div class="cost">
-            <div class="k">Forecast</div>
-            <div class="v">346h</div>
-            <div class="d">Predicted total effort based on current burn rate and pending tasks.</div>
-          </div>
-
-          <div class="cost">
-            <div class="k">Risk Signal</div>
-            <div class="v" style="color: var(--orange);">+15%</div>
-            <div class="d">Potential overrun if unresolved tickets and approvals continue to delay delivery.</div>
+            <div class="k">Loading</div>
+            <div class="v">-</div>
+            <div class="d">Fetching cost data from API...</div>
           </div>
         </div>
 
-        <div class="flow">
+        <div class="flow" id="project-flow">
           <div class="step">
-            <div class="k">Step 01</div>
-            <div class="name">Project Card</div>
-            <div class="desc">Project owner creates scope, budget, phase and delivery target.</div>
-          </div>
-
-          <div class="step">
-            <div class="k">Step 02</div>
-            <div class="name">ServiceOps Link</div>
-            <div class="desc">Infra tickets are attached to the project instead of becoming isolated tasks.</div>
-          </div>
-
-          <div class="step">
-            <div class="k">Step 03</div>
-            <div class="name">Worklog Import</div>
-            <div class="desc">Member work hours and notes become real project execution data.</div>
-          </div>
-
-          <div class="step">
-            <div class="k">Step 04</div>
-            <div class="name">Risk Forecast</div>
-            <div class="desc">Budget usage, delay, blockers and approval wait time create overrun signals.</div>
-          </div>
-
-          <div class="step">
-            <div class="k">Step 05</div>
-            <div class="name">Manager View</div>
-            <div class="desc">Supervisors see project health, labor cost and execution risk in one dashboard.</div>
+            <div class="k">Loading</div>
+            <div class="name">Fetching</div>
+            <div class="desc">Loading ProjectOps flow from API...</div>
           </div>
         </div>
       </div>
@@ -518,5 +428,131 @@
       <span>Project → Ticket → Worklog → Cost → Risk Forecast → Management View</span>
     </footer>
   </main>
+
+  <script>
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function statusLabel(status) {
+      return String(status || "")
+        .replaceAll("_", " ")
+        .toUpperCase();
+    }
+
+    function safePercent(value) {
+      const n = Number(value);
+      if (!Number.isFinite(n)) return 0;
+      return Math.max(0, Math.min(100, n));
+    }
+
+    async function loadProjectOpsSummary() {
+      const apiTime = document.getElementById("api-time");
+
+      try {
+        const res = await fetch("/api/projectops/summary", { cache: "no-store" });
+
+        if (!res.ok) {
+          throw new Error("ProjectOps summary API returned " + res.status);
+        }
+
+        const data = await res.json();
+        const metrics = data.metrics || {};
+
+        document.getElementById("metric-active-projects").textContent = metrics.active_projects ?? "-";
+        document.getElementById("metric-budget-used").textContent =
+          metrics.budget_used != null ? metrics.budget_used + "%" : "-";
+        document.getElementById("metric-serviceops-hours").textContent = metrics.serviceops_hours ?? "-";
+        document.getElementById("metric-overrun-risk").textContent = metrics.overrun_risk ?? "-";
+        document.getElementById("metric-project-summary").textContent =
+          `${metrics.on_track ?? 0} on track / ${metrics.watch ?? 0} watch / ${metrics.risk ?? 0} risk`;
+
+        apiTime.textContent = `API Source: /api/projectops/summary · ${data.time_utc || ""}`;
+
+        const projects = Array.isArray(data.projects) ? data.projects : [];
+        document.getElementById("project-list").innerHTML = projects.map((project) => {
+          const status = String(project.status || "watch");
+          const statusClass = ["ontrack", "watch", "risk"].includes(status) ? status : "watch";
+          const progress = safePercent(project.progress);
+
+          return `
+            <div class="project">
+              <div class="project-top">
+                <div class="title">${escapeHtml(project.title)}</div>
+                <div class="pill ${statusClass}">${escapeHtml(statusLabel(status))}</div>
+              </div>
+              <div class="meta">
+                Owner: ${escapeHtml(project.owner)} · Budget: ${escapeHtml(project.budget_hours)}h
+                · Actual: ${escapeHtml(project.actual_hours)}h · ServiceOps linked tickets: ${escapeHtml(project.linked_tickets)}<br>
+                Scope: ${escapeHtml(project.scope)}
+              </div>
+              <div class="bar"><div class="fill" style="width: ${progress}%"></div></div>
+            </div>
+          `;
+        }).join("");
+
+        const gantt = Array.isArray(data.gantt) ? data.gantt : [];
+        document.getElementById("gantt-list").innerHTML = gantt.map((item) => {
+          const offset = safePercent(item.offset);
+          const width = safePercent(item.width);
+
+          return `
+            <div class="phase">
+              <div class="phase-name">${escapeHtml(item.phase)}</div>
+              <div class="lane"><span style="left: ${offset}%; width: ${width}%;"></span></div>
+              <div class="pct">${escapeHtml(item.status)}</div>
+            </div>
+          `;
+        }).join("");
+
+        const cost = data.cost || {};
+        document.getElementById("cost-grid").innerHTML = `
+          <div class="cost">
+            <div class="k">Planned Budget</div>
+            <div class="v">${escapeHtml(cost.planned_budget || "-")}</div>
+            <div class="d">Initial project labor estimate across infra, security and support tasks.</div>
+          </div>
+
+          <div class="cost">
+            <div class="k">Actual Worklog</div>
+            <div class="v">${escapeHtml(cost.actual_worklog || "-")}</div>
+            <div class="d">Real work hours imported from ServiceOps tickets and member reports.</div>
+          </div>
+
+          <div class="cost">
+            <div class="k">Forecast</div>
+            <div class="v">${escapeHtml(cost.forecast || "-")}</div>
+            <div class="d">Predicted total effort based on current burn rate and pending tasks.</div>
+          </div>
+
+          <div class="cost">
+            <div class="k">Risk Signal</div>
+            <div class="v" style="color: var(--orange);">${escapeHtml(cost.risk_signal || "-")}</div>
+            <div class="d">${escapeHtml(cost.description || "-")}</div>
+          </div>
+        `;
+
+        const flow = Array.isArray(data.flow) ? data.flow : [];
+        document.getElementById("project-flow").innerHTML = flow.map((step) => `
+          <div class="step">
+            <div class="k">${escapeHtml(step.step)}</div>
+            <div class="name">${escapeHtml(step.name)}</div>
+            <div class="desc">${escapeHtml(step.description)}</div>
+          </div>
+        `).join("");
+      } catch (err) {
+        apiTime.textContent = "API Source: /api/projectops/summary · OFFLINE";
+        apiTime.style.color = "#ff6b86";
+        console.error("Failed to load ProjectOps summary:", err);
+      }
+    }
+
+    loadProjectOpsSummary();
+  </script>
 </body>
 </html>
