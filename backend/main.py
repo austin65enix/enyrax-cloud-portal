@@ -158,48 +158,100 @@ def modules():
 
 @app.get("/api/soc/summary")
 def soc_summary():
-    return {
+    fallback_incidents = [
+        {
+            "title": "Suspicious SSH Brute Force Pattern",
+            "severity": "critical",
+            "source_ip": "185.220.101.42",
+            "target": "web-portal-01",
+            "duplicate_count": 36,
+            "analysis_type": "failed_login_cluster",
+            "mitre": "T1110 Brute Force",
+        },
+        {
+            "title": "Privilege Escalation After Successful Login",
+            "severity": "high",
+            "source_ip": "203.0.113.77",
+            "target": "infra-node-03",
+            "duplicate_count": 8,
+            "analysis_type": "attack_story",
+            "mitre": "T1068 Privilege Escalation",
+        },
+        {
+            "title": "Wazuh Agent Disconnected and Reconnected",
+            "severity": "medium",
+            "source_ip": "10.20.5.17",
+            "target": "endpoint-07",
+            "duplicate_count": 2,
+            "analysis_type": "agent_state_change",
+            "mitre": "Defense Evasion Review",
+        },
+    ]
+
+    source = "fallback"
+    hot_incidents = fallback_incidents
+    db_error = None
+
+    if engine is not None:
+        try:
+            with engine.connect() as conn:
+                rows = conn.execute(
+                    text("""
+                        SELECT
+                            title,
+                            severity,
+                            source_ip,
+                            target,
+                            duplicate_count,
+                            analysis_type,
+                            mitre
+                        FROM soc_incidents
+                        ORDER BY display_order ASC, id ASC
+                    """)
+                ).mappings().all()
+
+            hot_incidents = [
+                {
+                    "title": row["title"],
+                    "severity": row["severity"],
+                    "source_ip": row["source_ip"],
+                    "target": row["target"],
+                    "duplicate_count": int(row["duplicate_count"]),
+                    "analysis_type": row["analysis_type"],
+                    "mitre": row["mitre"],
+                }
+                for row in rows
+            ]
+            source = "postgresql"
+
+        except SQLAlchemyError as exc:
+            hot_incidents = fallback_incidents
+            source = "fallback"
+            db_error = str(exc)
+    else:
+        db_error = "DATABASE_URL not configured"
+
+    critical = sum(1 for item in hot_incidents if item["severity"] == "critical")
+    high = sum(1 for item in hot_incidents if item["severity"] == "high")
+    medium = sum(1 for item in hot_incidents if item["severity"] == "medium")
+    open_incidents = len(hot_incidents)
+    correlated_alerts = sum(int(item["duplicate_count"]) for item in hot_incidents)
+
+    response = {
         "status": "ok",
         "service": "enyrax-soc-demo",
+        "source": source,
         "time_utc": now_utc(),
         "metrics": {
-            "open_incidents": 12,
-            "critical": 3,
-            "high": 5,
-            "medium": 4,
-            "correlated_alerts": 428,
+            "open_incidents": open_incidents,
+            "critical": critical,
+            "high": high,
+            "medium": medium,
+            "correlated_alerts": correlated_alerts,
             "ai_confidence": 91,
-            "mitre_coverage": 7,
+            "mitre_coverage": len({item["mitre"] for item in hot_incidents}),
         },
-        "hot_incidents": [
-            {
-                "title": "Suspicious SSH Brute Force Pattern",
-                "severity": "critical",
-                "source_ip": "185.220.101.42",
-                "target": "web-portal-01",
-                "duplicate_count": 36,
-                "analysis_type": "failed_login_cluster",
-                "mitre": "T1110 Brute Force",
-            },
-            {
-                "title": "Privilege Escalation After Successful Login",
-                "severity": "high",
-                "source_ip": "203.0.113.77",
-                "target": "infra-node-03",
-                "duplicate_count": 8,
-                "analysis_type": "attack_story",
-                "mitre": "T1068 Privilege Escalation",
-            },
-            {
-                "title": "Wazuh Agent Disconnected and Reconnected",
-                "severity": "medium",
-                "source_ip": "10.20.5.17",
-                "target": "endpoint-07",
-                "duplicate_count": 2,
-                "analysis_type": "agent_state_change",
-                "mitre": "Defense Evasion Review",
-            },
-        ],
+        "hot_incidents": hot_incidents,
         "timeline": [
             {
                 "time": "07:02",
@@ -232,6 +284,11 @@ def soc_summary():
             ],
         },
     }
+
+    if db_error:
+        response["db_error"] = db_error
+
+    return response
 
 
 @app.get("/api/serviceops/summary")
