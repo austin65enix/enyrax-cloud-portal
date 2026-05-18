@@ -167,6 +167,7 @@
       border-radius: 999px;
       font-size: 12px;
       font-weight: 950;
+      text-transform: uppercase;
     }
 
     .critical { color: #26060c; background: var(--red); }
@@ -249,6 +250,12 @@
       color: var(--muted);
     }
 
+    .api-line {
+      margin-top: 8px;
+      color: rgba(247, 242, 223, .48);
+      font-size: 13px;
+    }
+
     .footer {
       margin-top: 30px;
       display: flex;
@@ -276,12 +283,13 @@
   <main class="wrap">
     <section class="top">
       <div>
-        <div class="badge">SOC Monitoring · AI-Assisted Investigation</div>
+        <div class="badge">SOC Monitoring · API-Driven Demo · AI-Assisted Investigation</div>
         <h1>ENYRAX SOC</h1>
         <p class="subtitle">
           From raw alerts to correlated incidents, attack timeline, MITRE mapping and AI-generated
           response recommendations.
         </p>
+        <div class="api-line" id="api-time">Loading SOC summary from API...</div>
       </div>
       <a class="back" href="/">Back to Portal</a>
     </section>
@@ -289,22 +297,22 @@
     <section class="metrics">
       <div class="metric">
         <div class="label">Open Incidents</div>
-        <div class="num">12</div>
-        <div class="hint">3 critical / 5 high / 4 medium</div>
+        <div class="num" id="metric-open-incidents">-</div>
+        <div class="hint" id="metric-severity">Loading severity summary...</div>
       </div>
       <div class="metric">
         <div class="label">Correlated Alerts</div>
-        <div class="num">428</div>
+        <div class="num" id="metric-correlated-alerts">-</div>
         <div class="hint">Grouped by IP, host and behavior</div>
       </div>
       <div class="metric">
         <div class="label">AI Confidence</div>
-        <div class="num">91%</div>
+        <div class="num" id="metric-ai-confidence">-</div>
         <div class="hint">Evidence-backed decision output</div>
       </div>
       <div class="metric">
         <div class="label">MITRE Coverage</div>
-        <div class="num">7</div>
+        <div class="num" id="metric-mitre-coverage">-</div>
         <div class="hint">Techniques mapped in demo data</div>
       </div>
     </section>
@@ -312,37 +320,9 @@
     <section class="layout">
       <div class="card">
         <h2>Hot Incidents</h2>
-
-        <div class="incident">
-          <div class="incident-top">
-            <div class="title">Suspicious SSH Brute Force Pattern</div>
-            <div class="sev critical">CRITICAL</div>
-          </div>
-          <div class="meta">
-            Source IP: 185.220.101.42 · Target: web-portal-01 · Duplicate Count: 36<br>
-            Analysis Type: failed_login_cluster · MITRE: T1110 Brute Force
-          </div>
-        </div>
-
-        <div class="incident">
-          <div class="incident-top">
-            <div class="title">Privilege Escalation After Successful Login</div>
-            <div class="sev high">HIGH</div>
-          </div>
-          <div class="meta">
-            User: svc-backup · Host: infra-node-03 · Sequence: login → sudo → config access<br>
-            Analysis Type: attack_story · MITRE: T1068 Privilege Escalation
-          </div>
-        </div>
-
-        <div class="incident">
-          <div class="incident-top">
-            <div class="title">Wazuh Agent Disconnected and Reconnected</div>
-            <div class="sev medium">MEDIUM</div>
-          </div>
-          <div class="meta">
-            Agent: endpoint-07 · Status changed during suspicious activity window<br>
-            Analysis Type: agent_state_change · MITRE: Defense Evasion Review
+        <div id="hot-incidents">
+          <div class="incident">
+            <div class="meta">Loading incidents...</div>
           </div>
         </div>
       </div>
@@ -350,38 +330,19 @@
       <div class="card">
         <h2>Attack Timeline</h2>
 
-        <div class="timeline">
+        <div class="timeline" id="attack-timeline">
           <div class="event">
-            <div class="time">07:02</div>
-            <div class="desc">Multiple failed SSH login attempts from external IP.</div>
-          </div>
-          <div class="event">
-            <div class="time">07:04</div>
-            <div class="desc">Successful login detected after repeated failures.</div>
-          </div>
-          <div class="event">
-            <div class="time">07:05</div>
-            <div class="desc">Sudo command executed by newly authenticated session.</div>
-          </div>
-          <div class="event">
-            <div class="time">07:06</div>
-            <div class="desc">Agent heartbeat interruption observed on target host.</div>
+            <div class="time">Loading</div>
+            <div class="desc">Fetching timeline from API...</div>
           </div>
         </div>
 
         <div class="ai-box">
           <strong>AI Decision Summary</strong>
-          <p>
-            The event chain suggests a potential credential-based intrusion followed by privilege
-            escalation. Confidence is high because login failures, successful authentication and
-            sudo execution occurred within the same short time window.
-          </p>
+          <p id="ai-summary">Loading AI decision summary...</p>
 
-          <div class="actions">
-            <div class="action">1. Temporarily block source IP at firewall layer.</div>
-            <div class="action">2. Review successful login session and related commands.</div>
-            <div class="action">3. Force password rotation for affected user account.</div>
-            <div class="action">4. Preserve logs for incident timeline reconstruction.</div>
+          <div class="actions" id="ai-actions">
+            <div class="action">Loading recommended actions...</div>
           </div>
         </div>
       </div>
@@ -392,5 +353,89 @@
       <span>Alert → Incident → Timeline → AI Decision → Response</span>
     </footer>
   </main>
+
+  <script>
+    const severityClass = {
+      critical: "critical",
+      high: "high",
+      medium: "medium"
+    };
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    async function loadSocSummary() {
+      const apiTime = document.getElementById("api-time");
+
+      try {
+        const res = await fetch("/api/soc/summary", { cache: "no-store" });
+
+        if (!res.ok) {
+          throw new Error("SOC summary API returned " + res.status);
+        }
+
+        const data = await res.json();
+        const metrics = data.metrics || {};
+
+        document.getElementById("metric-open-incidents").textContent = metrics.open_incidents ?? "-";
+        document.getElementById("metric-correlated-alerts").textContent = metrics.correlated_alerts ?? "-";
+        document.getElementById("metric-ai-confidence").textContent =
+          metrics.ai_confidence != null ? metrics.ai_confidence + "%" : "-";
+        document.getElementById("metric-mitre-coverage").textContent = metrics.mitre_coverage ?? "-";
+
+        document.getElementById("metric-severity").textContent =
+          `${metrics.critical ?? 0} critical / ${metrics.high ?? 0} high / ${metrics.medium ?? 0} medium`;
+
+        apiTime.textContent = `API Source: /api/soc/summary · ${data.time_utc || ""}`;
+
+        const incidents = Array.isArray(data.hot_incidents) ? data.hot_incidents : [];
+        document.getElementById("hot-incidents").innerHTML = incidents.map((item) => {
+          const sev = String(item.severity || "medium").toLowerCase();
+          const cls = severityClass[sev] || "medium";
+
+          return `
+            <div class="incident">
+              <div class="incident-top">
+                <div class="title">${escapeHtml(item.title)}</div>
+                <div class="sev ${cls}">${escapeHtml(sev)}</div>
+              </div>
+              <div class="meta">
+                Source IP: ${escapeHtml(item.source_ip)} · Target: ${escapeHtml(item.target)} · Duplicate Count: ${escapeHtml(item.duplicate_count)}<br>
+                Analysis Type: ${escapeHtml(item.analysis_type)} · MITRE: ${escapeHtml(item.mitre)}
+              </div>
+            </div>
+          `;
+        }).join("");
+
+        const timeline = Array.isArray(data.timeline) ? data.timeline : [];
+        document.getElementById("attack-timeline").innerHTML = timeline.map((event) => `
+          <div class="event">
+            <div class="time">${escapeHtml(event.time)}</div>
+            <div class="desc">${escapeHtml(event.description)}</div>
+          </div>
+        `).join("");
+
+        const aiDecision = data.ai_decision || {};
+        document.getElementById("ai-summary").textContent = aiDecision.summary || "-";
+
+        const actions = Array.isArray(aiDecision.recommended_actions) ? aiDecision.recommended_actions : [];
+        document.getElementById("ai-actions").innerHTML = actions.map((action, index) => `
+          <div class="action">${index + 1}. ${escapeHtml(action)}</div>
+        `).join("");
+      } catch (err) {
+        apiTime.textContent = "API Source: /api/soc/summary · OFFLINE";
+        apiTime.style.color = "#ff6b86";
+        console.error("Failed to load SOC summary:", err);
+      }
+    }
+
+    loadSocSummary();
+  </script>
 </body>
 </html>
