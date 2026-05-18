@@ -1,16 +1,18 @@
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Optional
 import os
 import socket
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel, Field
 from sqlalchemy import create_engine, text
 from sqlalchemy.exc import SQLAlchemyError
 
 
 app = FastAPI(
     title="ENYRAX Cloud API",
-    version="0.4.0",
+    version="0.5.0",
 )
 
 
@@ -38,6 +40,26 @@ load_env()
 
 DATABASE_URL = os.environ.get("DATABASE_URL")
 engine = create_engine(DATABASE_URL) if DATABASE_URL else None
+
+
+class ServiceOpsTicketCreate(BaseModel):
+    title: str = Field(..., min_length=1, max_length=200)
+    status: str = Field(default="pending_approval", max_length=50)
+    owner: str = Field(..., min_length=1, max_length=100)
+    project: str = Field(..., min_length=1, max_length=120)
+    estimate_hours: float = 0
+    actual_hours: float = 0
+    task: str = Field(..., min_length=1)
+
+
+class ServiceOpsTicketUpdate(BaseModel):
+    title: Optional[str] = Field(default=None, max_length=200)
+    status: Optional[str] = Field(default=None, max_length=50)
+    owner: Optional[str] = Field(default=None, max_length=100)
+    project: Optional[str] = Field(default=None, max_length=120)
+    estimate_hours: Optional[float] = None
+    actual_hours: Optional[float] = None
+    task: Optional[str] = None
 
 
 MODULES = [
@@ -77,6 +99,28 @@ MODULES = [
         "description": "Cloud host, Nginx, HTTPS, API health and deployment checkpoint.",
     },
 ]
+
+
+def require_db():
+    if engine is None:
+        raise HTTPException(status_code=503, detail="Database is not configured")
+    return engine
+
+
+def ticket_row_to_dict(row):
+    return {
+        "id": row["id"],
+        "title": row["title"],
+        "status": row["status"],
+        "owner": row["owner"],
+        "project": row["project"],
+        "estimate_hours": float(row["estimate_hours"]),
+        "actual_hours": float(row["actual_hours"]),
+        "task": row["task"],
+        "display_order": row["display_order"],
+        "created_at": row["created_at"].isoformat() if row["created_at"] else None,
+        "updated_at": row["updated_at"].isoformat() if row["updated_at"] else None,
+    }
 
 
 @app.get("/api/health")
@@ -196,7 +240,8 @@ def soc_summary():
         try:
             with engine.connect() as conn:
                 rows = conn.execute(
-                    text("""
+                    text(
+                        """
                         SELECT
                             title,
                             severity,
@@ -207,7 +252,8 @@ def soc_summary():
                             mitre
                         FROM soc_incidents
                         ORDER BY display_order ASC, id ASC
-                    """)
+                        """
+                    )
                 ).mappings().all()
 
             hot_incidents = [
@@ -496,7 +542,8 @@ def projectops_summary():
         try:
             with engine.connect() as conn:
                 rows = conn.execute(
-                    text("""
+                    text(
+                        """
                         SELECT
                             title,
                             status,
@@ -508,7 +555,8 @@ def projectops_summary():
                             progress
                         FROM projectops_projects
                         ORDER BY display_order ASC, id ASC
-                    """)
+                        """
+                    )
                 ).mappings().all()
 
             projects = [
@@ -606,3 +654,181 @@ def projectops_summary():
 
     return response
 
+
+@app.get("/api/serviceops/tickets")
+def list_serviceops_tickets():
+    db = require_db()
+
+    with db.connect() as conn:
+        rows = conn.execute(
+            text(
+                """
+                SELECT
+                    id, title, status, owner, project,
+                    estimate_hours, actual_hours, task,
+                    display_order, created_at, updated_at
+                FROM serviceops_tickets
+                ORDER BY display_order ASC, id ASC
+                """
+            )
+        ).mappings().all()
+
+    return {
+        "status": "ok",
+        "source": "postgresql",
+        "count": len(rows),
+        "tickets": [ticket_row_to_dict(row) for row in rows],
+    }
+
+
+@app.get("/api/serviceops/tickets/{ticket_id}")
+def get_serviceops_ticket(ticket_id: int):
+    db = require_db()
+
+    with db.connect() as conn:
+        row = conn.execute(
+            text(
+                """
+                SELECT
+                    id, title, status, owner, project,
+                    estimate_hours, actual_hours, task,
+                    display_order, created_at, updated_at
+                FROM serviceops_tickets
+                WHERE id = :ticket_id
+                """
+            ),
+            {"ticket_id": ticket_id},
+        ).mappings().first()
+
+    if row is None:
+        raise HTTPException(status_code=404, detail="Ticket not found")
+
+    return {
+        "status": "ok",
+        "ticket": ticket_row_to_dict(row),
+    }
+
+
+@app.post("/api/serviceops/tickets")
+def create_serviceops_ticket(payload: ServiceOpsTicketCreate):
+    db = require_db()
+
+    with db.begin() as conn:
+        max_order = conn.execute(
+            text("SELECT COALESCE(MAX(display_order), 0) FROM serviceops_tickets")
+        ).scalar_one()
+
+        row = conn.execute(
+            text(
+                """
+                INSERT INTO serviceops_tickets
+                    (title, status, owner, project, estimate_hours, actual_hours, task, display_order)
+                VALUES
+                    (:title, :status, :owner, :project, :estimate_hours, :actual_hours, :task, :display_order)
+                RETURNING
+                    id, title, status, owner, project,
+                    estimate_hours, actual_hours, task,
+                    display_order, created_at, updated_at
+                """
+            ),
+            {
+                "title": payload.title,
+                "status": payload.status,
+                "owner": payload.owner,
+                "project": payload.project,
+                "estimate_hours": payload.estimate_hours,
+                "actual_hours": payload.actual_hours,
+                "task": payload.task,
+                "display_order": int(max_order) + 1,
+            },
+        ).mappings().first()
+
+    return {
+        "status": "created",
+        "ticket": ticket_row_to_dict(row),
+    }
+
+
+@app.put("/api/serviceops/tickets/{ticket_id}")
+def update_serviceops_ticket(ticket_id: int, payload: ServiceOpsTicketUpdate):
+    db = require_db()
+    updates = payload.model_dump(exclude_unset=True)
+
+    if not updates:
+        raise HTTPException(status_code=400, detail="No fields to update")
+
+    allowed = {
+        "title",
+        "status",
+        "owner",
+        "project",
+        "estimate_hours",
+        "actual_hours",
+        "task",
+    }
+
+    set_clauses = []
+    params = {"ticket_id": ticket_id}
+
+    for key, value in updates.items():
+        if key not in allowed:
+            continue
+        set_clauses.append(f"{key} = :{key}")
+        params[key] = value
+
+    if not set_clauses:
+        raise HTTPException(status_code=400, detail="No valid fields to update")
+
+    set_sql = ", ".join(set_clauses) + ", updated_at = NOW()"
+
+    with db.begin() as conn:
+        row = conn.execute(
+            text(
+                f"""
+                UPDATE serviceops_tickets
+                SET {set_sql}
+                WHERE id = :ticket_id
+                RETURNING
+                    id, title, status, owner, project,
+                    estimate_hours, actual_hours, task,
+                    display_order, created_at, updated_at
+                """
+            ),
+            params,
+        ).mappings().first()
+
+    if row is None:
+        raise HTTPException(status_code=404, detail="Ticket not found")
+
+    return {
+        "status": "updated",
+        "ticket": ticket_row_to_dict(row),
+    }
+
+
+@app.delete("/api/serviceops/tickets/{ticket_id}")
+def delete_serviceops_ticket(ticket_id: int):
+    db = require_db()
+
+    with db.begin() as conn:
+        row = conn.execute(
+            text(
+                """
+                DELETE FROM serviceops_tickets
+                WHERE id = :ticket_id
+                RETURNING id, title
+                """
+            ),
+            {"ticket_id": ticket_id},
+        ).mappings().first()
+
+    if row is None:
+        raise HTTPException(status_code=404, detail="Ticket not found")
+
+    return {
+        "status": "deleted",
+        "ticket": {
+            "id": row["id"],
+            "title": row["title"],
+        },
+    }
