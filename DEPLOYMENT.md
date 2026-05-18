@@ -20,3 +20,11 @@ Useful commands:
 sudo certbot certificates
 sudo systemctl status certbot.timer
 sudo certbot renew --dry-run
+
+
+## FastAPI Backend
+
+Service:
+
+```bash
+sudo systemctl status enyrax-api
