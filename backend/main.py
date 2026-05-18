@@ -1,11 +1,40 @@
-from fastapi import FastAPI
 from datetime import datetime, timezone
+from pathlib import Path
+import os
 import socket
+
+from fastapi import FastAPI
+from sqlalchemy import create_engine, text
+from sqlalchemy.exc import SQLAlchemyError
+
 
 app = FastAPI(
     title="ENYRAX Cloud API",
-    version="0.2.0",
+    version="0.3.0",
 )
+
+
+def load_env() -> None:
+    env_path = Path(__file__).parent / ".env"
+
+    if not env_path.exists():
+        return
+
+    for line in env_path.read_text().splitlines():
+        line = line.strip()
+
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+
+        key, value = line.split("=", 1)
+        os.environ.setdefault(key.strip(), value.strip())
+
+
+load_env()
+
+DATABASE_URL = os.environ.get("DATABASE_URL")
+engine = create_engine(DATABASE_URL) if DATABASE_URL else None
+
 
 MODULES = [
     {
@@ -19,21 +48,21 @@ MODULES = [
         "key": "soc",
         "name": "SOC Monitoring",
         "route": "/soc/",
-        "status": "static-demo",
+        "status": "api-driven",
         "description": "Security alerts, incident timeline and AI-assisted investigation demo.",
     },
     {
         "key": "serviceops",
         "name": "ServiceOps",
         "route": "/serviceops/",
-        "status": "static-demo",
+        "status": "api-driven",
         "description": "Infra work orders, labor time, supervisor view and operation workflow.",
     },
     {
         "key": "projectops",
         "name": "ProjectOps",
         "route": "/projectops/",
-        "status": "static-demo",
+        "status": "api-driven",
         "description": "Project timeline, worklog cost mapping and overrun risk view.",
     },
     {
@@ -46,18 +75,23 @@ MODULES = [
 ]
 
 
+def now_utc() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
+
 @app.get("/api/health")
 def health():
     return {
         "status": "ok",
         "service": "enyrax-api",
         "host": socket.gethostname(),
-        "time_utc": datetime.now(timezone.utc).isoformat(),
+        "time_utc": now_utc(),
+        "database": "configured" if engine is not None else "not_configured",
         "modules": {
             "portal": "online",
-            "soc": "static-demo",
-            "serviceops": "static-demo",
-            "projectops": "static-demo",
+            "soc": "api-driven",
+            "serviceops": "api-driven",
+            "projectops": "api-driven",
             "status": "api-connected",
         },
     }
@@ -65,13 +99,61 @@ def health():
 
 @app.get("/api/modules")
 def modules():
-    return {
-        "status": "ok",
-        "service": "enyrax-api",
-        "host": socket.gethostname(),
-        "time_utc": datetime.now(timezone.utc).isoformat(),
-        "modules": MODULES,
-    }
+    if engine is None:
+        return {
+            "status": "ok",
+            "service": "enyrax-api",
+            "host": socket.gethostname(),
+            "time_utc": now_utc(),
+            "source": "fallback",
+            "modules": MODULES,
+        }
+
+    try:
+        with engine.connect() as conn:
+            rows = conn.execute(
+                text(
+                    """
+                    SELECT
+                        module_key,
+                        name,
+                        route,
+                        status,
+                        description
+                    FROM portal_modules
+                    ORDER BY display_order ASC
+                    """
+                )
+            ).mappings().all()
+
+        return {
+            "status": "ok",
+            "service": "enyrax-api",
+            "host": socket.gethostname(),
+            "time_utc": now_utc(),
+            "source": "postgresql",
+            "modules": [
+                {
+                    "key": row["module_key"],
+                    "name": row["name"],
+                    "route": row["route"],
+                    "status": row["status"],
+                    "description": row["description"],
+                }
+                for row in rows
+            ],
+        }
+
+    except SQLAlchemyError as exc:
+        return {
+            "status": "degraded",
+            "service": "enyrax-api",
+            "host": socket.gethostname(),
+            "time_utc": now_utc(),
+            "source": "fallback",
+            "error": str(exc),
+            "modules": MODULES,
+        }
 
 
 @app.get("/api/soc/summary")
@@ -79,7 +161,7 @@ def soc_summary():
     return {
         "status": "ok",
         "service": "enyrax-soc-demo",
-        "time_utc": datetime.now(timezone.utc).isoformat(),
+        "time_utc": now_utc(),
         "metrics": {
             "open_incidents": 12,
             "critical": 3,
@@ -157,7 +239,7 @@ def serviceops_summary():
     return {
         "status": "ok",
         "service": "enyrax-serviceops-demo",
-        "time_utc": datetime.now(timezone.utc).isoformat(),
+        "time_utc": now_utc(),
         "metrics": {
             "today_tickets": 18,
             "active": 6,
@@ -252,12 +334,13 @@ def serviceops_summary():
         ],
     }
 
+
 @app.get("/api/projectops/summary")
 def projectops_summary():
     return {
         "status": "ok",
         "service": "enyrax-projectops-demo",
-        "time_utc": datetime.now(timezone.utc).isoformat(),
+        "time_utc": now_utc(),
         "metrics": {
             "active_projects": 7,
             "on_track": 3,
