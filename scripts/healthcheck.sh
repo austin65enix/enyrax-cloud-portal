@@ -38,4 +38,9 @@ echo "[7] Modules API"
 curl -s https://portal.soc-monitoring.dev/api/modules | head -c 300
 echo
 
+echo
+echo "[8] SOC Summary API"
+curl -s https://portal.soc-monitoring.dev/api/soc/summary | head -c 300
+echo
+
 echo "== Done =="
