@@ -36,6 +36,14 @@ source .env
 python seed_all.py
 
 
+## Database Backup
+
+Run PostgreSQL backup:
+
+```bash
+cd /var/www/enyrax-portal
+./scripts/backup_db.sh
+
 ## Health Check
 
 Run the health check script:
