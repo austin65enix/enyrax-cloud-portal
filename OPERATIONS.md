@@ -44,6 +44,14 @@ Run PostgreSQL backup:
 cd /var/www/enyrax-portal
 ./scripts/backup_db.sh
 
+## Database Restore
+
+Restore from a backup:
+
+```bash
+cd /var/www/enyrax-portal
+./scripts/restore_db.sh backups/<backup-file>.sql.gz
+
 ## Health Check
 
 Run the health check script:
