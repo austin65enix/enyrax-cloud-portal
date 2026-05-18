@@ -28,4 +28,9 @@ echo "[5] TLS certificate"
 sudo certbot certificates | grep -E "Certificate Name|Expiry Date|Domains"
 echo
 
+echo
+echo "[6] API"
+curl -s https://portal.soc-monitoring.dev/api/health
+echo
+
 echo "== Done =="
