@@ -251,3 +251,93 @@ def serviceops_summary():
             },
         ],
     }
+
+@app.get("/api/projectops/summary")
+def projectops_summary():
+    return {
+        "status": "ok",
+        "service": "enyrax-projectops-demo",
+        "time_utc": datetime.now(timezone.utc).isoformat(),
+        "metrics": {
+            "active_projects": 7,
+            "on_track": 3,
+            "watch": 2,
+            "risk": 2,
+            "budget_used": 68,
+            "serviceops_hours": 126,
+            "overrun_risk": 2,
+        },
+        "projects": [
+            {
+                "title": "ERP Test Environment Upgrade",
+                "status": "ontrack",
+                "owner": "IT / Infra",
+                "budget_hours": 120,
+                "actual_hours": 76,
+                "linked_tickets": 11,
+                "scope": "VM build, network policy, backup baseline, UAT support.",
+                "progress": 63,
+            },
+            {
+                "title": "Vendor VPN Access Control Review",
+                "status": "watch",
+                "owner": "Security / Infra",
+                "budget_hours": 80,
+                "actual_hours": 61,
+                "linked_tickets": 7,
+                "scope": "Firewall rule cleanup, expiry date, owner mapping and audit evidence.",
+                "progress": 76,
+            },
+            {
+                "title": "Backup Storage Improvement",
+                "status": "risk",
+                "owner": "Infra / Storage",
+                "budget_hours": 100,
+                "actual_hours": 94,
+                "linked_tickets": 9,
+                "scope": "Capacity review, retention cleanup, expansion planning and recovery test.",
+                "progress": 94,
+            },
+        ],
+        "gantt": [
+            {"phase": "Requirement", "offset": 0, "width": 100, "status": "Done"},
+            {"phase": "Infra Build", "offset": 10, "width": 78, "status": "78%"},
+            {"phase": "Security Review", "offset": 34, "width": 42, "status": "42%"},
+            {"phase": "UAT Support", "offset": 62, "width": 24, "status": "24%"},
+            {"phase": "Go-Live", "offset": 82, "width": 8, "status": "Ready"},
+        ],
+        "cost": {
+            "planned_budget": "300h",
+            "actual_worklog": "231h",
+            "forecast": "346h",
+            "risk_signal": "+15%",
+            "description": "Potential overrun if unresolved tickets and approvals continue to delay delivery.",
+        },
+        "flow": [
+            {
+                "step": "Step 01",
+                "name": "Project Card",
+                "description": "Project owner creates scope, budget, phase and delivery target.",
+            },
+            {
+                "step": "Step 02",
+                "name": "ServiceOps Link",
+                "description": "Infra tickets are attached to the project instead of becoming isolated tasks.",
+            },
+            {
+                "step": "Step 03",
+                "name": "Worklog Import",
+                "description": "Member work hours and notes become real project execution data.",
+            },
+            {
+                "step": "Step 04",
+                "name": "Risk Forecast",
+                "description": "Budget usage, delay, blockers and approval wait time create overrun signals.",
+            },
+            {
+                "step": "Step 05",
+                "name": "Manager View",
+                "description": "Supervisors see project health, labor cost and execution risk in one dashboard.",
+            },
+        ],
+    }
