@@ -33,4 +33,9 @@ echo "[6] API"
 curl -s https://portal.soc-monitoring.dev/api/health
 echo
 
+echo
+echo "[7] Modules API"
+curl -s https://portal.soc-monitoring.dev/api/modules | head -c 300
+echo
+
 echo "== Done =="
