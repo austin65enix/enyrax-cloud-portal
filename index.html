@@ -200,6 +200,40 @@
     }
 
 
+
+    .module-status {
+      display: inline-flex;
+      margin-top: 14px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(115, 244, 223, .22);
+      background: rgba(115, 244, 223, .08);
+      color: var(--cyan);
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+
+    .module-status.online,
+    .module-status.api-connected {
+      color: #8ff7b2;
+      border-color: rgba(143, 247, 178, .26);
+      background: rgba(143, 247, 178, .08);
+    }
+
+    .module-status.static-demo {
+      color: var(--gold);
+      border-color: rgba(245, 211, 122, .26);
+      background: rgba(245, 211, 122, .08);
+    }
+
+    .module-status.offline {
+      color: #ff7a90;
+      border-color: rgba(255, 122, 144, .28);
+      background: rgba(255, 122, 144, .08);
+    }
+
     .platform-flow {
       margin-top: 18px;
       padding: 22px;
@@ -306,24 +340,28 @@
         <div class="kicker">Security</div>
         <h2>SOC Monitoring</h2>
         <p>Security alerts become correlated incidents, attack timelines, MITRE mapping and AI response decisions.</p>
+        <span class="module-status" data-module-status="soc">CHECKING</span>
       </a>
 
       <a class="card" href="/serviceops/">
         <div class="kicker">Operations</div>
         <h2>ServiceOps</h2>
         <p>Infrastructure tickets, member worklogs, supervisor overview and labor-cost visibility.</p>
+        <span class="module-status" data-module-status="serviceops">CHECKING</span>
       </a>
 
       <a class="card" href="/projectops/">
         <div class="kicker">Delivery</div>
         <h2>ProjectOps</h2>
         <p>Project schedule, ServiceOps-linked work hours, budget usage and overrun risk forecast.</p>
+        <span class="module-status" data-module-status="projectops">CHECKING</span>
       </a>
 
       <a class="card" href="/status/">
         <div class="kicker">Cloud</div>
         <h2>Server Status</h2>
         <p>Akamai Tokyo 3 cloud host, Ubuntu runtime, firewall status and deployment checkpoints.</p>
+        <span class="module-status" data-module-status="status">CHECKING</span>
       </a>
     </section>
 
@@ -365,5 +403,40 @@
       <span>SOC × ServiceOps × ProjectOps × AI Decision Engine</span>
     </footer>
   </div>
+
+  <script>
+    async function loadModuleStatus() {
+      const statusEls = document.querySelectorAll("[data-module-status]");
+
+      try {
+        const res = await fetch("/api/modules", { cache: "no-store" });
+
+        if (!res.ok) {
+          throw new Error("Modules API returned " + res.status);
+        }
+
+        const data = await res.json();
+        const modules = Array.isArray(data.modules) ? data.modules : [];
+        const statusMap = new Map(modules.map((m) => [m.key, m.status]));
+
+        statusEls.forEach((el) => {
+          const key = el.dataset.moduleStatus;
+          const status = statusMap.get(key) || "unknown";
+
+          el.textContent = status;
+          el.className = "module-status " + status;
+        });
+      } catch (err) {
+        statusEls.forEach((el) => {
+          el.textContent = "offline";
+          el.className = "module-status offline";
+        });
+        console.error("Module status load failed:", err);
+      }
+    }
+
+    loadModuleStatus();
+  </script>
+
 </body>
 </html>
