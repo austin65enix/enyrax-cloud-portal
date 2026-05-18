@@ -28,3 +28,14 @@ Service:
 
 ```bash
 sudo systemctl status enyrax-api
+
+## Current Production URL
+
+- https://portal.soc-monitoring.dev
+
+## Runtime Architecture
+
+```text
+Nginx
+  ├── Static files from /var/www/enyrax-portal
+  └── /api/ proxy to FastAPI on 127.0.0.1:8000

@@ -18,6 +18,14 @@ Main routes:
 
 ---
 
+## FastAPI Operations
+
+Check API service:
+
+```bash
+sudo systemctl status enyrax-api
+
+
 ## Health Check
 
 Run the health check script:
