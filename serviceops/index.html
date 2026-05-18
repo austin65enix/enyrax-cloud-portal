@@ -252,6 +252,41 @@
     }
 
 
+
+    .ticket-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+
+    .mini-btn {
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 12px;
+      padding: 8px 11px;
+      color: var(--text);
+      background: rgba(255,255,255,.05);
+      cursor: pointer;
+      font-weight: 900;
+      font-size: 12px;
+    }
+
+    .mini-btn.done-btn {
+      color: #062014;
+      background: var(--green);
+      border-color: rgba(143, 247, 178, .4);
+    }
+
+    .mini-btn.delete-btn {
+      color: #26060c;
+      background: var(--red);
+      border-color: rgba(255, 107, 134, .4);
+    }
+
+    .mini-btn:hover {
+      transform: translateY(-1px);
+    }
+
     .form-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -337,7 +372,42 @@
       .layout { grid-template-columns: 1fr; }
       .wide { grid-column: span 1; }
       .flow { grid-template-columns: 1fr; }
-      .form-grid { grid-template-columns: 1fr; }
+  
+    .ticket-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+
+    .mini-btn {
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 12px;
+      padding: 8px 11px;
+      color: var(--text);
+      background: rgba(255,255,255,.05);
+      cursor: pointer;
+      font-weight: 900;
+      font-size: 12px;
+    }
+
+    .mini-btn.done-btn {
+      color: #062014;
+      background: var(--green);
+      border-color: rgba(143, 247, 178, .4);
+    }
+
+    .mini-btn.delete-btn {
+      color: #26060c;
+      background: var(--red);
+      border-color: rgba(255, 107, 134, .4);
+    }
+
+    .mini-btn:hover {
+      transform: translateY(-1px);
+    }
+
+    .form-grid { grid-template-columns: 1fr; }
       .form-full { grid-column: span 1; }
     }
 
@@ -536,6 +606,10 @@
                 · Estimate: ${escapeHtml(item.estimate_hours)}h · Actual: ${escapeHtml(item.actual_hours)}h<br>
                 Task: ${escapeHtml(item.task)}
               </div>
+              <div class="ticket-actions">
+                <button class="mini-btn done-btn" type="button" onclick="markTicketDone(${Number(item.id)})">Mark Done</button>
+                <button class="mini-btn delete-btn" type="button" onclick="deleteTicket(${Number(item.id)})">Delete</button>
+              </div>
             </div>
           `;
         }).join("");
@@ -563,6 +637,50 @@
       }
     }
 
+
+
+    async function markTicketDone(ticketId) {
+      if (!ticketId) return;
+
+      try {
+        const res = await fetch(`/api/serviceops/tickets/${ticketId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: "done" })
+        });
+
+        if (!res.ok) {
+          throw new Error("Update failed: " + res.status);
+        }
+
+        await loadServiceOpsSummary();
+      } catch (err) {
+        alert("Mark done failed. Check API.");
+        console.error(err);
+      }
+    }
+
+    async function deleteTicket(ticketId) {
+      if (!ticketId) return;
+
+      const ok = confirm(`Delete ticket #${ticketId}?`);
+      if (!ok) return;
+
+      try {
+        const res = await fetch(`/api/serviceops/tickets/${ticketId}`, {
+          method: "DELETE"
+        });
+
+        if (!res.ok) {
+          throw new Error("Delete failed: " + res.status);
+        }
+
+        await loadServiceOpsSummary();
+      } catch (err) {
+        alert("Delete failed. Check API.");
+        console.error(err);
+      }
+    }
 
     async function createServiceOpsTicket(event) {
       event.preventDefault();

@@ -389,6 +389,7 @@ def serviceops_summary():
                     text(
                         """
                         SELECT
+                            id,
                             title,
                             status,
                             owner,
@@ -404,6 +405,7 @@ def serviceops_summary():
 
             work_queue = [
                 {
+                    "id": row["id"],
                     "title": row["title"],
                     "status": row["status"],
                     "owner": row["owner"],
