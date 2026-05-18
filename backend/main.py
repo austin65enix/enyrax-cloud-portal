@@ -12,7 +12,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 app = FastAPI(
     title="ENYRAX Cloud API",
-    version="0.5.0",
+    version="0.6.0",
 )
 
 
@@ -60,6 +60,28 @@ class ServiceOpsTicketUpdate(BaseModel):
     estimate_hours: Optional[float] = None
     actual_hours: Optional[float] = None
     task: Optional[str] = None
+
+
+class ProjectOpsProjectCreate(BaseModel):
+    title: str = Field(..., min_length=1, max_length=200)
+    status: str = Field(default="watch", max_length=50)
+    owner: str = Field(..., min_length=1, max_length=120)
+    budget_hours: float = 0
+    actual_hours: float = 0
+    linked_tickets: int = 0
+    scope: str = Field(..., min_length=1)
+    progress: int = Field(default=0, ge=0, le=100)
+
+
+class ProjectOpsProjectUpdate(BaseModel):
+    title: Optional[str] = Field(default=None, max_length=200)
+    status: Optional[str] = Field(default=None, max_length=50)
+    owner: Optional[str] = Field(default=None, max_length=120)
+    budget_hours: Optional[float] = None
+    actual_hours: Optional[float] = None
+    linked_tickets: Optional[int] = None
+    scope: Optional[str] = None
+    progress: Optional[int] = Field(default=None, ge=0, le=100)
 
 
 MODULES = [
@@ -117,6 +139,23 @@ def ticket_row_to_dict(row):
         "estimate_hours": float(row["estimate_hours"]),
         "actual_hours": float(row["actual_hours"]),
         "task": row["task"],
+        "display_order": row["display_order"],
+        "created_at": row["created_at"].isoformat() if row["created_at"] else None,
+        "updated_at": row["updated_at"].isoformat() if row["updated_at"] else None,
+    }
+
+
+def project_row_to_dict(row):
+    return {
+        "id": row["id"],
+        "title": row["title"],
+        "status": row["status"],
+        "owner": row["owner"],
+        "budget_hours": float(row["budget_hours"]),
+        "actual_hours": float(row["actual_hours"]),
+        "linked_tickets": int(row["linked_tickets"]),
+        "scope": row["scope"],
+        "progress": int(row["progress"]),
         "display_order": row["display_order"],
         "created_at": row["created_at"].isoformat() if row["created_at"] else None,
         "updated_at": row["updated_at"].isoformat() if row["updated_at"] else None,
@@ -341,6 +380,7 @@ def soc_summary():
 def serviceops_summary():
     fallback_work_queue = [
         {
+            "id": None,
             "title": "VM Request · ERP Test Environment",
             "status": "in_progress",
             "owner": "atn",
@@ -350,6 +390,7 @@ def serviceops_summary():
             "task": "Provision VM, assign network, prepare OS baseline and handover checklist.",
         },
         {
+            "id": None,
             "title": "Firewall Policy Review · Vendor VPN",
             "status": "pending_approval",
             "owner": "Infra Team",
@@ -359,6 +400,7 @@ def serviceops_summary():
             "task": "Review source/destination, service ports, business owner and expiry date.",
         },
         {
+            "id": None,
             "title": "Storage Capacity Alert · Backup Volume",
             "status": "risk",
             "owner": "Storage Admin",
@@ -368,6 +410,7 @@ def serviceops_summary():
             "task": "Analyze growth trend, clean expired backup and report expansion risk.",
         },
         {
+            "id": None,
             "title": "Nginx Portal Deployment · ENYRAX Demo",
             "status": "done",
             "owner": "atn",
@@ -830,6 +873,189 @@ def delete_serviceops_ticket(ticket_id: int):
     return {
         "status": "deleted",
         "ticket": {
+            "id": row["id"],
+            "title": row["title"],
+        },
+    }
+
+
+@app.get("/api/projectops/projects")
+def list_projectops_projects():
+    db = require_db()
+
+    with db.connect() as conn:
+        rows = conn.execute(
+            text(
+                """
+                SELECT
+                    id, title, status, owner,
+                    budget_hours, actual_hours, linked_tickets,
+                    scope, progress, display_order, created_at, updated_at
+                FROM projectops_projects
+                ORDER BY display_order ASC, id ASC
+                """
+            )
+        ).mappings().all()
+
+    return {
+        "status": "ok",
+        "source": "postgresql",
+        "count": len(rows),
+        "projects": [project_row_to_dict(row) for row in rows],
+    }
+
+
+@app.get("/api/projectops/projects/{project_id}")
+def get_projectops_project(project_id: int):
+    db = require_db()
+
+    with db.connect() as conn:
+        row = conn.execute(
+            text(
+                """
+                SELECT
+                    id, title, status, owner,
+                    budget_hours, actual_hours, linked_tickets,
+                    scope, progress, display_order, created_at, updated_at
+                FROM projectops_projects
+                WHERE id = :project_id
+                """
+            ),
+            {"project_id": project_id},
+        ).mappings().first()
+
+    if row is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    return {
+        "status": "ok",
+        "project": project_row_to_dict(row),
+    }
+
+
+@app.post("/api/projectops/projects")
+def create_projectops_project(payload: ProjectOpsProjectCreate):
+    db = require_db()
+
+    with db.begin() as conn:
+        max_order = conn.execute(
+            text("SELECT COALESCE(MAX(display_order), 0) FROM projectops_projects")
+        ).scalar_one()
+
+        row = conn.execute(
+            text(
+                """
+                INSERT INTO projectops_projects
+                    (title, status, owner, budget_hours, actual_hours,
+                     linked_tickets, scope, progress, display_order)
+                VALUES
+                    (:title, :status, :owner, :budget_hours, :actual_hours,
+                     :linked_tickets, :scope, :progress, :display_order)
+                RETURNING
+                    id, title, status, owner,
+                    budget_hours, actual_hours, linked_tickets,
+                    scope, progress, display_order, created_at, updated_at
+                """
+            ),
+            {
+                "title": payload.title,
+                "status": payload.status,
+                "owner": payload.owner,
+                "budget_hours": payload.budget_hours,
+                "actual_hours": payload.actual_hours,
+                "linked_tickets": payload.linked_tickets,
+                "scope": payload.scope,
+                "progress": payload.progress,
+                "display_order": int(max_order) + 1,
+            },
+        ).mappings().first()
+
+    return {
+        "status": "created",
+        "project": project_row_to_dict(row),
+    }
+
+
+@app.put("/api/projectops/projects/{project_id}")
+def update_projectops_project(project_id: int, payload: ProjectOpsProjectUpdate):
+    db = require_db()
+    updates = payload.model_dump(exclude_unset=True)
+
+    if not updates:
+        raise HTTPException(status_code=400, detail="No fields to update")
+
+    allowed = {
+        "title",
+        "status",
+        "owner",
+        "budget_hours",
+        "actual_hours",
+        "linked_tickets",
+        "scope",
+        "progress",
+    }
+
+    set_clauses = []
+    params = {"project_id": project_id}
+
+    for key, value in updates.items():
+        if key not in allowed:
+            continue
+        set_clauses.append(f"{key} = :{key}")
+        params[key] = value
+
+    if not set_clauses:
+        raise HTTPException(status_code=400, detail="No valid fields to update")
+
+    set_sql = ", ".join(set_clauses) + ", updated_at = NOW()"
+
+    with db.begin() as conn:
+        row = conn.execute(
+            text(
+                f"""
+                UPDATE projectops_projects
+                SET {set_sql}
+                WHERE id = :project_id
+                RETURNING
+                    id, title, status, owner,
+                    budget_hours, actual_hours, linked_tickets,
+                    scope, progress, display_order, created_at, updated_at
+                """
+            ),
+            params,
+        ).mappings().first()
+
+    if row is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    return {
+        "status": "updated",
+        "project": project_row_to_dict(row),
+    }
+
+
+@app.delete("/api/projectops/projects/{project_id}")
+def delete_projectops_project(project_id: int):
+    db = require_db()
+
+    with db.begin() as conn:
+        row = conn.execute(
+            text(
+                """
+                DELETE FROM projectops_projects
+                WHERE id = :project_id
+                RETURNING id, title
+                """
+            ),
+            {"project_id": project_id},
+        ).mappings().first()
+
+    if row is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    return {
+        "status": "deleted",
+        "project": {
             "id": row["id"],
             "title": row["title"],
         },
