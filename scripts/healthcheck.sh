@@ -43,4 +43,9 @@ echo "[8] SOC Summary API"
 curl -s https://portal.soc-monitoring.dev/api/soc/summary | head -c 300
 echo
 
+echo
+echo "[9] ServiceOps Summary API"
+curl -s https://portal.soc-monitoring.dev/api/serviceops/summary | head -c 300
+echo
+
 echo "== Done =="

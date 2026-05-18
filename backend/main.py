@@ -150,3 +150,104 @@ def soc_summary():
             ],
         },
     }
+
+
+@app.get("/api/serviceops/summary")
+def serviceops_summary():
+    return {
+        "status": "ok",
+        "service": "enyrax-serviceops-demo",
+        "time_utc": datetime.now(timezone.utc).isoformat(),
+        "metrics": {
+            "today_tickets": 18,
+            "active": 6,
+            "pending": 9,
+            "done": 3,
+            "team_hours": 42.5,
+            "project_linked": 11,
+            "risk_items": 3,
+        },
+        "work_queue": [
+            {
+                "title": "VM Request · ERP Test Environment",
+                "status": "in_progress",
+                "owner": "atn",
+                "project": "ERP Upgrade",
+                "estimate_hours": 3.5,
+                "actual_hours": 2.0,
+                "task": "Provision VM, assign network, prepare OS baseline and handover checklist.",
+            },
+            {
+                "title": "Firewall Policy Review · Vendor VPN",
+                "status": "pending_approval",
+                "owner": "Infra Team",
+                "project": "Vendor Access Control",
+                "estimate_hours": 1.5,
+                "actual_hours": 0.5,
+                "task": "Review source/destination, service ports, business owner and expiry date.",
+            },
+            {
+                "title": "Storage Capacity Alert · Backup Volume",
+                "status": "risk",
+                "owner": "Storage Admin",
+                "project": "Backup Improvement",
+                "estimate_hours": 2.0,
+                "actual_hours": 4.0,
+                "task": "Analyze growth trend, clean expired backup and report expansion risk.",
+            },
+            {
+                "title": "Nginx Portal Deployment · ENYRAX Demo",
+                "status": "done",
+                "owner": "atn",
+                "project": "ENYRAX Cloud Demo",
+                "estimate_hours": 1.0,
+                "actual_hours": 1.0,
+                "task": "Deploy portal, verify firewall, confirm public route and status page.",
+            },
+        ],
+        "roles": [
+            {
+                "title": "Infra Member View",
+                "description": "Members only see their own tickets, worklog, today's progress, notes and pending reports.",
+            },
+            {
+                "title": "Infra Supervisor View",
+                "description": "Supervisors see team workload, member status, total labor hours, blocked tickets and project-linked operation cost.",
+            },
+            {
+                "title": "Executive / Higher-Level View",
+                "description": "Higher-level managers review cross-team capacity, project overrun risk and service delivery trends.",
+            },
+            {
+                "title": "ProjectOps Connection",
+                "description": "Each ticket can be linked to a project, so infra labor time becomes part of real project cost.",
+            },
+        ],
+        "flow": [
+            {
+                "step": "Step 01",
+                "name": "Request",
+                "description": "VM, network, storage, account, firewall or system support request enters the queue.",
+            },
+            {
+                "step": "Step 02",
+                "name": "Assign",
+                "description": "Supervisor assigns owner, priority, due date and project relationship.",
+            },
+            {
+                "step": "Step 03",
+                "name": "Worklog",
+                "description": "Member records actions, time spent, blockers and completion notes.",
+            },
+            {
+                "step": "Step 04",
+                "name": "Cost Map",
+                "description": "Labor time is mapped back to project budget, delivery cost and resource usage.",
+            },
+            {
+                "step": "Step 05",
+                "name": "Review",
+                "description": "Supervisor reviews team workload, risk items and project operation status.",
+            },
+        ],
+    }
