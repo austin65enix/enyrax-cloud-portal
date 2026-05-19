@@ -12,7 +12,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 app = FastAPI(
     title="ENYRAX Cloud API",
-    version="0.7.0",
+    version="0.8.0",
 )
 
 
@@ -86,6 +86,26 @@ class ProjectOpsProjectUpdate(BaseModel):
     progress: Optional[int] = Field(default=None, ge=0, le=100)
     start_date: Optional[str] = None
     end_date: Optional[str] = None
+
+
+class SocIncidentCreate(BaseModel):
+    title: str = Field(..., min_length=1, max_length=220)
+    severity: str = Field(default="medium", max_length=50)
+    source_ip: str = Field(..., min_length=1, max_length=80)
+    target: str = Field(..., min_length=1, max_length=120)
+    duplicate_count: int = 1
+    analysis_type: str = Field(..., min_length=1, max_length=120)
+    mitre: str = Field(default="Unmapped", max_length=160)
+
+
+class SocIncidentUpdate(BaseModel):
+    title: Optional[str] = Field(default=None, max_length=220)
+    severity: Optional[str] = Field(default=None, max_length=50)
+    source_ip: Optional[str] = Field(default=None, max_length=80)
+    target: Optional[str] = Field(default=None, max_length=120)
+    duplicate_count: Optional[int] = None
+    analysis_type: Optional[str] = Field(default=None, max_length=120)
+    mitre: Optional[str] = Field(default=None, max_length=160)
 
 
 MODULES = [
@@ -162,6 +182,22 @@ def project_row_to_dict(row):
         "progress": int(row["progress"]),
         "start_date": row["start_date"].isoformat() if row["start_date"] else None,
         "end_date": row["end_date"].isoformat() if row["end_date"] else None,
+        "display_order": row["display_order"],
+        "created_at": row["created_at"].isoformat() if row["created_at"] else None,
+        "updated_at": row["updated_at"].isoformat() if row["updated_at"] else None,
+    }
+
+
+def incident_row_to_dict(row):
+    return {
+        "id": row["id"],
+        "title": row["title"],
+        "severity": row["severity"],
+        "source_ip": row["source_ip"],
+        "target": row["target"],
+        "duplicate_count": int(row["duplicate_count"]),
+        "analysis_type": row["analysis_type"],
+        "mitre": row["mitre"],
         "display_order": row["display_order"],
         "created_at": row["created_at"].isoformat() if row["created_at"] else None,
         "updated_at": row["updated_at"].isoformat() if row["updated_at"] else None,
@@ -1085,6 +1121,187 @@ def delete_projectops_project(project_id: int):
     return {
         "status": "deleted",
         "project": {
+            "id": row["id"],
+            "title": row["title"],
+        },
+    }
+
+
+@app.get("/api/soc/incidents")
+def list_soc_incidents():
+    db = require_db()
+
+    with db.connect() as conn:
+        rows = conn.execute(
+            text(
+                """
+                SELECT
+                    id, title, severity, source_ip, target,
+                    duplicate_count, analysis_type, mitre,
+                    display_order, created_at, updated_at
+                FROM soc_incidents
+                ORDER BY display_order ASC, id ASC
+                """
+            )
+        ).mappings().all()
+
+    return {
+        "status": "ok",
+        "source": "postgresql",
+        "count": len(rows),
+        "incidents": [incident_row_to_dict(row) for row in rows],
+    }
+
+
+@app.get("/api/soc/incidents/{incident_id}")
+def get_soc_incident(incident_id: int):
+    db = require_db()
+
+    with db.connect() as conn:
+        row = conn.execute(
+            text(
+                """
+                SELECT
+                    id, title, severity, source_ip, target,
+                    duplicate_count, analysis_type, mitre,
+                    display_order, created_at, updated_at
+                FROM soc_incidents
+                WHERE id = :incident_id
+                """
+            ),
+            {"incident_id": incident_id},
+        ).mappings().first()
+
+    if row is None:
+        raise HTTPException(status_code=404, detail="Incident not found")
+
+    return {
+        "status": "ok",
+        "incident": incident_row_to_dict(row),
+    }
+
+
+@app.post("/api/soc/incidents")
+def create_soc_incident(payload: SocIncidentCreate):
+    db = require_db()
+
+    with db.begin() as conn:
+        max_order = conn.execute(
+            text("SELECT COALESCE(MAX(display_order), 0) FROM soc_incidents")
+        ).scalar_one()
+
+        row = conn.execute(
+            text(
+                """
+                INSERT INTO soc_incidents
+                    (title, severity, source_ip, target, duplicate_count,
+                     analysis_type, mitre, display_order)
+                VALUES
+                    (:title, :severity, :source_ip, :target, :duplicate_count,
+                     :analysis_type, :mitre, :display_order)
+                RETURNING
+                    id, title, severity, source_ip, target,
+                    duplicate_count, analysis_type, mitre,
+                    display_order, created_at, updated_at
+                """
+            ),
+            {
+                "title": payload.title,
+                "severity": payload.severity,
+                "source_ip": payload.source_ip,
+                "target": payload.target,
+                "duplicate_count": payload.duplicate_count,
+                "analysis_type": payload.analysis_type,
+                "mitre": payload.mitre,
+                "display_order": int(max_order) + 1,
+            },
+        ).mappings().first()
+
+    return {
+        "status": "created",
+        "incident": incident_row_to_dict(row),
+    }
+
+
+@app.put("/api/soc/incidents/{incident_id}")
+def update_soc_incident(incident_id: int, payload: SocIncidentUpdate):
+    db = require_db()
+    updates = payload.model_dump(exclude_unset=True)
+
+    if not updates:
+        raise HTTPException(status_code=400, detail="No fields to update")
+
+    allowed = {
+        "title",
+        "severity",
+        "source_ip",
+        "target",
+        "duplicate_count",
+        "analysis_type",
+        "mitre",
+    }
+
+    set_clauses = []
+    params = {"incident_id": incident_id}
+
+    for key, value in updates.items():
+        if key not in allowed:
+            continue
+        set_clauses.append(f"{key} = :{key}")
+        params[key] = value
+
+    if not set_clauses:
+        raise HTTPException(status_code=400, detail="No valid fields to update")
+
+    set_sql = ", ".join(set_clauses) + ", updated_at = NOW()"
+
+    with db.begin() as conn:
+        row = conn.execute(
+            text(
+                f"""
+                UPDATE soc_incidents
+                SET {set_sql}
+                WHERE id = :incident_id
+                RETURNING
+                    id, title, severity, source_ip, target,
+                    duplicate_count, analysis_type, mitre,
+                    display_order, created_at, updated_at
+                """
+            ),
+            params,
+        ).mappings().first()
+
+    if row is None:
+        raise HTTPException(status_code=404, detail="Incident not found")
+
+    return {
+        "status": "updated",
+        "incident": incident_row_to_dict(row),
+    }
+
+
+@app.delete("/api/soc/incidents/{incident_id}")
+def delete_soc_incident(incident_id: int):
+    db = require_db()
+
+    with db.begin() as conn:
+        row = conn.execute(
+            text(
+                """
+                DELETE FROM soc_incidents
+                WHERE id = :incident_id
+                RETURNING id, title
+                """
+            ),
+            {"incident_id": incident_id},
+        ).mappings().first()
+
+    if row is None:
+        raise HTTPException(status_code=404, detail="Incident not found")
+
+    return {
+        "status": "deleted",
+        "incident": {
             "id": row["id"],
             "title": row["title"],
         },
