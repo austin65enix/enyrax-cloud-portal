@@ -256,6 +256,92 @@
       font-size: 13px;
     }
 
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .form-full {
+      grid-column: span 2;
+    }
+
+    label {
+      display: grid;
+      gap: 6px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      border: 1px solid rgba(115, 244, 223, .18);
+      border-radius: 14px;
+      padding: 11px 12px;
+      color: var(--text);
+      background: rgba(255,255,255,.05);
+      outline: none;
+      font: inherit;
+    }
+
+    textarea {
+      min-height: 88px;
+      resize: vertical;
+    }
+
+    .submit-row,
+    .incident-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 14px;
+      flex-wrap: wrap;
+    }
+
+    .submit-btn,
+    .mini-btn {
+      border: 0;
+      cursor: pointer;
+      border-radius: 14px;
+      font-weight: 950;
+    }
+
+    .submit-btn {
+      color: #081018;
+      background: linear-gradient(135deg, var(--gold), #fff0b8);
+      padding: 12px 16px;
+    }
+
+    .mini-btn {
+      padding: 8px 11px;
+      font-size: 12px;
+    }
+
+    .critical-btn {
+      color: #26060c;
+      background: var(--red);
+    }
+
+    .high-btn {
+      color: #241203;
+      background: var(--orange);
+    }
+
+    .delete-btn {
+      color: #26060c;
+      background: var(--red);
+    }
+
+    .form-message {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
     .footer {
       margin-top: 30px;
       display: flex;
@@ -276,6 +362,8 @@
     @media (max-width: 560px) {
       .metrics { grid-template-columns: 1fr; }
       .incident-top { align-items: flex-start; flex-direction: column; }
+      .form-grid { grid-template-columns: 1fr; }
+      .form-full { grid-column: span 1; }
     }
   </style>
 </head>
@@ -325,6 +413,62 @@
             <div class="meta">Loading incidents...</div>
           </div>
         </div>
+
+        <div class="incident" style="margin-top: 16px;">
+          <div class="incident-top">
+            <div class="title">Add SOC Incident</div>
+            <div class="sev high">CREATE</div>
+          </div>
+
+          <form id="incident-form">
+            <div class="form-grid">
+              <label>
+                Title
+                <input id="incident-title" required maxlength="220" placeholder="Example: Suspicious Admin Login From New Geo">
+              </label>
+
+              <label>
+                Severity
+                <select id="incident-severity">
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
+                  <option value="critical">Critical</option>
+                </select>
+              </label>
+
+              <label>
+                Source IP
+                <input id="incident-source-ip" required maxlength="80" value="198.51.100.88">
+              </label>
+
+              <label>
+                Target
+                <input id="incident-target" required maxlength="120" value="admin-portal-01">
+              </label>
+
+              <label>
+                Duplicate Count
+                <input id="incident-duplicate-count" type="number" min="1" value="1">
+              </label>
+
+              <label>
+                MITRE
+                <input id="incident-mitre" maxlength="160" value="T1078 Valid Accounts">
+              </label>
+
+              <label class="form-full">
+                Analysis Type
+                <input id="incident-analysis-type" required maxlength="120" value="identity_threat">
+              </label>
+            </div>
+
+            <div class="submit-row">
+              <button class="submit-btn" type="submit">Create Incident</button>
+              <span class="form-message" id="incident-form-message">Ready.</span>
+            </div>
+          </form>
+        </div>
+
       </div>
 
       <div class="card">
@@ -409,6 +553,11 @@
                 Source IP: ${escapeHtml(item.source_ip)} · Target: ${escapeHtml(item.target)} · Duplicate Count: ${escapeHtml(item.duplicate_count)}<br>
                 Analysis Type: ${escapeHtml(item.analysis_type)} · MITRE: ${escapeHtml(item.mitre)}
               </div>
+              <div class="incident-actions">
+                <button class="mini-btn critical-btn" type="button" onclick="markIncidentSeverity(${Number(item.id)}, 'critical')">Mark Critical</button>
+                <button class="mini-btn high-btn" type="button" onclick="markIncidentSeverity(${Number(item.id)}, 'high')">Mark High</button>
+                <button class="mini-btn delete-btn" type="button" onclick="deleteIncident(${Number(item.id)})">Delete</button>
+              </div>
             </div>
           `;
         }).join("");
@@ -434,6 +583,101 @@
         console.error("Failed to load SOC summary:", err);
       }
     }
+
+
+    async function createSocIncident(event) {
+      event.preventDefault();
+
+      const message = document.getElementById("incident-form-message");
+      const form = document.getElementById("incident-form");
+
+      const payload = {
+        title: document.getElementById("incident-title").value.trim(),
+        severity: document.getElementById("incident-severity").value,
+        source_ip: document.getElementById("incident-source-ip").value.trim(),
+        target: document.getElementById("incident-target").value.trim(),
+        duplicate_count: Number(document.getElementById("incident-duplicate-count").value || 1),
+        analysis_type: document.getElementById("incident-analysis-type").value.trim(),
+        mitre: document.getElementById("incident-mitre").value.trim() || "Unmapped"
+      };
+
+      if (!payload.title || !payload.source_ip || !payload.target || !payload.analysis_type) {
+        message.textContent = "Please fill title, source IP, target and analysis type.";
+        message.style.color = "#ff6b86";
+        return;
+      }
+
+      message.textContent = "Creating incident...";
+      message.style.color = "rgba(247, 242, 223, .68)";
+
+      try {
+        const res = await fetch("/api/soc/incidents", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) throw new Error("Create failed: " + res.status);
+
+        const data = await res.json();
+        message.textContent = `Created incident #${data.incident.id}`;
+        message.style.color = "#8ff7b2";
+
+        form.reset();
+        document.getElementById("incident-source-ip").value = "198.51.100.88";
+        document.getElementById("incident-target").value = "admin-portal-01";
+        document.getElementById("incident-duplicate-count").value = "1";
+        document.getElementById("incident-analysis-type").value = "identity_threat";
+        document.getElementById("incident-mitre").value = "T1078 Valid Accounts";
+
+        await loadSocSummary();
+      } catch (err) {
+        message.textContent = "Create failed. Check API or console.";
+        message.style.color = "#ff6b86";
+        console.error(err);
+      }
+    }
+
+    async function markIncidentSeverity(incidentId, severity) {
+      if (!incidentId) return;
+
+      try {
+        const res = await fetch(`/api/soc/incidents/${incidentId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ severity })
+        });
+
+        if (!res.ok) throw new Error("Update failed: " + res.status);
+
+        await loadSocSummary();
+      } catch (err) {
+        alert("Incident update failed. Check API.");
+        console.error(err);
+      }
+    }
+
+    async function deleteIncident(incidentId) {
+      if (!incidentId) return;
+
+      const ok = confirm(`Delete incident #${incidentId}?`);
+      if (!ok) return;
+
+      try {
+        const res = await fetch(`/api/soc/incidents/${incidentId}`, {
+          method: "DELETE"
+        });
+
+        if (!res.ok) throw new Error("Delete failed: " + res.status);
+
+        await loadSocSummary();
+      } catch (err) {
+        alert("Incident delete failed. Check API.");
+        console.error(err);
+      }
+    }
+
+    document.getElementById("incident-form").addEventListener("submit", createSocIncident);
 
     loadSocSummary();
   </script>
