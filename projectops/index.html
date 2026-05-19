@@ -315,6 +315,47 @@
     }
 
 
+
+    .project-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+
+    .mini-btn {
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 12px;
+      padding: 8px 11px;
+      color: var(--text);
+      background: rgba(255,255,255,.05);
+      cursor: pointer;
+      font-weight: 900;
+      font-size: 12px;
+    }
+
+    .mini-btn.track-btn {
+      color: #062014;
+      background: var(--green);
+      border-color: rgba(143, 247, 178, .4);
+    }
+
+    .mini-btn.risk-btn {
+      color: #26060c;
+      background: var(--red);
+      border-color: rgba(255, 107, 134, .4);
+    }
+
+    .mini-btn.delete-btn {
+      color: #26060c;
+      background: var(--red);
+      border-color: rgba(255, 107, 134, .4);
+    }
+
+    .mini-btn:hover {
+      transform: translateY(-1px);
+    }
+
     .form-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -637,6 +678,11 @@
                 Scope: ${escapeHtml(project.scope)}
               </div>
               <div class="bar"><div class="fill" style="width: ${progress}%"></div></div>
+              <div class="project-actions">
+                <button class="mini-btn track-btn" type="button" onclick="markProjectOnTrack(${Number(project.id)})">Mark On Track</button>
+                <button class="mini-btn risk-btn" type="button" onclick="markProjectRisk(${Number(project.id)})">Mark Risk</button>
+                <button class="mini-btn delete-btn" type="button" onclick="deleteProject(${Number(project.id)})">Delete</button>
+              </div>
             </div>
           `;
         }).join("");
@@ -697,6 +743,58 @@
       }
     }
 
+
+
+    async function updateProjectStatus(projectId, status) {
+      if (!projectId) return;
+
+      try {
+        const res = await fetch(`/api/projectops/projects/${projectId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status })
+        });
+
+        if (!res.ok) {
+          throw new Error("Update failed: " + res.status);
+        }
+
+        await loadProjectOpsSummary();
+      } catch (err) {
+        alert("Project update failed. Check API.");
+        console.error(err);
+      }
+    }
+
+    async function markProjectOnTrack(projectId) {
+      await updateProjectStatus(projectId, "ontrack");
+    }
+
+    async function markProjectRisk(projectId) {
+      await updateProjectStatus(projectId, "risk");
+    }
+
+    async function deleteProject(projectId) {
+      if (!projectId) return;
+
+      const ok = confirm(`Delete project #${projectId}?`);
+      if (!ok) return;
+
+      try {
+        const res = await fetch(`/api/projectops/projects/${projectId}`, {
+          method: "DELETE"
+        });
+
+        if (!res.ok) {
+          throw new Error("Delete failed: " + res.status);
+        }
+
+        await loadProjectOpsSummary();
+      } catch (err) {
+        alert("Project delete failed. Check API.");
+        console.error(err);
+      }
+    }
 
     async function createProjectOpsProject(event) {
       event.preventDefault();
