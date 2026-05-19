@@ -12,7 +12,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 app = FastAPI(
     title="ENYRAX Cloud API",
-    version="0.9.0",
+    version="1.0.0",
 )
 
 
@@ -1095,6 +1095,15 @@ def create_projectops_project(payload: ProjectOpsProjectCreate):
             },
         ).mappings().first()
 
+        write_audit_log(
+            conn,
+            module="projectops",
+            entity_type="project",
+            entity_id=row["id"],
+            action="create",
+            summary=f"Created ProjectOps project: {row['title']}",
+        )
+
     return {
         "status": "created",
         "project": project_row_to_dict(row),
@@ -1153,6 +1162,16 @@ def update_projectops_project(project_id: int, payload: ProjectOpsProjectUpdate)
             params,
         ).mappings().first()
 
+        if row is not None:
+            write_audit_log(
+                conn,
+                module="projectops",
+                entity_type="project",
+                entity_id=row["id"],
+                action="update",
+                summary=f"Updated ProjectOps project: {row['title']}",
+            )
+
     if row is None:
         raise HTTPException(status_code=404, detail="Project not found")
 
@@ -1177,6 +1196,16 @@ def delete_projectops_project(project_id: int):
             ),
             {"project_id": project_id},
         ).mappings().first()
+
+        if row is not None:
+            write_audit_log(
+                conn,
+                module="projectops",
+                entity_type="project",
+                entity_id=row["id"],
+                action="delete",
+                summary=f"Deleted ProjectOps project: {row['title']}",
+            )
 
     if row is None:
         raise HTTPException(status_code=404, detail="Project not found")
@@ -1280,6 +1309,15 @@ def create_soc_incident(payload: SocIncidentCreate):
             },
         ).mappings().first()
 
+        write_audit_log(
+            conn,
+            module="soc",
+            entity_type="incident",
+            entity_id=row["id"],
+            action="create",
+            summary=f"Created SOC incident: {row['title']}",
+        )
+
     return {
         "status": "created",
         "incident": incident_row_to_dict(row),
@@ -1334,6 +1372,16 @@ def update_soc_incident(incident_id: int, payload: SocIncidentUpdate):
             params,
         ).mappings().first()
 
+        if row is not None:
+            write_audit_log(
+                conn,
+                module="soc",
+                entity_type="incident",
+                entity_id=row["id"],
+                action="update",
+                summary=f"Updated SOC incident: {row['title']}",
+            )
+
     if row is None:
         raise HTTPException(status_code=404, detail="Incident not found")
 
@@ -1358,6 +1406,16 @@ def delete_soc_incident(incident_id: int):
             ),
             {"incident_id": incident_id},
         ).mappings().first()
+
+        if row is not None:
+            write_audit_log(
+                conn,
+                module="soc",
+                entity_type="incident",
+                entity_id=row["id"],
+                action="delete",
+                summary=f"Deleted SOC incident: {row['title']}",
+            )
 
     if row is None:
         raise HTTPException(status_code=404, detail="Incident not found")
