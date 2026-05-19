@@ -4,7 +4,7 @@ from typing import Optional
 import os
 import socket
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Header
 from pydantic import BaseModel, Field
 from sqlalchemy import create_engine, text
 from sqlalchemy.exc import SQLAlchemyError
@@ -12,7 +12,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 app = FastAPI(
     title="ENYRAX Cloud API",
-    version="1.0.0",
+    version="1.1.0",
 )
 
 
@@ -138,6 +138,13 @@ MODULES = [
         "description": "Project timeline, worklog cost mapping and overrun risk view.",
     },
     {
+        "key": "audit",
+        "name": "Audit Logs",
+        "route": "/audit/",
+        "status": "api-connected",
+        "description": "Operation trail for SOC, ServiceOps and ProjectOps create / update / delete actions.",
+    },
+    {
         "key": "status",
         "name": "Server Status",
         "route": "/status/",
@@ -145,6 +152,35 @@ MODULES = [
         "description": "Cloud host, Nginx, HTTPS, API health and deployment checkpoint.",
     },
 ]
+
+
+ROLE_LEVELS = {
+    "viewer": 1,
+    "operator": 2,
+    "supervisor": 3,
+    "admin": 4,
+}
+
+
+def normalize_demo_role(role: Optional[str]) -> str:
+    normalized = (role or "viewer").strip().lower()
+
+    if normalized not in ROLE_LEVELS:
+        raise HTTPException(status_code=403, detail=f"Invalid demo role: {normalized}")
+
+    return normalized
+
+
+def require_role(current_role: Optional[str], minimum_role: str) -> str:
+    role = normalize_demo_role(current_role)
+
+    if ROLE_LEVELS[role] < ROLE_LEVELS[minimum_role]:
+        raise HTTPException(
+            status_code=403,
+            detail=f"Role '{role}' requires '{minimum_role}' or higher",
+        )
+
+    return role
 
 
 def require_db():
@@ -246,6 +282,7 @@ def health():
             "soc": "api-driven",
             "serviceops": "api-driven",
             "projectops": "api-driven",
+            "audit": "api-connected",
             "status": "api-connected",
         },
     }
@@ -846,7 +883,11 @@ def get_serviceops_ticket(ticket_id: int):
 
 
 @app.post("/api/serviceops/tickets")
-def create_serviceops_ticket(payload: ServiceOpsTicketCreate):
+def create_serviceops_ticket(
+    payload: ServiceOpsTicketCreate,
+    demo_role: str = Header(default="admin", alias="X-Demo-Role"),
+):
+    require_role(demo_role, "operator")
     db = require_db()
 
     with db.begin() as conn:
@@ -895,7 +936,12 @@ def create_serviceops_ticket(payload: ServiceOpsTicketCreate):
 
 
 @app.put("/api/serviceops/tickets/{ticket_id}")
-def update_serviceops_ticket(ticket_id: int, payload: ServiceOpsTicketUpdate):
+def update_serviceops_ticket(
+    ticket_id: int,
+    payload: ServiceOpsTicketUpdate,
+    demo_role: str = Header(default="admin", alias="X-Demo-Role"),
+):
+    require_role(demo_role, "operator")
     db = require_db()
     updates = payload.model_dump(exclude_unset=True)
 
@@ -962,7 +1008,11 @@ def update_serviceops_ticket(ticket_id: int, payload: ServiceOpsTicketUpdate):
 
 
 @app.delete("/api/serviceops/tickets/{ticket_id}")
-def delete_serviceops_ticket(ticket_id: int):
+def delete_serviceops_ticket(
+    ticket_id: int,
+    demo_role: str = Header(default="admin", alias="X-Demo-Role"),
+):
+    require_role(demo_role, "admin")
     db = require_db()
 
     with db.begin() as conn:
@@ -1056,7 +1106,11 @@ def get_projectops_project(project_id: int):
 
 
 @app.post("/api/projectops/projects")
-def create_projectops_project(payload: ProjectOpsProjectCreate):
+def create_projectops_project(
+    payload: ProjectOpsProjectCreate,
+    demo_role: str = Header(default="admin", alias="X-Demo-Role"),
+):
+    require_role(demo_role, "operator")
     db = require_db()
 
     with db.begin() as conn:
@@ -1111,7 +1165,12 @@ def create_projectops_project(payload: ProjectOpsProjectCreate):
 
 
 @app.put("/api/projectops/projects/{project_id}")
-def update_projectops_project(project_id: int, payload: ProjectOpsProjectUpdate):
+def update_projectops_project(
+    project_id: int,
+    payload: ProjectOpsProjectUpdate,
+    demo_role: str = Header(default="admin", alias="X-Demo-Role"),
+):
+    require_role(demo_role, "operator")
     db = require_db()
     updates = payload.model_dump(exclude_unset=True)
 
@@ -1182,7 +1241,11 @@ def update_projectops_project(project_id: int, payload: ProjectOpsProjectUpdate)
 
 
 @app.delete("/api/projectops/projects/{project_id}")
-def delete_projectops_project(project_id: int):
+def delete_projectops_project(
+    project_id: int,
+    demo_role: str = Header(default="admin", alias="X-Demo-Role"),
+):
+    require_role(demo_role, "admin")
     db = require_db()
 
     with db.begin() as conn:
@@ -1274,7 +1337,11 @@ def get_soc_incident(incident_id: int):
 
 
 @app.post("/api/soc/incidents")
-def create_soc_incident(payload: SocIncidentCreate):
+def create_soc_incident(
+    payload: SocIncidentCreate,
+    demo_role: str = Header(default="admin", alias="X-Demo-Role"),
+):
+    require_role(demo_role, "operator")
     db = require_db()
 
     with db.begin() as conn:
@@ -1325,7 +1392,12 @@ def create_soc_incident(payload: SocIncidentCreate):
 
 
 @app.put("/api/soc/incidents/{incident_id}")
-def update_soc_incident(incident_id: int, payload: SocIncidentUpdate):
+def update_soc_incident(
+    incident_id: int,
+    payload: SocIncidentUpdate,
+    demo_role: str = Header(default="admin", alias="X-Demo-Role"),
+):
+    require_role(demo_role, "operator")
     db = require_db()
     updates = payload.model_dump(exclude_unset=True)
 
@@ -1392,7 +1464,11 @@ def update_soc_incident(incident_id: int, payload: SocIncidentUpdate):
 
 
 @app.delete("/api/soc/incidents/{incident_id}")
-def delete_soc_incident(incident_id: int):
+def delete_soc_incident(
+    incident_id: int,
+    demo_role: str = Header(default="admin", alias="X-Demo-Role"),
+):
+    require_role(demo_role, "admin")
     db = require_db()
 
     with db.begin() as conn:
@@ -1430,7 +1506,12 @@ def delete_soc_incident(incident_id: int):
 
 
 @app.get("/api/audit/logs")
-def list_audit_logs(limit: int = 50):
+def list_audit_logs(
+    limit: int = 50,
+    demo_role: str = Header(default="admin", alias="X-Demo-Role"),
+):
+    require_role(demo_role, "supervisor")
+
     db = require_db()
     safe_limit = max(1, min(limit, 200))
 
