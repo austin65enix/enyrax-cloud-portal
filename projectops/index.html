@@ -496,6 +496,16 @@
               </label>
 
               <label>
+                Start Date
+                <input id="project-start-date" name="start_date" type="date">
+              </label>
+
+              <label>
+                End Date
+                <input id="project-end-date" name="end_date" type="date">
+              </label>
+
+              <label>
                 Budget Hours
                 <input id="project-budget" name="budget_hours" type="number" step="1" min="0" value="60">
               </label>
@@ -623,6 +633,7 @@
               <div class="meta">
                 Owner: ${escapeHtml(project.owner)} · Budget: ${escapeHtml(project.budget_hours)}h
                 · Actual: ${escapeHtml(project.actual_hours)}h · ServiceOps linked tickets: ${escapeHtml(project.linked_tickets)}<br>
+                Period: ${escapeHtml(project.start_date || "-")} → ${escapeHtml(project.end_date || "-")}<br>
                 Scope: ${escapeHtml(project.scope)}
               </div>
               <div class="bar"><div class="fill" style="width: ${progress}%"></div></div>
@@ -701,7 +712,9 @@
         actual_hours: Number(document.getElementById("project-actual").value || 0),
         linked_tickets: Number(document.getElementById("project-linked").value || 0),
         scope: document.getElementById("project-scope").value.trim(),
-        progress: Number(document.getElementById("project-progress").value || 0)
+        progress: Number(document.getElementById("project-progress").value || 0),
+        start_date: document.getElementById("project-start-date").value || null,
+        end_date: document.getElementById("project-end-date").value || null
       };
 
       if (!payload.title || !payload.owner || !payload.scope) {
