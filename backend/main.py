@@ -285,6 +285,7 @@ def modules():
 def soc_summary():
     fallback_incidents = [
         {
+            "id": None,
             "title": "Suspicious SSH Brute Force Pattern",
             "severity": "critical",
             "source_ip": "185.220.101.42",
@@ -294,6 +295,7 @@ def soc_summary():
             "mitre": "T1110 Brute Force",
         },
         {
+            "id": None,
             "title": "Privilege Escalation After Successful Login",
             "severity": "high",
             "source_ip": "203.0.113.77",
@@ -303,6 +305,7 @@ def soc_summary():
             "mitre": "T1068 Privilege Escalation",
         },
         {
+            "id": None,
             "title": "Wazuh Agent Disconnected and Reconnected",
             "severity": "medium",
             "source_ip": "10.20.5.17",
@@ -324,6 +327,7 @@ def soc_summary():
                     text(
                         """
                         SELECT
+                            id,
                             title,
                             severity,
                             source_ip,
@@ -339,6 +343,7 @@ def soc_summary():
 
             hot_incidents = [
                 {
+                    "id": row["id"],
                     "title": row["title"],
                     "severity": row["severity"],
                     "source_ip": row["source_ip"],
