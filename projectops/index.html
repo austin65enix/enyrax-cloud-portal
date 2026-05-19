@@ -756,6 +756,25 @@
       }
     }
 
+
+    function setDefaultProjectDates() {
+      const startEl = document.getElementById("project-start-date");
+      const endEl = document.getElementById("project-end-date");
+
+      if (!startEl || !endEl) return;
+
+      const today = new Date();
+      const end = new Date();
+      end.setDate(today.getDate() + 30);
+
+      const toDateValue = (date) => date.toISOString().slice(0, 10);
+
+      if (!startEl.value) startEl.value = toDateValue(today);
+      if (!endEl.value) endEl.value = toDateValue(end);
+    }
+
+    setDefaultProjectDates();
+
     document.getElementById("project-form").addEventListener("submit", createProjectOpsProject);
 
     loadProjectOpsSummary();
