@@ -12,7 +12,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 app = FastAPI(
     title="ENYRAX Cloud API",
-    version="0.8.0",
+    version="0.9.0",
 )
 
 
@@ -202,6 +202,35 @@ def incident_row_to_dict(row):
         "created_at": row["created_at"].isoformat() if row["created_at"] else None,
         "updated_at": row["updated_at"].isoformat() if row["updated_at"] else None,
     }
+
+
+def write_audit_log(
+    conn,
+    module: str,
+    entity_type: str,
+    entity_id: Optional[int],
+    action: str,
+    summary: str,
+    actor: str = "demo-user",
+) -> None:
+    conn.execute(
+        text(
+            """
+            INSERT INTO audit_logs
+                (module, entity_type, entity_id, action, summary, actor)
+            VALUES
+                (:module, :entity_type, :entity_id, :action, :summary, :actor)
+            """
+        ),
+        {
+            "module": module,
+            "entity_type": entity_type,
+            "entity_id": entity_id,
+            "action": action,
+            "summary": summary,
+            "actor": actor,
+        },
+    )
 
 
 @app.get("/api/health")
@@ -850,6 +879,15 @@ def create_serviceops_ticket(payload: ServiceOpsTicketCreate):
             },
         ).mappings().first()
 
+        write_audit_log(
+            conn,
+            module="serviceops",
+            entity_type="ticket",
+            entity_id=row["id"],
+            action="create",
+            summary=f"Created ServiceOps ticket: {row['title']}",
+        )
+
     return {
         "status": "created",
         "ticket": ticket_row_to_dict(row),
@@ -904,6 +942,16 @@ def update_serviceops_ticket(ticket_id: int, payload: ServiceOpsTicketUpdate):
             params,
         ).mappings().first()
 
+        if row is not None:
+            write_audit_log(
+                conn,
+                module="serviceops",
+                entity_type="ticket",
+                entity_id=row["id"],
+                action="update",
+                summary=f"Updated ServiceOps ticket: {row['title']}",
+            )
+
     if row is None:
         raise HTTPException(status_code=404, detail="Ticket not found")
 
@@ -928,6 +976,16 @@ def delete_serviceops_ticket(ticket_id: int):
             ),
             {"ticket_id": ticket_id},
         ).mappings().first()
+
+        if row is not None:
+            write_audit_log(
+                conn,
+                module="serviceops",
+                entity_type="ticket",
+                entity_id=row["id"],
+                action="delete",
+                summary=f"Deleted ServiceOps ticket: {row['title']}",
+            )
 
     if row is None:
         raise HTTPException(status_code=404, detail="Ticket not found")
@@ -1310,4 +1368,44 @@ def delete_soc_incident(incident_id: int):
             "id": row["id"],
             "title": row["title"],
         },
+    }
+
+
+@app.get("/api/audit/logs")
+def list_audit_logs(limit: int = 50):
+    db = require_db()
+    safe_limit = max(1, min(limit, 200))
+
+    with db.connect() as conn:
+        rows = conn.execute(
+            text(
+                """
+                SELECT
+                    id, module, entity_type, entity_id,
+                    action, summary, actor, created_at
+                FROM audit_logs
+                ORDER BY created_at DESC, id DESC
+                LIMIT :limit
+                """
+            ),
+            {"limit": safe_limit},
+        ).mappings().all()
+
+    return {
+        "status": "ok",
+        "source": "postgresql",
+        "count": len(rows),
+        "logs": [
+            {
+                "id": row["id"],
+                "module": row["module"],
+                "entity_type": row["entity_type"],
+                "entity_id": row["entity_id"],
+                "action": row["action"],
+                "summary": row["summary"],
+                "actor": row["actor"],
+                "created_at": row["created_at"].isoformat() if row["created_at"] else None,
+            }
+            for row in rows
+        ],
     }
