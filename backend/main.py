@@ -12,7 +12,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 app = FastAPI(
     title="ENYRAX Cloud API",
-    version="0.6.0",
+    version="0.7.0",
 )
 
 
@@ -71,6 +71,8 @@ class ProjectOpsProjectCreate(BaseModel):
     linked_tickets: int = 0
     scope: str = Field(..., min_length=1)
     progress: int = Field(default=0, ge=0, le=100)
+    start_date: Optional[str] = None
+    end_date: Optional[str] = None
 
 
 class ProjectOpsProjectUpdate(BaseModel):
@@ -82,6 +84,8 @@ class ProjectOpsProjectUpdate(BaseModel):
     linked_tickets: Optional[int] = None
     scope: Optional[str] = None
     progress: Optional[int] = Field(default=None, ge=0, le=100)
+    start_date: Optional[str] = None
+    end_date: Optional[str] = None
 
 
 MODULES = [
@@ -156,6 +160,8 @@ def project_row_to_dict(row):
         "linked_tickets": int(row["linked_tickets"]),
         "scope": row["scope"],
         "progress": int(row["progress"]),
+        "start_date": row["start_date"].isoformat() if row["start_date"] else None,
+        "end_date": row["end_date"].isoformat() if row["end_date"] else None,
         "display_order": row["display_order"],
         "created_at": row["created_at"].isoformat() if row["created_at"] else None,
         "updated_at": row["updated_at"].isoformat() if row["updated_at"] else None,
@@ -548,6 +554,7 @@ def serviceops_summary():
 def projectops_summary():
     fallback_projects = [
         {
+            "id": None,
             "title": "ERP Test Environment Upgrade",
             "status": "ontrack",
             "owner": "IT / Infra",
@@ -556,8 +563,11 @@ def projectops_summary():
             "linked_tickets": 11,
             "scope": "VM build, network policy, backup baseline, UAT support.",
             "progress": 63,
+            "start_date": "2026-05-18",
+            "end_date": "2026-06-30",
         },
         {
+            "id": None,
             "title": "Vendor VPN Access Control Review",
             "status": "watch",
             "owner": "Security / Infra",
@@ -566,8 +576,11 @@ def projectops_summary():
             "linked_tickets": 7,
             "scope": "Firewall rule cleanup, expiry date, owner mapping and audit evidence.",
             "progress": 76,
+            "start_date": "2026-05-20",
+            "end_date": "2026-06-20",
         },
         {
+            "id": None,
             "title": "Backup Storage Improvement",
             "status": "risk",
             "owner": "Infra / Storage",
@@ -576,6 +589,8 @@ def projectops_summary():
             "linked_tickets": 9,
             "scope": "Capacity review, retention cleanup, expansion planning and recovery test.",
             "progress": 94,
+            "start_date": "2026-05-25",
+            "end_date": "2026-07-05",
         },
     ]
 
@@ -590,6 +605,7 @@ def projectops_summary():
                     text(
                         """
                         SELECT
+                            id,
                             title,
                             status,
                             owner,
@@ -597,7 +613,9 @@ def projectops_summary():
                             actual_hours,
                             linked_tickets,
                             scope,
-                            progress
+                            progress,
+                            start_date,
+                            end_date
                         FROM projectops_projects
                         ORDER BY display_order ASC, id ASC
                         """
@@ -606,6 +624,7 @@ def projectops_summary():
 
             projects = [
                 {
+                    "id": row["id"],
                     "title": row["title"],
                     "status": row["status"],
                     "owner": row["owner"],
@@ -614,6 +633,8 @@ def projectops_summary():
                     "linked_tickets": int(row["linked_tickets"]),
                     "scope": row["scope"],
                     "progress": int(row["progress"]),
+                    "start_date": row["start_date"].isoformat() if row["start_date"] else None,
+                    "end_date": row["end_date"].isoformat() if row["end_date"] else None,
                 }
                 for row in rows
             ]
@@ -890,7 +911,8 @@ def list_projectops_projects():
                 SELECT
                     id, title, status, owner,
                     budget_hours, actual_hours, linked_tickets,
-                    scope, progress, display_order, created_at, updated_at
+                    scope, progress, start_date, end_date,
+                    display_order, created_at, updated_at
                 FROM projectops_projects
                 ORDER BY display_order ASC, id ASC
                 """
@@ -916,7 +938,8 @@ def get_projectops_project(project_id: int):
                 SELECT
                     id, title, status, owner,
                     budget_hours, actual_hours, linked_tickets,
-                    scope, progress, display_order, created_at, updated_at
+                    scope, progress, start_date, end_date,
+                    display_order, created_at, updated_at
                 FROM projectops_projects
                 WHERE id = :project_id
                 """
@@ -947,14 +970,15 @@ def create_projectops_project(payload: ProjectOpsProjectCreate):
                 """
                 INSERT INTO projectops_projects
                     (title, status, owner, budget_hours, actual_hours,
-                     linked_tickets, scope, progress, display_order)
+                     linked_tickets, scope, progress, start_date, end_date, display_order)
                 VALUES
                     (:title, :status, :owner, :budget_hours, :actual_hours,
-                     :linked_tickets, :scope, :progress, :display_order)
+                     :linked_tickets, :scope, :progress, :start_date, :end_date, :display_order)
                 RETURNING
                     id, title, status, owner,
                     budget_hours, actual_hours, linked_tickets,
-                    scope, progress, display_order, created_at, updated_at
+                    scope, progress, start_date, end_date,
+                    display_order, created_at, updated_at
                 """
             ),
             {
@@ -966,6 +990,8 @@ def create_projectops_project(payload: ProjectOpsProjectCreate):
                 "linked_tickets": payload.linked_tickets,
                 "scope": payload.scope,
                 "progress": payload.progress,
+                "start_date": payload.start_date,
+                "end_date": payload.end_date,
                 "display_order": int(max_order) + 1,
             },
         ).mappings().first()
@@ -993,6 +1019,8 @@ def update_projectops_project(project_id: int, payload: ProjectOpsProjectUpdate)
         "linked_tickets",
         "scope",
         "progress",
+        "start_date",
+        "end_date",
     }
 
     set_clauses = []
@@ -1019,7 +1047,8 @@ def update_projectops_project(project_id: int, payload: ProjectOpsProjectUpdate)
                 RETURNING
                     id, title, status, owner,
                     budget_hours, actual_hours, linked_tickets,
-                    scope, progress, display_order, created_at, updated_at
+                    scope, progress, start_date, end_date,
+                    display_order, created_at, updated_at
                 """
             ),
             params,
