@@ -1,5 +1,78 @@
 # ENYRAX Cloud Portal Release Notes
 
+## v0.2.0-crud-demo
+
+Release date: 2026-05-19
+
+## Summary
+
+This release upgrades ENYRAX Cloud Portal from a DB-backed dashboard demo into a CRUD-enabled operation platform prototype.
+
+SOC, ServiceOps and ProjectOps now support database-backed summary APIs and basic create / update / delete workflows.
+
+## Completed
+
+- SOC Incident CRUD API
+- SOC frontend incident controls
+- ServiceOps Ticket CRUD API
+- ServiceOps frontend create / mark done / delete controls
+- ProjectOps Project CRUD API
+- ProjectOps frontend create / status update / delete controls
+- ProjectOps start date / end date support
+- Native date picker for ProjectOps project form
+- PostgreSQL-backed summary APIs
+- CRUD count healthcheck coverage
+
+## API Endpoints
+
+### SOC
+
+- `GET /api/soc/summary`
+- `GET /api/soc/incidents`
+- `GET /api/soc/incidents/{incident_id}`
+- `POST /api/soc/incidents`
+- `PUT /api/soc/incidents/{incident_id}`
+- `DELETE /api/soc/incidents/{incident_id}`
+
+### ServiceOps
+
+- `GET /api/serviceops/summary`
+- `GET /api/serviceops/tickets`
+- `GET /api/serviceops/tickets/{ticket_id}`
+- `POST /api/serviceops/tickets`
+- `PUT /api/serviceops/tickets/{ticket_id}`
+- `DELETE /api/serviceops/tickets/{ticket_id}`
+
+### ProjectOps
+
+- `GET /api/projectops/summary`
+- `GET /api/projectops/projects`
+- `GET /api/projectops/projects/{project_id}`
+- `POST /api/projectops/projects`
+- `PUT /api/projectops/projects/{project_id}`
+- `DELETE /api/projectops/projects/{project_id}`
+
+## Current Architecture
+
+```text
+Browser
+  ↓ HTTPS
+Nginx
+  ├── Static Frontend Pages
+  │   ├── /
+  │   ├── /soc/
+  │   ├── /serviceops/
+  │   ├── /projectops/
+  │   └── /status/
+  │
+  └── /api/ reverse proxy
+        ↓
+      FastAPI
+        ↓
+      PostgreSQL
+
+# ENYRAX Cloud Portal Release Notes
+
 ## v0.1.0-cloud-api-db-demo
 
 Release date: 2026-05-18
