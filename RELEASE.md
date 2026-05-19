@@ -10,6 +10,10 @@ This release upgrades ENYRAX Cloud Portal from a DB-backed dashboard demo into a
 
 SOC, ServiceOps and ProjectOps now support database-backed summary APIs and basic create / update / delete workflows.
 
+## Live URL
+
+- https://portal.soc-monitoring.dev
+
 ## Completed
 
 - SOC Incident CRUD API
@@ -70,8 +74,28 @@ Nginx
       FastAPI
         ↓
       PostgreSQL
+```
 
-# ENYRAX Cloud Portal Release Notes
+## Current Product Status
+
+```text
+SOC          CRUD-enabled
+ServiceOps   CRUD-enabled
+ProjectOps   CRUD-enabled
+Status Page  API-connected
+Portal Home  Module API-connected
+```
+
+## Next Phase
+
+- Add authentication
+- Add role-based access control
+- Add audit logs for create / update / delete actions
+- Add ProjectOps and ServiceOps relationship mapping
+- Add SOC incident timeline database table
+- Add admin data management page
+
+---
 
 ## v0.1.0-cloud-api-db-demo
 
