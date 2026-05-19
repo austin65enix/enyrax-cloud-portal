@@ -67,4 +67,28 @@ curl -s https://portal.soc-monitoring.dev/api/serviceops/summary | jq -r '.sourc
 echo -n "projectops: "
 curl -s https://portal.soc-monitoring.dev/api/projectops/summary | jq -r '.source'
 
+echo
+echo "[12] CRUD API Counts"
+
+echo -n "SOC incidents: "
+curl -s https://portal.soc-monitoring.dev/api/soc/incidents | jq -r '.count'
+
+echo -n "ServiceOps tickets: "
+curl -s https://portal.soc-monitoring.dev/api/serviceops/tickets | jq -r '.count'
+
+echo -n "ProjectOps projects: "
+curl -s https://portal.soc-monitoring.dev/api/projectops/projects | jq -r '.count'
+
+echo
+echo "[13] DB-backed Summary Sources"
+
+echo -n "SOC summary source: "
+curl -s https://portal.soc-monitoring.dev/api/soc/summary | jq -r '.source'
+
+echo -n "ServiceOps summary source: "
+curl -s https://portal.soc-monitoring.dev/api/serviceops/summary | jq -r '.source'
+
+echo -n "ProjectOps summary source: "
+curl -s https://portal.soc-monitoring.dev/api/projectops/summary | jq -r '.source'
+
 echo "== Done =="
