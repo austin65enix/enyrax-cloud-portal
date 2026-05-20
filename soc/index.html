@@ -256,6 +256,37 @@
       font-size: 13px;
     }
 
+    .role-note {
+      display: inline-flex;
+      width: fit-content;
+      gap: 8px;
+      align-items: center;
+      border: 1px solid rgba(245, 211, 122, .22);
+      background: rgba(245, 211, 122, .06);
+      color: var(--muted);
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-size: 13px;
+      font-weight: 800;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+
+    .role-note strong { color: var(--gold); }
+
+    .management-note {
+      margin-top: 12px;
+      color: var(--gold);
+      font-size: 13px;
+      font-weight: 850;
+      display: none;
+    }
+
+    .error-text {
+      color: var(--red);
+      font-weight: 850;
+    }
+
 
     .form-grid {
       display: grid;
@@ -378,6 +409,11 @@
           response recommendations.
         </p>
         <div class="api-line" id="api-time">Loading SOC summary from API...</div>
+        <div class="role-note">
+          Current role: <strong id="current-role-label">Admin</strong>
+          <span>· Viewer read-only · Operator updates incidents · Admin deletes</span>
+        </div>
+        <div class="management-note" id="management-note">Supervisor management controls are enabled for incident triage operations.</div>
       </div>
       <a class="back" href="/">Back to Portal</a>
     </section>
@@ -414,7 +450,7 @@
           </div>
         </div>
 
-        <div class="incident" style="margin-top: 16px;">
+        <div class="incident" id="incident-create-panel" style="margin-top: 16px;">
           <div class="incident-top">
             <div class="title">Add SOC Incident</div>
             <div class="sev high">CREATE</div>
@@ -498,6 +534,8 @@
     </footer>
   </main>
 
+  <script src="/shared/role-switcher.js"></script>
+
   <script>
     const severityClass = {
       critical: "critical",
@@ -514,11 +552,110 @@
         .replaceAll("'", "&#039;");
     }
 
+    function roleLabel(role) {
+      const labels = {
+        viewer: "Viewer",
+        operator: "Operator",
+        supervisor: "Supervisor",
+        admin: "Admin"
+      };
+
+      return labels[role] || role;
+    }
+
+    function currentRole() {
+      return window.ENYRAXRole ? window.ENYRAXRole.get() : "admin";
+    }
+
+    function roleLevel(role) {
+      const levels = {
+        viewer: 1,
+        operator: 2,
+        supervisor: 3,
+        admin: 4
+      };
+
+      return levels[role] || 1;
+    }
+
+    function canWrite() {
+      return roleLevel(currentRole()) >= roleLevel("operator");
+    }
+
+    function canDelete() {
+      return roleLevel(currentRole()) >= roleLevel("admin");
+    }
+
+    function canSeeManagementHint() {
+      return roleLevel(currentRole()) >= roleLevel("supervisor");
+    }
+
+    function updateRoleLabel() {
+      const el = document.getElementById("current-role-label");
+      if (el) el.textContent = roleLabel(currentRole());
+    }
+
+    function applyRoleVisibility() {
+      const createPanel = document.getElementById("incident-create-panel");
+      const managementNote = document.getElementById("management-note");
+
+      if (createPanel) {
+        createPanel.style.display = canWrite() ? "block" : "none";
+      }
+
+      if (managementNote) {
+        managementNote.style.display = canSeeManagementHint() ? "block" : "none";
+      }
+    }
+
+    async function parseError(res, fallback) {
+      const errorData = await res.json().catch(() => ({}));
+      return new Error(errorData.detail || `${fallback}: ${res.status}`);
+    }
+
+    function renderIncidentActions(item) {
+      const id = Number(item.id);
+
+      if (!id || !canWrite()) {
+        return "";
+      }
+
+      const actions = [];
+
+      if (String(item.severity || "").toLowerCase() !== "critical") {
+        actions.push(`<button class="mini-btn critical-btn" type="button" onclick="markIncidentSeverity(${id}, 'critical')">Mark Critical</button>`);
+      }
+
+      if (String(item.severity || "").toLowerCase() !== "high") {
+        actions.push(`<button class="mini-btn high-btn" type="button" onclick="markIncidentSeverity(${id}, 'high')">Mark High</button>`);
+      }
+
+      if (canDelete()) {
+        actions.push(`<button class="mini-btn delete-btn" type="button" onclick="deleteIncident(${id})">Delete</button>`);
+      }
+
+      if (!actions.length) {
+        return "";
+      }
+
+      return `
+        <div class="incident-actions">
+          ${actions.join("")}
+        </div>
+      `;
+    }
+
     async function loadSocSummary() {
+      updateRoleLabel();
+      applyRoleVisibility();
+
       const apiTime = document.getElementById("api-time");
 
       try {
-        const res = await fetch("/api/soc/summary", { cache: "no-store" });
+        const res = await fetch("/api/soc/summary", {
+          cache: "no-store",
+          headers: window.ENYRAXRole ? window.ENYRAXRole.header() : {}
+        });
 
         if (!res.ok) {
           throw new Error("SOC summary API returned " + res.status);
@@ -553,11 +690,7 @@
                 Source IP: ${escapeHtml(item.source_ip)} · Target: ${escapeHtml(item.target)} · Duplicate Count: ${escapeHtml(item.duplicate_count)}<br>
                 Analysis Type: ${escapeHtml(item.analysis_type)} · MITRE: ${escapeHtml(item.mitre)}
               </div>
-              <div class="incident-actions">
-                <button class="mini-btn critical-btn" type="button" onclick="markIncidentSeverity(${Number(item.id)}, 'critical')">Mark Critical</button>
-                <button class="mini-btn high-btn" type="button" onclick="markIncidentSeverity(${Number(item.id)}, 'high')">Mark High</button>
-                <button class="mini-btn delete-btn" type="button" onclick="deleteIncident(${Number(item.id)})">Delete</button>
-              </div>
+              ${renderIncidentActions(item)}
             </div>
           `;
         }).join("");
@@ -613,11 +746,13 @@
       try {
         const res = await fetch("/api/soc/incidents", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: window.ENYRAXRole
+            ? window.ENYRAXRole.jsonHeaders()
+            : { "Content-Type": "application/json" },
           body: JSON.stringify(payload)
         });
 
-        if (!res.ok) throw new Error("Create failed: " + res.status);
+        if (!res.ok) throw await parseError(res, "Create failed");
 
         const data = await res.json();
         message.textContent = `Created incident #${data.incident.id}`;
@@ -632,7 +767,7 @@
 
         await loadSocSummary();
       } catch (err) {
-        message.textContent = "Create failed. Check API or console.";
+        message.textContent = err.message;
         message.style.color = "#ff6b86";
         console.error(err);
       }
@@ -644,15 +779,17 @@
       try {
         const res = await fetch(`/api/soc/incidents/${incidentId}`, {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
+          headers: window.ENYRAXRole
+            ? window.ENYRAXRole.jsonHeaders()
+            : { "Content-Type": "application/json" },
           body: JSON.stringify({ severity })
         });
 
-        if (!res.ok) throw new Error("Update failed: " + res.status);
+        if (!res.ok) throw await parseError(res, "Update failed");
 
         await loadSocSummary();
       } catch (err) {
-        alert("Incident update failed. Check API.");
+        alert(err.message);
         console.error(err);
       }
     }
@@ -665,19 +802,24 @@
 
       try {
         const res = await fetch(`/api/soc/incidents/${incidentId}`, {
-          method: "DELETE"
+          method: "DELETE",
+          headers: window.ENYRAXRole ? window.ENYRAXRole.header() : {}
         });
 
-        if (!res.ok) throw new Error("Delete failed: " + res.status);
+        if (!res.ok) throw await parseError(res, "Delete failed");
 
         await loadSocSummary();
       } catch (err) {
-        alert("Incident delete failed. Check API.");
+        alert(err.message);
         console.error(err);
       }
     }
 
     document.getElementById("incident-form").addEventListener("submit", createSocIncident);
+
+    window.addEventListener("enyrax-role-changed", () => {
+      loadSocSummary();
+    });
 
     loadSocSummary();
   </script>
