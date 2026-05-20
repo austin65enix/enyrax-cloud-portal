@@ -202,6 +202,11 @@
       margin-top: 0;
     }
 
+    .archive-project {
+      border-color: rgba(255, 184, 107, .24);
+      background: rgba(255, 184, 107, .055);
+    }
+
     .title {
       font-size: 16px;
       font-weight: 950;
@@ -268,10 +273,16 @@
       border-color: rgba(255, 107, 134, .4);
     }
 
-    .delete-btn {
-      color: #26060c;
-      background: var(--red);
-      border-color: rgba(255, 107, 134, .4);
+    .archive-btn {
+      color: #241203;
+      background: var(--orange);
+      border-color: rgba(255, 184, 107, .4);
+    }
+
+    .restore-btn {
+      color: #062014;
+      background: var(--green);
+      border-color: rgba(143, 247, 178, .4);
     }
 
     .mini-btn:hover {
@@ -473,7 +484,7 @@
       </div>
       <div class="role-note">
         Current role: <strong id="current-role-label">Admin</strong>
-        <span>· Viewer read-only · Operator updates projects · Admin deletes</span>
+        <span>· Viewer read-only · Operator updates / archives · Supervisor restores</span>
       </div>
     </section>
 
@@ -592,6 +603,19 @@
             </form>
           </div>
         </div>
+
+        <div class="card" id="archive-panel" style="margin-top: 16px;">
+          <div class="card-top">
+            <h2>Archived Projects</h2>
+            <div class="status" id="archive-status">Loading...</div>
+          </div>
+
+          <div id="archive-list">
+            <div class="project archive-project">
+              <div class="meta">Loading archive...</div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <aside>
@@ -684,14 +708,28 @@
       return roleLevel(currentRole()) >= roleLevel("operator");
     }
 
-    function canDelete() {
-      return roleLevel(currentRole()) >= roleLevel("admin");
+    function canArchive() {
+      return roleLevel(currentRole()) >= roleLevel("operator");
+    }
+
+    function canViewArchive() {
+      return roleLevel(currentRole()) >= roleLevel("operator");
+    }
+
+    function canRestore() {
+      return roleLevel(currentRole()) >= roleLevel("supervisor");
     }
 
     function applyRoleVisibility() {
       const createPanel = document.getElementById("project-create-panel");
+      const archivePanel = document.getElementById("archive-panel");
+
       if (createPanel) {
         createPanel.style.display = canWrite() ? "block" : "none";
+      }
+
+      if (archivePanel) {
+        archivePanel.style.display = canViewArchive() ? "block" : "none";
       }
     }
 
@@ -708,6 +746,24 @@
     function formatDate(value) {
       if (!value) return "-";
       return value;
+    }
+
+    function formatTime(value) {
+      if (!value) return "-";
+
+      try {
+        const date = new Date(value);
+        return date.toLocaleString("zh-TW", {
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit"
+        });
+      } catch {
+        return value;
+      }
     }
 
     function resetMetrics() {
@@ -758,10 +814,10 @@
         `);
       }
 
-      if (canDelete()) {
+      if (canArchive()) {
         actions.push(`
-          <button class="mini-btn delete-btn" type="button" onclick="deleteProject(${id})">
-            Delete
+          <button class="mini-btn archive-btn" type="button" onclick="archiveProject(${id})">
+            Archive
           </button>
         `);
       }
@@ -769,6 +825,22 @@
       return `
         <div class="project-actions">
           ${actions.join("")}
+        </div>
+      `;
+    }
+
+    function renderArchiveActions(item) {
+      const id = Number(item.id);
+
+      if (!id || !canRestore()) {
+        return "";
+      }
+
+      return `
+        <div class="project-actions">
+          <button class="mini-btn restore-btn" type="button" onclick="restoreProject(${id})">
+            Restore
+          </button>
         </div>
       `;
     }
@@ -900,6 +972,72 @@
       }
     }
 
+    async function loadArchive() {
+      applyRoleVisibility();
+
+      const archiveStatus = document.getElementById("archive-status");
+      const archiveList = document.getElementById("archive-list");
+
+      if (!canViewArchive()) {
+        if (archiveStatus) archiveStatus.textContent = "Hidden";
+        if (archiveList) archiveList.innerHTML = "";
+        return;
+      }
+
+      archiveStatus.textContent = "Loading...";
+
+      try {
+        const res = await fetch("/api/projectops/projects/archive", {
+          headers: window.ENYRAXRole ? window.ENYRAXRole.header() : {}
+        });
+
+        if (!res.ok) {
+          throw await parseError(res, "Archive load failed");
+        }
+
+        const data = await res.json();
+        const projects = data.projects || [];
+
+        if (!projects.length) {
+          archiveList.innerHTML = `
+            <div class="project archive-project">
+              <div class="empty-text">Archive is empty.</div>
+            </div>
+          `;
+          archiveStatus.textContent = "Empty";
+          return;
+        }
+
+        archiveList.innerHTML = projects.map((item) => {
+          return `
+            <div class="project archive-project">
+              <div class="project-top">
+                <div class="title">${escapeHtml(item.title)}</div>
+                <div class="pill ${escapeHtml(item.status)}">${escapeHtml(statusLabel(item.status))}</div>
+              </div>
+              <div class="meta">
+                Owner: ${escapeHtml(item.owner)} · Status: ${escapeHtml(statusLabel(item.status))}<br>
+                Archived By: ${escapeHtml(item.archived_by || "-")} · Archived At: ${escapeHtml(formatTime(item.archived_at))}<br>
+                Reason: ${escapeHtml(item.archive_reason || "-")}<br>
+                Scope: ${escapeHtml(item.scope || "-")}
+              </div>
+              ${renderArchiveActions(item)}
+            </div>
+          `;
+        }).join("");
+
+        archiveStatus.textContent = `Loaded ${projects.length}`;
+      } catch (err) {
+        console.error("Archive load failed:", err);
+        archiveStatus.textContent = "API error";
+        archiveList.innerHTML = `
+          <div class="project archive-project">
+            <div class="error-text">${escapeHtml(err.message)}</div>
+          </div>
+        `;
+      }
+    }
+
     async function createProject(event) {
       event.preventDefault();
 
@@ -952,7 +1090,7 @@
         document.getElementById("project-actual-hours").value = "0";
         document.getElementById("project-linked-tickets").value = "0";
 
-        await loadProjectOpsSummary();
+        await reloadAll();
       } catch (err) {
         console.error("Create project failed:", err);
         message.textContent = err.message;
@@ -976,17 +1114,17 @@
           throw await parseError(res, "Update failed");
         }
 
-        await loadProjectOpsSummary();
+        await reloadAll();
       } catch (err) {
         console.error("Update project failed:", err);
         alert(err.message);
       }
     }
 
-    async function deleteProject(projectId) {
+    async function archiveProject(projectId) {
       if (!projectId) return;
 
-      const ok = confirm(`Delete ProjectOps project #${projectId}?`);
+      const ok = confirm(`Archive ProjectOps project #${projectId}?`);
       if (!ok) return;
 
       try {
@@ -996,27 +1134,53 @@
         });
 
         if (!res.ok) {
-          throw await parseError(res, "Delete failed");
+          throw await parseError(res, "Archive failed");
         }
 
-        await loadProjectOpsSummary();
+        await reloadAll();
       } catch (err) {
-        console.error("Delete project failed:", err);
+        console.error("Archive project failed:", err);
         alert(err.message);
       }
+    }
+
+    async function restoreProject(projectId) {
+      if (!projectId) return;
+
+      const ok = confirm(`Restore ProjectOps project #${projectId}?`);
+      if (!ok) return;
+
+      try {
+        const res = await fetch(`/api/projectops/projects/${projectId}/restore`, {
+          method: "PUT",
+          headers: window.ENYRAXRole ? window.ENYRAXRole.header() : {}
+        });
+
+        if (!res.ok) {
+          throw await parseError(res, "Restore failed");
+        }
+
+        await reloadAll();
+      } catch (err) {
+        console.error("Restore project failed:", err);
+        alert(err.message);
+      }
+    }
+
+    async function reloadAll() {
+      updateRoleLabel();
+      applyRoleVisibility();
+      await loadProjectOpsSummary();
+      await loadArchive();
     }
 
     document.getElementById("project-form").addEventListener("submit", createProject);
 
     window.addEventListener("enyrax-role-changed", () => {
-      updateRoleLabel();
-      applyRoleVisibility();
-      loadProjectOpsSummary();
+      reloadAll();
     });
 
-    updateRoleLabel();
-    applyRoleVisibility();
-    loadProjectOpsSummary();
+    reloadAll();
   </script>
 </body>
 </html>
