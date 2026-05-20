@@ -8,7 +8,9 @@ Release date: 2026-05-20
 
 This release upgrades ENYRAX Cloud Portal from a CRUD-enabled prototype into a role-aware operation platform demo.
 
-The platform now includes demo RBAC role guards, frontend role switching, audit logs, and ServiceOps archive / restore workflow.
+The platform now includes demo RBAC role guards, frontend role switching, audit logs, and ServiceOps / ProjectOps archive / restore workflow.
+
+SOC, ServiceOps and ProjectOps now all include RBAC demo controls.
 
 ## Live URL
 
@@ -21,6 +23,9 @@ The platform now includes demo RBAC role guards, frontend role switching, audit 
 - Audit Logs frontend page
 - Audit Logs module entry on Portal home
 - ServiceOps role-based UI controls
+- ProjectOps role-based UI controls
+- SOC role-based UI controls
+- All core modules now support RBAC demo controls
 - Viewer read-only behavior
 - Operator create / update / archive behavior
 - Supervisor restore permission
@@ -116,7 +121,7 @@ Nginx
 
 ```text
 Portal        Module entry complete
-SOC           CRUD-enabled
+SOC           RBAC demo controls enabled
 ServiceOps    RBAC + Archive / Restore enabled
 ProjectOps    RBAC + Archive / Restore enabled
 Audit Logs    API-connected and role-protected
