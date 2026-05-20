@@ -28,6 +28,10 @@ The platform now includes demo RBAC role guards, frontend role switching, audit 
 - ServiceOps soft delete converted into archive workflow
 - Archived Tickets frontend section
 - ServiceOps restore workflow
+- ProjectOps role switcher frontend controls
+- ProjectOps archive / restore API
+- ProjectOps archived projects frontend section
+- ProjectOps archive and restore audit logs
 - Archive and restore audit logs
 - New archive API route for ServiceOps archived tickets
 - Backward-compatible legacy trash API route
@@ -69,12 +73,19 @@ Admin
 - `DELETE /api/serviceops/tickets/{ticket_id}` now archives the ticket instead of hard deleting it
 - `PUT /api/serviceops/tickets/{ticket_id}/restore`
 
+### ProjectOps Archive
+
+- `GET /api/projectops/projects/archive`
+- `DELETE /api/projectops/projects/{project_id}` now archives the project instead of hard deleting it
+- `PUT /api/projectops/projects/{project_id}/restore`
+
 ### Audit Logs
 
 - `GET /api/audit/logs`
 - `archive` action added
 - `restore` action added
 - ServiceOps archive and restore actions are recorded with actor role
+- ProjectOps archive and restore actions are recorded with actor role
 
 ## Current Architecture
 
@@ -107,7 +118,7 @@ Nginx
 Portal        Module entry complete
 SOC           CRUD-enabled
 ServiceOps    RBAC + Archive / Restore enabled
-ProjectOps    CRUD-enabled
+ProjectOps    RBAC + Archive / Restore enabled
 Audit Logs    API-connected and role-protected
 Status Page   API-connected
 RBAC          Header-based demo role guard
