@@ -1,0 +1,536 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ENYRAX Login</title>
+  <style>
+    :root {
+      --bg: #071018;
+      --panel: rgba(255,255,255,.065);
+      --panel-strong: rgba(9, 13, 24, .78);
+      --line: rgba(255,255,255,.13);
+      --line-gold: rgba(245, 211, 122, .26);
+      --gold: #f5d37a;
+      --gold-strong: #fff0b8;
+      --cyan: #73f4df;
+      --green: #8ff7b2;
+      --red: #ff6b86;
+      --text: #f7f2df;
+      --muted: rgba(247,242,223,.68);
+      --shadow: 0 24px 90px rgba(0,0,0,.28);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at 14% 8%, rgba(115,244,223,.15), transparent 30%),
+        radial-gradient(circle at 86% 12%, rgba(245,211,122,.14), transparent 28%),
+        linear-gradient(180deg, #071018 0%, #090d16 100%);
+    }
+
+    a { color: inherit; }
+
+    .wrap {
+      width: min(1040px, calc(100% - 32px));
+      min-height: 100vh;
+      margin: 0 auto;
+      padding: 34px 0 48px;
+      display: grid;
+      align-content: center;
+      gap: 28px;
+    }
+
+    .nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .brand {
+      display: grid;
+      gap: 4px;
+    }
+
+    .brand strong {
+      color: var(--gold);
+      letter-spacing: .14em;
+      font-size: 13px;
+    }
+
+    .brand span {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .home-link {
+      color: var(--text);
+      text-decoration: none;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.04);
+      padding: 9px 12px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .shell {
+      display: grid;
+      grid-template-columns: .95fr 1.05fr;
+      gap: 18px;
+      align-items: stretch;
+    }
+
+    .hero,
+    .panel {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      border-radius: 26px;
+      box-shadow: var(--shadow);
+    }
+
+    .hero {
+      padding: 28px;
+      min-height: 520px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      width: 280px;
+      height: 280px;
+      right: -90px;
+      bottom: -80px;
+      border: 1px solid rgba(245,211,122,.18);
+      border-radius: 50%;
+      box-shadow: inset 0 0 80px rgba(115,244,223,.08), 0 0 90px rgba(245,211,122,.08);
+    }
+
+    .badge {
+      display: inline-flex;
+      width: fit-content;
+      gap: 8px;
+      align-items: center;
+      padding: 8px 12px;
+      border: 1px solid rgba(115,244,223,.32);
+      border-radius: 999px;
+      color: var(--cyan);
+      background: rgba(115,244,223,.06);
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 18px 0 16px;
+      font-size: clamp(42px, 8vw, 76px);
+      line-height: .94;
+      letter-spacing: 0;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 16px;
+      line-height: 1.7;
+      max-width: 520px;
+    }
+
+    .mini-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-top: 28px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .mini {
+      border: 1px solid rgba(255,255,255,.1);
+      background: rgba(255,255,255,.045);
+      border-radius: 18px;
+      padding: 14px;
+    }
+
+    .mini span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .mini strong {
+      display: block;
+      margin-top: 6px;
+      color: var(--gold);
+      font-size: 18px;
+    }
+
+    .panel {
+      padding: 22px;
+      background: var(--panel-strong);
+    }
+
+    .panel-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 24px;
+      letter-spacing: 0;
+    }
+
+    .status-pill {
+      border: 1px solid var(--line-gold);
+      color: var(--gold);
+      background: rgba(245,211,122,.07);
+      border-radius: 999px;
+      padding: 7px 10px;
+      font-size: 12px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .quick {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-bottom: 18px;
+    }
+
+    button,
+    .nav-button {
+      min-height: 42px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      color: var(--text);
+      background: rgba(255,255,255,.055);
+      font: inherit;
+      font-size: 13px;
+      font-weight: 900;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform .16s ease, border-color .16s ease, background .16s ease;
+    }
+
+    button:hover,
+    .nav-button:hover {
+      transform: translateY(-1px);
+      border-color: rgba(245,211,122,.44);
+      background: rgba(255,255,255,.08);
+    }
+
+    .form {
+      display: grid;
+      gap: 14px;
+    }
+
+    label {
+      display: grid;
+      gap: 7px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+
+    input {
+      width: 100%;
+      min-height: 48px;
+      border: 1px solid rgba(255,255,255,.13);
+      border-radius: 14px;
+      color: var(--text);
+      background: rgba(255,255,255,.045);
+      padding: 12px 14px;
+      font: inherit;
+      font-size: 15px;
+      outline: none;
+    }
+
+    input:focus {
+      border-color: rgba(115,244,223,.48);
+      box-shadow: 0 0 0 4px rgba(115,244,223,.08);
+    }
+
+    .primary {
+      min-height: 50px;
+      color: #081018;
+      background: linear-gradient(135deg, var(--gold), var(--gold-strong));
+      border: 0;
+    }
+
+    .secondary {
+      color: var(--cyan);
+      border-color: rgba(115,244,223,.25);
+    }
+
+    .danger {
+      color: var(--red);
+      border-color: rgba(255,107,134,.28);
+      background: rgba(255,107,134,.07);
+    }
+
+    .message {
+      min-height: 22px;
+      color: var(--red);
+      font-size: 14px;
+      font-weight: 800;
+      line-height: 1.5;
+    }
+
+    .message.ok { color: var(--green); }
+
+    .user-card {
+      display: none;
+      margin-top: 18px;
+      border: 1px solid var(--line-gold);
+      background: rgba(245,211,122,.055);
+      border-radius: 20px;
+      padding: 16px;
+    }
+
+    .user-card.active { display: block; }
+
+    .user-card h3 {
+      margin: 0 0 12px;
+      font-size: 18px;
+    }
+
+    .user-meta {
+      display: grid;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .user-meta strong { color: var(--text); }
+
+    .destinations {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .logout-row {
+      margin-top: 14px;
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    @media (max-width: 820px) {
+      .wrap { align-content: start; }
+      .shell { grid-template-columns: 1fr; }
+      .hero { min-height: auto; }
+      .quick { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (max-width: 520px) {
+      .wrap { width: min(100% - 24px, 1040px); padding: 22px 0 36px; }
+      .nav { align-items: flex-start; flex-direction: column; }
+      .hero, .panel { border-radius: 20px; padding: 18px; }
+      .mini-grid, .destinations { grid-template-columns: 1fr; }
+      .panel-top { align-items: flex-start; flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <nav class="nav" aria-label="Primary">
+      <div class="brand">
+        <strong>ENYRAX</strong>
+        <span>Demo Auth Gateway</span>
+      </div>
+      <a class="home-link" href="/">Portal</a>
+    </nav>
+
+    <section class="shell">
+      <aside class="hero">
+        <div>
+          <span class="badge">Auth Demo API</span>
+          <h1>Secure demo access</h1>
+          <p class="subtitle">Use a seeded local account to receive a demo token and unlock portal navigation for the current browser session.</p>
+        </div>
+        <div class="mini-grid" aria-label="Demo account summary">
+          <div class="mini"><span>Viewer</span><strong>Read access</strong></div>
+          <div class="mini"><span>Operator</span><strong>Operations</strong></div>
+          <div class="mini"><span>Supervisor</span><strong>Approvals</strong></div>
+          <div class="mini"><span>Admin</span><strong>Full demo</strong></div>
+        </div>
+      </aside>
+
+      <section class="panel" aria-label="Login form">
+        <div class="panel-top">
+          <h2>Login</h2>
+          <span id="sessionStatus" class="status-pill">Signed out</span>
+        </div>
+
+        <div class="quick" aria-label="Demo account shortcuts">
+          <button type="button" data-email="viewer@enyrax.local">Viewer</button>
+          <button type="button" data-email="operator@enyrax.local">Operator</button>
+          <button type="button" data-email="supervisor@enyrax.local">Supervisor</button>
+          <button type="button" data-email="admin@enyrax.local">Admin</button>
+        </div>
+
+        <form id="loginForm" class="form">
+          <label>
+            Email
+            <input id="email" name="email" type="email" autocomplete="username" required placeholder="admin@enyrax.local" />
+          </label>
+          <label>
+            Password
+            <input id="password" name="password" type="password" autocomplete="current-password" required placeholder="demo1234" />
+          </label>
+          <button id="loginButton" class="primary" type="submit">Login</button>
+          <div id="message" class="message" role="status" aria-live="polite"></div>
+        </form>
+
+        <section id="userCard" class="user-card" aria-label="Authenticated user">
+          <h3>Current user</h3>
+          <div class="user-meta">
+            <div>Display name: <strong id="displayName">-</strong></div>
+            <div>Email: <strong id="userEmail">-</strong></div>
+            <div>Role: <strong id="userRole">-</strong></div>
+          </div>
+          <div class="destinations">
+            <a class="nav-button secondary" href="/">Go to Portal</a>
+            <a class="nav-button secondary" href="/serviceops/">Go to ServiceOps</a>
+            <a class="nav-button secondary" href="/projectops/">Go to ProjectOps</a>
+            <a class="nav-button secondary" href="/soc/">Go to SOC</a>
+          </div>
+          <div class="logout-row">
+            <button id="logoutButton" class="danger" type="button">Logout</button>
+          </div>
+        </section>
+      </section>
+    </section>
+  </main>
+
+  <script>
+    const DEMO_PASSWORD = 'demo1234';
+    const TOKEN_KEY = 'enyrax_auth_token';
+    const USER_KEY = 'enyrax_auth_user';
+
+    const form = document.getElementById('loginForm');
+    const emailInput = document.getElementById('email');
+    const passwordInput = document.getElementById('password');
+    const loginButton = document.getElementById('loginButton');
+    const message = document.getElementById('message');
+    const sessionStatus = document.getElementById('sessionStatus');
+    const userCard = document.getElementById('userCard');
+    const displayName = document.getElementById('displayName');
+    const userEmail = document.getElementById('userEmail');
+    const userRole = document.getElementById('userRole');
+    const logoutButton = document.getElementById('logoutButton');
+
+    function setMessage(text, isOk = false) {
+      message.textContent = text;
+      message.classList.toggle('ok', isOk);
+    }
+
+    function setUser(user) {
+      if (!user) {
+        sessionStatus.textContent = 'Signed out';
+        userCard.classList.remove('active');
+        displayName.textContent = '-';
+        userEmail.textContent = '-';
+        userRole.textContent = '-';
+        return;
+      }
+
+      sessionStatus.textContent = 'Signed in';
+      displayName.textContent = user.display_name || '-';
+      userEmail.textContent = user.email || '-';
+      userRole.textContent = user.role || '-';
+      userCard.classList.add('active');
+    }
+
+    function loadStoredUser() {
+      const storedUser = localStorage.getItem(USER_KEY);
+      if (!storedUser) return;
+
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch (_error) {
+        localStorage.removeItem(USER_KEY);
+        localStorage.removeItem(TOKEN_KEY);
+      }
+    }
+
+    document.querySelectorAll('[data-email]').forEach((button) => {
+      button.addEventListener('click', () => {
+        emailInput.value = button.dataset.email;
+        passwordInput.value = DEMO_PASSWORD;
+        setMessage('Demo credentials filled.', true);
+      });
+    });
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      loginButton.disabled = true;
+      loginButton.textContent = 'Logging in...';
+      setMessage('');
+
+      try {
+        const response = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: emailInput.value.trim(),
+            password: passwordInput.value,
+          }),
+        });
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+          throw new Error(data.detail || 'Login failed');
+        }
+
+        localStorage.setItem(TOKEN_KEY, data.token);
+        localStorage.setItem(USER_KEY, JSON.stringify(data.user));
+        setUser(data.user);
+        setMessage('Login successful.', true);
+      } catch (error) {
+        localStorage.removeItem(TOKEN_KEY);
+        localStorage.removeItem(USER_KEY);
+        setUser(null);
+        setMessage(error.message || 'Login failed');
+      } finally {
+        loginButton.disabled = false;
+        loginButton.textContent = 'Login';
+      }
+    });
+
+    logoutButton.addEventListener('click', () => {
+      localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem(USER_KEY);
+      setUser(null);
+      setMessage('Logged out.', true);
+    });
+
+    loadStoredUser();
+  </script>
+</body>
+</html>
