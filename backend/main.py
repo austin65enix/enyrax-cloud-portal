@@ -12,7 +12,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 app = FastAPI(
     title="ENYRAX Cloud API",
-    version="1.3.0",
+    version="1.4.0",
 )
 
 
@@ -189,6 +189,23 @@ def require_db():
     return engine
 
 
+SERVICEOPS_TICKET_COLUMNS = """
+    id, title, status, owner, project,
+    estimate_hours, actual_hours, task,
+    display_order, created_at, updated_at,
+    deleted_at, deleted_by, delete_reason
+"""
+
+
+PROJECTOPS_PROJECT_COLUMNS = """
+    id, title, status, owner,
+    budget_hours, actual_hours, linked_tickets,
+    scope, progress, start_date, end_date,
+    display_order, created_at, updated_at,
+    archived_at, archived_by, archive_reason
+"""
+
+
 def ticket_row_to_dict(row):
     data = dict(row)
 
@@ -211,21 +228,26 @@ def ticket_row_to_dict(row):
 
 
 def project_row_to_dict(row):
+    data = dict(row)
+
     return {
-        "id": row["id"],
-        "title": row["title"],
-        "status": row["status"],
-        "owner": row["owner"],
-        "budget_hours": float(row["budget_hours"]),
-        "actual_hours": float(row["actual_hours"]),
-        "linked_tickets": int(row["linked_tickets"]),
-        "scope": row["scope"],
-        "progress": int(row["progress"]),
-        "start_date": row["start_date"].isoformat() if row["start_date"] else None,
-        "end_date": row["end_date"].isoformat() if row["end_date"] else None,
-        "display_order": row["display_order"],
-        "created_at": row["created_at"].isoformat() if row["created_at"] else None,
-        "updated_at": row["updated_at"].isoformat() if row["updated_at"] else None,
+        "id": data["id"],
+        "title": data["title"],
+        "status": data["status"],
+        "owner": data["owner"],
+        "budget_hours": float(data["budget_hours"]),
+        "actual_hours": float(data["actual_hours"]),
+        "linked_tickets": int(data["linked_tickets"]),
+        "scope": data["scope"],
+        "progress": int(data["progress"]),
+        "start_date": data["start_date"].isoformat() if data.get("start_date") else None,
+        "end_date": data["end_date"].isoformat() if data.get("end_date") else None,
+        "display_order": data["display_order"],
+        "created_at": data["created_at"].isoformat() if data.get("created_at") else None,
+        "updated_at": data["updated_at"].isoformat() if data.get("updated_at") else None,
+        "archived_at": data["archived_at"].isoformat() if data.get("archived_at") else None,
+        "archived_by": data.get("archived_by"),
+        "archive_reason": data.get("archive_reason"),
     }
 
 
@@ -272,14 +294,6 @@ def write_audit_log(
             "actor": actor,
         },
     )
-
-
-SERVICEOPS_TICKET_COLUMNS = """
-    id, title, status, owner, project,
-    estimate_hours, actual_hours, task,
-    display_order, created_at, updated_at,
-    deleted_at, deleted_by, delete_reason
-"""
 
 
 @app.get("/api/health")
@@ -738,6 +752,7 @@ def projectops_summary():
                             start_date,
                             end_date
                         FROM projectops_projects
+                        WHERE archived_at IS NULL
                         ORDER BY display_order ASC, id ASC
                         """
                     )
@@ -1161,14 +1176,40 @@ def list_projectops_projects():
     with db.connect() as conn:
         rows = conn.execute(
             text(
-                """
+                f"""
                 SELECT
-                    id, title, status, owner,
-                    budget_hours, actual_hours, linked_tickets,
-                    scope, progress, start_date, end_date,
-                    display_order, created_at, updated_at
+                    {PROJECTOPS_PROJECT_COLUMNS}
                 FROM projectops_projects
+                WHERE archived_at IS NULL
                 ORDER BY display_order ASC, id ASC
+                """
+            )
+        ).mappings().all()
+
+    return {
+        "status": "ok",
+        "source": "postgresql",
+        "count": len(rows),
+        "projects": [project_row_to_dict(row) for row in rows],
+    }
+
+
+@app.get("/api/projectops/projects/archive")
+def list_projectops_archive(
+    demo_role: str = Header(default="admin", alias="X-Demo-Role"),
+):
+    require_role(demo_role, "operator")
+    db = require_db()
+
+    with db.connect() as conn:
+        rows = conn.execute(
+            text(
+                f"""
+                SELECT
+                    {PROJECTOPS_PROJECT_COLUMNS}
+                FROM projectops_projects
+                WHERE archived_at IS NOT NULL
+                ORDER BY archived_at DESC, id DESC
                 """
             )
         ).mappings().all()
@@ -1188,12 +1229,9 @@ def get_projectops_project(project_id: int):
     with db.connect() as conn:
         row = conn.execute(
             text(
-                """
+                f"""
                 SELECT
-                    id, title, status, owner,
-                    budget_hours, actual_hours, linked_tickets,
-                    scope, progress, start_date, end_date,
-                    display_order, created_at, updated_at
+                    {PROJECTOPS_PROJECT_COLUMNS}
                 FROM projectops_projects
                 WHERE id = :project_id
                 """
@@ -1225,7 +1263,7 @@ def create_projectops_project(
 
         row = conn.execute(
             text(
-                """
+                f"""
                 INSERT INTO projectops_projects
                     (title, status, owner, budget_hours, actual_hours,
                      linked_tickets, scope, progress, start_date, end_date, display_order)
@@ -1233,10 +1271,7 @@ def create_projectops_project(
                     (:title, :status, :owner, :budget_hours, :actual_hours,
                      :linked_tickets, :scope, :progress, :start_date, :end_date, :display_order)
                 RETURNING
-                    id, title, status, owner,
-                    budget_hours, actual_hours, linked_tickets,
-                    scope, progress, start_date, end_date,
-                    display_order, created_at, updated_at
+                    {PROJECTOPS_PROJECT_COLUMNS}
                 """
             ),
             {
@@ -1317,11 +1352,9 @@ def update_projectops_project(
                 UPDATE projectops_projects
                 SET {set_sql}
                 WHERE id = :project_id
+                  AND archived_at IS NULL
                 RETURNING
-                    id, title, status, owner,
-                    budget_hours, actual_hours, linked_tickets,
-                    scope, progress, start_date, end_date,
-                    display_order, created_at, updated_at
+                    {PROJECTOPS_PROJECT_COLUMNS}
                 """
             ),
             params,
@@ -1339,7 +1372,7 @@ def update_projectops_project(
             )
 
     if row is None:
-        raise HTTPException(status_code=404, detail="Project not found")
+        raise HTTPException(status_code=404, detail="Project not found or archived")
 
     return {
         "status": "updated",
@@ -1347,21 +1380,28 @@ def update_projectops_project(
     }
 
 
-@app.delete("/api/projectops/projects/{project_id}")
-def delete_projectops_project(
+@app.put("/api/projectops/projects/{project_id}/restore")
+def restore_projectops_project(
     project_id: int,
     demo_role: str = Header(default="admin", alias="X-Demo-Role"),
 ):
-    role = require_role(demo_role, "admin")
+    role = require_role(demo_role, "supervisor")
     db = require_db()
 
     with db.begin() as conn:
         row = conn.execute(
             text(
-                """
-                DELETE FROM projectops_projects
+                f"""
+                UPDATE projectops_projects
+                SET
+                    archived_at = NULL,
+                    archived_by = NULL,
+                    archive_reason = NULL,
+                    updated_at = NOW()
                 WHERE id = :project_id
-                RETURNING id, title
+                  AND archived_at IS NOT NULL
+                RETURNING
+                    {PROJECTOPS_PROJECT_COLUMNS}
                 """
             ),
             {"project_id": project_id},
@@ -1373,20 +1413,68 @@ def delete_projectops_project(
                 module="projectops",
                 entity_type="project",
                 entity_id=row["id"],
-                action="delete",
-                summary=f"Deleted ProjectOps project: {row['title']}",
+                action="restore",
+                summary=f"Restored ProjectOps project from archive: {row['title']}",
                 actor=role,
             )
 
     if row is None:
-        raise HTTPException(status_code=404, detail="Project not found")
+        raise HTTPException(status_code=404, detail="Project not found or not archived")
 
     return {
-        "status": "deleted",
-        "project": {
-            "id": row["id"],
-            "title": row["title"],
-        },
+        "status": "restored",
+        "project": project_row_to_dict(row),
+    }
+
+
+@app.delete("/api/projectops/projects/{project_id}")
+def archive_projectops_project(
+    project_id: int,
+    demo_role: str = Header(default="admin", alias="X-Demo-Role"),
+):
+    role = require_role(demo_role, "operator")
+    db = require_db()
+
+    with db.begin() as conn:
+        row = conn.execute(
+            text(
+                f"""
+                UPDATE projectops_projects
+                SET
+                    archived_at = NOW(),
+                    archived_by = :archived_by,
+                    archive_reason = :archive_reason,
+                    updated_at = NOW()
+                WHERE id = :project_id
+                  AND archived_at IS NULL
+                RETURNING
+                    {PROJECTOPS_PROJECT_COLUMNS}
+                """
+            ),
+            {
+                "project_id": project_id,
+                "archived_by": role,
+                "archive_reason": "Archived from ProjectOps UI",
+            },
+        ).mappings().first()
+
+        if row is not None:
+            write_audit_log(
+                conn,
+                module="projectops",
+                entity_type="project",
+                entity_id=row["id"],
+                action="archive",
+                summary=f"Archived ProjectOps project: {row['title']}",
+                actor=role,
+            )
+
+    if row is None:
+        raise HTTPException(status_code=404, detail="Project not found or already archived")
+
+    return {
+        "status": "archived",
+        "project": project_row_to_dict(row),
     }
 
 
