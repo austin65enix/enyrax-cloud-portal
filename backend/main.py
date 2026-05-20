@@ -12,7 +12,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 app = FastAPI(
     title="ENYRAX Cloud API",
-    version="1.1.0",
+    version="1.2.0",
 )
 
 
@@ -190,18 +190,23 @@ def require_db():
 
 
 def ticket_row_to_dict(row):
+    data = dict(row)
+
     return {
-        "id": row["id"],
-        "title": row["title"],
-        "status": row["status"],
-        "owner": row["owner"],
-        "project": row["project"],
-        "estimate_hours": float(row["estimate_hours"]),
-        "actual_hours": float(row["actual_hours"]),
-        "task": row["task"],
-        "display_order": row["display_order"],
-        "created_at": row["created_at"].isoformat() if row["created_at"] else None,
-        "updated_at": row["updated_at"].isoformat() if row["updated_at"] else None,
+        "id": data["id"],
+        "title": data["title"],
+        "status": data["status"],
+        "owner": data["owner"],
+        "project": data["project"],
+        "estimate_hours": float(data["estimate_hours"]),
+        "actual_hours": float(data["actual_hours"]),
+        "task": data["task"],
+        "display_order": data["display_order"],
+        "created_at": data["created_at"].isoformat() if data.get("created_at") else None,
+        "updated_at": data["updated_at"].isoformat() if data.get("updated_at") else None,
+        "deleted_at": data["deleted_at"].isoformat() if data.get("deleted_at") else None,
+        "deleted_by": data.get("deleted_by"),
+        "delete_reason": data.get("delete_reason"),
     }
 
 
@@ -554,6 +559,7 @@ def serviceops_summary():
                             actual_hours,
                             task
                         FROM serviceops_tickets
+                        WHERE deleted_at IS NULL
                         ORDER BY display_order ASC, id ASC
                         """
                     )
@@ -839,9 +845,42 @@ def list_serviceops_tickets():
                 SELECT
                     id, title, status, owner, project,
                     estimate_hours, actual_hours, task,
-                    display_order, created_at, updated_at
+                    display_order, created_at, updated_at,
+                    deleted_at, deleted_by, delete_reason
                 FROM serviceops_tickets
+                WHERE deleted_at IS NULL
                 ORDER BY display_order ASC, id ASC
+                """
+            )
+        ).mappings().all()
+
+    return {
+        "status": "ok",
+        "source": "postgresql",
+        "count": len(rows),
+        "tickets": [ticket_row_to_dict(row) for row in rows],
+    }
+
+
+@app.get("/api/serviceops/tickets/trash")
+def list_serviceops_trash(
+    demo_role: str = Header(default="admin", alias="X-Demo-Role"),
+):
+    require_role(demo_role, "operator")
+    db = require_db()
+
+    with db.connect() as conn:
+        rows = conn.execute(
+            text(
+                """
+                SELECT
+                    id, title, status, owner, project,
+                    estimate_hours, actual_hours, task,
+                    display_order, created_at, updated_at,
+                    deleted_at, deleted_by, delete_reason
+                FROM serviceops_tickets
+                WHERE deleted_at IS NOT NULL
+                ORDER BY deleted_at DESC, id DESC
                 """
             )
         ).mappings().all()
@@ -865,7 +904,8 @@ def get_serviceops_ticket(ticket_id: int):
                 SELECT
                     id, title, status, owner, project,
                     estimate_hours, actual_hours, task,
-                    display_order, created_at, updated_at
+                    display_order, created_at, updated_at,
+                    deleted_at, deleted_by, delete_reason
                 FROM serviceops_tickets
                 WHERE id = :ticket_id
                 """
@@ -887,7 +927,7 @@ def create_serviceops_ticket(
     payload: ServiceOpsTicketCreate,
     demo_role: str = Header(default="admin", alias="X-Demo-Role"),
 ):
-    require_role(demo_role, "operator")
+    role = require_role(demo_role, "operator")
     db = require_db()
 
     with db.begin() as conn:
@@ -905,7 +945,8 @@ def create_serviceops_ticket(
                 RETURNING
                     id, title, status, owner, project,
                     estimate_hours, actual_hours, task,
-                    display_order, created_at, updated_at
+                    display_order, created_at, updated_at,
+                    deleted_at, deleted_by, delete_reason
                 """
             ),
             {
@@ -927,6 +968,7 @@ def create_serviceops_ticket(
             entity_id=row["id"],
             action="create",
             summary=f"Created ServiceOps ticket: {row['title']}",
+            actor=role,
         )
 
     return {
@@ -941,7 +983,7 @@ def update_serviceops_ticket(
     payload: ServiceOpsTicketUpdate,
     demo_role: str = Header(default="admin", alias="X-Demo-Role"),
 ):
-    require_role(demo_role, "operator")
+    role = require_role(demo_role, "operator")
     db = require_db()
     updates = payload.model_dump(exclude_unset=True)
 
@@ -979,10 +1021,12 @@ def update_serviceops_ticket(
                 UPDATE serviceops_tickets
                 SET {set_sql}
                 WHERE id = :ticket_id
+                  AND deleted_at IS NULL
                 RETURNING
                     id, title, status, owner, project,
                     estimate_hours, actual_hours, task,
-                    display_order, created_at, updated_at
+                    display_order, created_at, updated_at,
+                    deleted_at, deleted_by, delete_reason
                 """
             ),
             params,
@@ -996,10 +1040,11 @@ def update_serviceops_ticket(
                 entity_id=row["id"],
                 action="update",
                 summary=f"Updated ServiceOps ticket: {row['title']}",
+                actor=role,
             )
 
     if row is None:
-        raise HTTPException(status_code=404, detail="Ticket not found")
+        raise HTTPException(status_code=404, detail="Ticket not found or in trash")
 
     return {
         "status": "updated",
@@ -1007,21 +1052,31 @@ def update_serviceops_ticket(
     }
 
 
-@app.delete("/api/serviceops/tickets/{ticket_id}")
-def delete_serviceops_ticket(
+@app.put("/api/serviceops/tickets/{ticket_id}/restore")
+def restore_serviceops_ticket(
     ticket_id: int,
     demo_role: str = Header(default="admin", alias="X-Demo-Role"),
 ):
-    require_role(demo_role, "admin")
+    role = require_role(demo_role, "supervisor")
     db = require_db()
 
     with db.begin() as conn:
         row = conn.execute(
             text(
                 """
-                DELETE FROM serviceops_tickets
+                UPDATE serviceops_tickets
+                SET
+                    deleted_at = NULL,
+                    deleted_by = NULL,
+                    delete_reason = NULL,
+                    updated_at = NOW()
                 WHERE id = :ticket_id
-                RETURNING id, title
+                  AND deleted_at IS NOT NULL
+                RETURNING
+                    id, title, status, owner, project,
+                    estimate_hours, actual_hours, task,
+                    display_order, created_at, updated_at,
+                    deleted_at, deleted_by, delete_reason
                 """
             ),
             {"ticket_id": ticket_id},
@@ -1033,19 +1088,71 @@ def delete_serviceops_ticket(
                 module="serviceops",
                 entity_type="ticket",
                 entity_id=row["id"],
-                action="delete",
-                summary=f"Deleted ServiceOps ticket: {row['title']}",
+                action="restore",
+                summary=f"Restored ServiceOps ticket from trash: {row['title']}",
+                actor=role,
             )
 
     if row is None:
-        raise HTTPException(status_code=404, detail="Ticket not found")
+        raise HTTPException(status_code=404, detail="Ticket not found or not in trash")
 
     return {
-        "status": "deleted",
-        "ticket": {
-            "id": row["id"],
-            "title": row["title"],
-        },
+        "status": "restored",
+        "ticket": ticket_row_to_dict(row),
+    }
+
+
+@app.delete("/api/serviceops/tickets/{ticket_id}")
+def trash_serviceops_ticket(
+    ticket_id: int,
+    demo_role: str = Header(default="admin", alias="X-Demo-Role"),
+):
+    role = require_role(demo_role, "operator")
+    db = require_db()
+
+    with db.begin() as conn:
+        row = conn.execute(
+            text(
+                """
+                UPDATE serviceops_tickets
+                SET
+                    deleted_at = NOW(),
+                    deleted_by = :deleted_by,
+                    delete_reason = :delete_reason,
+                    updated_at = NOW()
+                WHERE id = :ticket_id
+                  AND deleted_at IS NULL
+                RETURNING
+                    id, title, status, owner, project,
+                    estimate_hours, actual_hours, task,
+                    display_order, created_at, updated_at,
+                    deleted_at, deleted_by, delete_reason
+                """
+            ),
+            {
+                "ticket_id": ticket_id,
+                "deleted_by": role,
+                "delete_reason": "Moved to trash from ServiceOps UI",
+            },
+        ).mappings().first()
+
+        if row is not None:
+            write_audit_log(
+                conn,
+                module="serviceops",
+                entity_type="ticket",
+                entity_id=row["id"],
+                action="trash",
+                summary=f"Moved ServiceOps ticket to trash: {row['title']}",
+                actor=role,
+            )
+
+    if row is None:
+        raise HTTPException(status_code=404, detail="Ticket not found or already trashed")
+
+    return {
+        "status": "trashed",
+        "ticket": ticket_row_to_dict(row),
     }
 
 
@@ -1110,7 +1217,7 @@ def create_projectops_project(
     payload: ProjectOpsProjectCreate,
     demo_role: str = Header(default="admin", alias="X-Demo-Role"),
 ):
-    require_role(demo_role, "operator")
+    role = require_role(demo_role, "operator")
     db = require_db()
 
     with db.begin() as conn:
@@ -1156,6 +1263,7 @@ def create_projectops_project(
             entity_id=row["id"],
             action="create",
             summary=f"Created ProjectOps project: {row['title']}",
+            actor=role,
         )
 
     return {
@@ -1170,7 +1278,7 @@ def update_projectops_project(
     payload: ProjectOpsProjectUpdate,
     demo_role: str = Header(default="admin", alias="X-Demo-Role"),
 ):
-    require_role(demo_role, "operator")
+    role = require_role(demo_role, "operator")
     db = require_db()
     updates = payload.model_dump(exclude_unset=True)
 
@@ -1229,6 +1337,7 @@ def update_projectops_project(
                 entity_id=row["id"],
                 action="update",
                 summary=f"Updated ProjectOps project: {row['title']}",
+                actor=role,
             )
 
     if row is None:
@@ -1245,7 +1354,7 @@ def delete_projectops_project(
     project_id: int,
     demo_role: str = Header(default="admin", alias="X-Demo-Role"),
 ):
-    require_role(demo_role, "admin")
+    role = require_role(demo_role, "admin")
     db = require_db()
 
     with db.begin() as conn:
@@ -1268,6 +1377,7 @@ def delete_projectops_project(
                 entity_id=row["id"],
                 action="delete",
                 summary=f"Deleted ProjectOps project: {row['title']}",
+                actor=role,
             )
 
     if row is None:
@@ -1341,7 +1451,7 @@ def create_soc_incident(
     payload: SocIncidentCreate,
     demo_role: str = Header(default="admin", alias="X-Demo-Role"),
 ):
-    require_role(demo_role, "operator")
+    role = require_role(demo_role, "operator")
     db = require_db()
 
     with db.begin() as conn:
@@ -1383,6 +1493,7 @@ def create_soc_incident(
             entity_id=row["id"],
             action="create",
             summary=f"Created SOC incident: {row['title']}",
+            actor=role,
         )
 
     return {
@@ -1397,7 +1508,7 @@ def update_soc_incident(
     payload: SocIncidentUpdate,
     demo_role: str = Header(default="admin", alias="X-Demo-Role"),
 ):
-    require_role(demo_role, "operator")
+    role = require_role(demo_role, "operator")
     db = require_db()
     updates = payload.model_dump(exclude_unset=True)
 
@@ -1452,6 +1563,7 @@ def update_soc_incident(
                 entity_id=row["id"],
                 action="update",
                 summary=f"Updated SOC incident: {row['title']}",
+                actor=role,
             )
 
     if row is None:
@@ -1468,7 +1580,7 @@ def delete_soc_incident(
     incident_id: int,
     demo_role: str = Header(default="admin", alias="X-Demo-Role"),
 ):
-    require_role(demo_role, "admin")
+    role = require_role(demo_role, "admin")
     db = require_db()
 
     with db.begin() as conn:
@@ -1491,6 +1603,7 @@ def delete_soc_incident(
                 entity_id=row["id"],
                 action="delete",
                 summary=f"Deleted SOC incident: {row['title']}",
+                actor=role,
             )
 
     if row is None:
