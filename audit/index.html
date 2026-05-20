@@ -1,0 +1,530 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ENYRAX Audit Logs</title>
+  <style>
+    :root {
+      --bg: #071018;
+      --card: rgba(255,255,255,.06);
+      --card2: rgba(255,255,255,.09);
+      --text: #f7f2df;
+      --muted: rgba(247,242,223,.68);
+      --line: rgba(255,255,255,.12);
+      --gold: #f5d37a;
+      --cyan: #73f4df;
+      --green: #8ff7b2;
+      --orange: #ffb86b;
+      --red: #ff6b86;
+      --purple: #b894ff;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(115,244,223,.16), transparent 32%),
+        radial-gradient(circle at top right, rgba(245,211,122,.12), transparent 30%),
+        linear-gradient(180deg, #071018 0%, #090d16 100%);
+    }
+
+    .wrap {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 34px 0 48px;
+    }
+
+    .nav {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: center;
+      margin-bottom: 28px;
+      padding-right: 230px;
+    }
+
+    .brand {
+      display: grid;
+      gap: 4px;
+    }
+
+    .brand strong {
+      color: var(--gold);
+      letter-spacing: .14em;
+      font-size: 13px;
+    }
+
+    .brand span {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .links a {
+      color: var(--text);
+      text-decoration: none;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.04);
+      padding: 9px 12px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .hero {
+      display: grid;
+      gap: 14px;
+      margin-bottom: 22px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(34px, 6vw, 64px);
+      line-height: .95;
+      letter-spacing: -.05em;
+    }
+
+    .subtitle {
+      max-width: 760px;
+      color: var(--muted);
+      font-size: 16px;
+      line-height: 1.7;
+    }
+
+    .role-note {
+      display: inline-flex;
+      width: fit-content;
+      gap: 8px;
+      align-items: center;
+      border: 1px solid rgba(245, 211, 122, .22);
+      background: rgba(245, 211, 122, .06);
+      color: var(--muted);
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .role-note strong {
+      color: var(--gold);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin: 22px 0;
+    }
+
+    .metric {
+      border: 1px solid var(--line);
+      background: var(--card);
+      border-radius: 22px;
+      padding: 18px;
+      box-shadow: 0 24px 80px rgba(0,0,0,.18);
+    }
+
+    .metric .label {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+
+    .metric .value {
+      margin-top: 8px;
+      color: var(--gold);
+      font-size: 30px;
+      font-weight: 950;
+    }
+
+    .card {
+      border: 1px solid var(--line);
+      background: var(--card);
+      border-radius: 26px;
+      padding: 20px;
+      box-shadow: 0 24px 80px rgba(0,0,0,.22);
+    }
+
+    .card-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 20px;
+      letter-spacing: -.02em;
+    }
+
+    .status {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .toolbar {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+
+    button,
+    select {
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.06);
+      color: var(--text);
+      border-radius: 14px;
+      padding: 10px 12px;
+      font: inherit;
+      font-weight: 850;
+    }
+
+    button {
+      cursor: pointer;
+      color: #071018;
+      border: 0;
+      background: linear-gradient(135deg, var(--gold), #fff0b8);
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 880px;
+    }
+
+    th,
+    td {
+      padding: 13px 14px;
+      text-align: left;
+      border-bottom: 1px solid rgba(255,255,255,.09);
+      vertical-align: top;
+      font-size: 14px;
+    }
+
+    th {
+      color: var(--muted);
+      background: rgba(255,255,255,.05);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+
+    tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 5px 9px;
+      font-size: 12px;
+      font-weight: 950;
+      text-transform: uppercase;
+    }
+
+    .soc { color: #26060c; background: var(--red); }
+    .serviceops { color: #062014; background: var(--green); }
+    .projectops { color: #081018; background: var(--cyan); }
+    .create { color: #062014; background: var(--green); }
+    .update { color: #241203; background: var(--orange); }
+    .delete { color: #26060c; background: var(--red); }
+
+    .summary {
+      color: var(--text);
+      font-weight: 760;
+      line-height: 1.45;
+    }
+
+    .muted {
+      color: var(--muted);
+    }
+
+    .error-text {
+      color: var(--red);
+      font-weight: 850;
+    }
+
+    .footer {
+      margin-top: 22px;
+      color: var(--muted);
+      font-size: 13px;
+      text-align: center;
+    }
+
+    @media (max-width: 880px) {
+      .nav {
+        align-items: flex-start;
+        flex-direction: column;
+        padding-right: 0;
+      }
+
+      .grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (max-width: 560px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="wrap">
+    <nav class="nav">
+      <div class="brand">
+        <strong>ENYRAX</strong>
+        <span>Audit Trail / Operation History</span>
+      </div>
+
+      <div class="links">
+        <a href="/">Portal</a>
+        <a href="/soc/">SOC</a>
+        <a href="/serviceops/">ServiceOps</a>
+        <a href="/projectops/">ProjectOps</a>
+        <a href="/status/">Status</a>
+      </div>
+    </nav>
+
+    <section class="hero">
+      <h1>Audit Logs</h1>
+      <div class="subtitle">
+        Operation trail for SOC, ServiceOps and ProjectOps actions. This page reads from
+        <strong>/api/audit/logs</strong> and shows recent create / update / delete activity.
+      </div>
+      <div class="role-note">
+        Current role: <strong id="current-role-label">Admin</strong>
+        <span>· Audit requires Supervisor or Admin</span>
+      </div>
+    </section>
+
+    <section class="grid">
+      <div class="metric">
+        <div class="label">Total Logs</div>
+        <div class="value" id="metric-total">-</div>
+      </div>
+      <div class="metric">
+        <div class="label">SOC</div>
+        <div class="value" id="metric-soc">-</div>
+      </div>
+      <div class="metric">
+        <div class="label">ServiceOps</div>
+        <div class="value" id="metric-serviceops">-</div>
+      </div>
+      <div class="metric">
+        <div class="label">ProjectOps</div>
+        <div class="value" id="metric-projectops">-</div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-top">
+        <h2>Recent Activity</h2>
+        <div class="status" id="load-status">Loading...</div>
+      </div>
+
+      <div class="toolbar">
+        <select id="limit-select">
+          <option value="25">Last 25</option>
+          <option value="50" selected>Last 50</option>
+          <option value="100">Last 100</option>
+          <option value="200">Last 200</option>
+        </select>
+        <button type="button" onclick="loadAuditLogs()">Refresh Logs</button>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Time</th>
+              <th>Module</th>
+              <th>Action</th>
+              <th>Entity</th>
+              <th>Summary</th>
+              <th>Actor</th>
+            </tr>
+          </thead>
+          <tbody id="audit-body">
+            <tr>
+              <td colspan="6" class="muted">Loading audit logs...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <div class="footer">
+      ENYRAX Cloud Portal · Audit Logs · PostgreSQL-backed operation history
+    </div>
+  </main>
+
+  <script src="/shared/role-switcher.js"></script>
+
+  <script>
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function formatTime(value) {
+      if (!value) return "-";
+
+      try {
+        const date = new Date(value);
+        return date.toLocaleString("zh-TW", {
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit"
+        });
+      } catch {
+        return value;
+      }
+    }
+
+    function roleLabel(role) {
+      const labels = {
+        viewer: "Viewer",
+        operator: "Operator",
+        supervisor: "Supervisor",
+        admin: "Admin"
+      };
+
+      return labels[role] || role;
+    }
+
+    function updateRoleLabel() {
+      const role = window.ENYRAXRole ? window.ENYRAXRole.get() : "admin";
+      const el = document.getElementById("current-role-label");
+      if (el) el.textContent = roleLabel(role);
+    }
+
+    function moduleClass(moduleName) {
+      if (moduleName === "soc") return "soc";
+      if (moduleName === "serviceops") return "serviceops";
+      if (moduleName === "projectops") return "projectops";
+      return "";
+    }
+
+    function actionClass(action) {
+      if (action === "create") return "create";
+      if (action === "update") return "update";
+      if (action === "delete") return "delete";
+      return "";
+    }
+
+    function resetMetrics() {
+      document.getElementById("metric-total").textContent = "-";
+      document.getElementById("metric-soc").textContent = "-";
+      document.getElementById("metric-serviceops").textContent = "-";
+      document.getElementById("metric-projectops").textContent = "-";
+    }
+
+    async function loadAuditLogs() {
+      updateRoleLabel();
+
+      const status = document.getElementById("load-status");
+      const tbody = document.getElementById("audit-body");
+      const limit = document.getElementById("limit-select").value || 50;
+
+      status.textContent = "Loading...";
+
+      try {
+        const res = await fetch(`/api/audit/logs?limit=${encodeURIComponent(limit)}`, {
+          headers: window.ENYRAXRole ? window.ENYRAXRole.header() : {}
+        });
+
+        if (!res.ok) {
+          const errorData = await res.json().catch(() => ({}));
+          throw new Error(errorData.detail || ("HTTP " + res.status));
+        }
+
+        const data = await res.json();
+        const logs = data.logs || [];
+
+        const socCount = logs.filter(item => item.module === "soc").length;
+        const serviceOpsCount = logs.filter(item => item.module === "serviceops").length;
+        const projectOpsCount = logs.filter(item => item.module === "projectops").length;
+
+        document.getElementById("metric-total").textContent = logs.length;
+        document.getElementById("metric-soc").textContent = socCount;
+        document.getElementById("metric-serviceops").textContent = serviceOpsCount;
+        document.getElementById("metric-projectops").textContent = projectOpsCount;
+
+        if (!logs.length) {
+          tbody.innerHTML = `<tr><td colspan="6" class="muted">No audit logs found.</td></tr>`;
+          status.textContent = "No logs";
+          return;
+        }
+
+        tbody.innerHTML = logs.map(item => {
+          const moduleName = escapeHtml(item.module);
+          const action = escapeHtml(item.action);
+          const entity = `${escapeHtml(item.entity_type)} #${escapeHtml(item.entity_id ?? "-")}`;
+
+          return `
+            <tr>
+              <td class="muted">${escapeHtml(formatTime(item.created_at))}</td>
+              <td><span class="pill ${moduleClass(item.module)}">${moduleName}</span></td>
+              <td><span class="pill ${actionClass(item.action)}">${action}</span></td>
+              <td>${entity}</td>
+              <td class="summary">${escapeHtml(item.summary)}</td>
+              <td class="muted">${escapeHtml(item.actor)}</td>
+            </tr>
+          `;
+        }).join("");
+
+        status.textContent = `Loaded ${logs.length} logs`;
+      } catch (err) {
+        console.error("Failed to load audit logs:", err);
+        resetMetrics();
+        status.textContent = "Access denied / API error";
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="6" class="error-text">
+              ${escapeHtml(err.message)}.
+            </td>
+          </tr>
+        `;
+      }
+    }
+
+    document.getElementById("limit-select").addEventListener("change", loadAuditLogs);
+    window.addEventListener("enyrax-role-changed", () => {
+      updateRoleLabel();
+      loadAuditLogs();
+    });
+
+    updateRoleLabel();
+    loadAuditLogs();
+  </script>
+</body>
+</html>
