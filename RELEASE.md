@@ -1,5 +1,131 @@
 # ENYRAX Cloud Portal Release Notes
 
+## v0.3.0-rbac-archive-demo
+
+Release date: 2026-05-20
+
+## Summary
+
+This release upgrades ENYRAX Cloud Portal from a CRUD-enabled prototype into a role-aware operation platform demo.
+
+The platform now includes demo RBAC role guards, frontend role switching, audit logs, and ServiceOps archive / restore workflow.
+
+## Live URL
+
+- https://portal.soc-monitoring.dev
+
+## Completed
+
+- Demo RBAC role model
+- Role switcher shared frontend component
+- Audit Logs frontend page
+- Audit Logs module entry on Portal home
+- ServiceOps role-based UI controls
+- Viewer read-only behavior
+- Operator create / update / archive behavior
+- Supervisor restore permission
+- Admin full operation permission
+- ServiceOps soft delete converted into archive workflow
+- Archived Tickets frontend section
+- ServiceOps restore workflow
+- Archive and restore audit logs
+- New archive API route for ServiceOps archived tickets
+- Backward-compatible legacy trash API route
+
+## Role Model
+
+```text
+Viewer
+  - Read-only
+  - Can view dashboards and active work queue
+  - Cannot create, update, archive or restore
+
+Operator
+  - Can create ServiceOps tickets
+  - Can update ticket status
+  - Can mark work done or pending
+  - Can archive tickets
+  - Cannot restore archived tickets
+
+Supervisor
+  - Can create and update tickets
+  - Can archive tickets
+  - Can restore archived tickets
+  - Can view audit logs
+
+Admin
+  - Full demo access
+  - Can create, update, archive and restore
+  - Can view audit logs
+  - Reserved for future permanent delete / data management
+```
+
+## API Changes
+
+### ServiceOps Archive
+
+- `GET /api/serviceops/tickets/archive`
+- `GET /api/serviceops/tickets/trash` compatibility route
+- `DELETE /api/serviceops/tickets/{ticket_id}` now archives the ticket instead of hard deleting it
+- `PUT /api/serviceops/tickets/{ticket_id}/restore`
+
+### Audit Logs
+
+- `GET /api/audit/logs`
+- `archive` action added
+- `restore` action added
+- ServiceOps archive and restore actions are recorded with actor role
+
+## Current Architecture
+
+```text
+Browser
+  ↓ HTTPS
+Nginx
+  ├── Static Frontend Pages
+  │   ├── /
+  │   ├── /soc/
+  │   ├── /serviceops/
+  │   ├── /projectops/
+  │   ├── /audit/
+  │   └── /status/
+  │
+  └── /api/ reverse proxy
+        ↓
+      FastAPI
+        ├── Demo RBAC Guard
+        ├── Audit Log Writer
+        ├── ServiceOps Archive / Restore
+        └── CRUD APIs
+        ↓
+      PostgreSQL
+```
+
+## Current Product Status
+
+```text
+Portal        Module entry complete
+SOC           CRUD-enabled
+ServiceOps    RBAC + Archive / Restore enabled
+ProjectOps    CRUD-enabled
+Audit Logs    API-connected and role-protected
+Status Page   API-connected
+RBAC          Header-based demo role guard
+```
+
+## Next Phase
+
+- Add Role Switcher to ProjectOps
+- Add Role Switcher to SOC
+- Convert ProjectOps delete into archive / restore
+- Convert SOC delete into archive / restore or close / reopen workflow
+- Add real authentication
+- Replace demo role header with login session / JWT
+- Add user table and role mapping
+- Add action-level audit detail
+
+---
+
 ## v0.2.0-crud-demo
 
 Release date: 2026-05-19
