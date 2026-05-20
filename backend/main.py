@@ -4,7 +4,7 @@ from typing import Optional
 import os
 import socket
 
-from fastapi import FastAPI, HTTPException, Header
+from fastapi import FastAPI, Header, HTTPException
 from pydantic import BaseModel, Field
 from sqlalchemy import create_engine, text
 from sqlalchemy.exc import SQLAlchemyError
@@ -12,7 +12,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 app = FastAPI(
     title="ENYRAX Cloud API",
-    version="1.2.0",
+    version="1.3.0",
 )
 
 
@@ -142,7 +142,7 @@ MODULES = [
         "name": "Audit Logs",
         "route": "/audit/",
         "status": "api-connected",
-        "description": "Operation trail for SOC, ServiceOps and ProjectOps create / update / delete actions.",
+        "description": "Operation trail for SOC, ServiceOps and ProjectOps create / update / archive / restore actions.",
     },
     {
         "key": "status",
@@ -272,6 +272,14 @@ def write_audit_log(
             "actor": actor,
         },
     )
+
+
+SERVICEOPS_TICKET_COLUMNS = """
+    id, title, status, owner, project,
+    estimate_hours, actual_hours, task,
+    display_order, created_at, updated_at,
+    deleted_at, deleted_by, delete_reason
+"""
 
 
 @app.get("/api/health")
@@ -841,12 +849,9 @@ def list_serviceops_tickets():
     with db.connect() as conn:
         rows = conn.execute(
             text(
-                """
+                f"""
                 SELECT
-                    id, title, status, owner, project,
-                    estimate_hours, actual_hours, task,
-                    display_order, created_at, updated_at,
-                    deleted_at, deleted_by, delete_reason
+                    {SERVICEOPS_TICKET_COLUMNS}
                 FROM serviceops_tickets
                 WHERE deleted_at IS NULL
                 ORDER BY display_order ASC, id ASC
@@ -862,22 +867,16 @@ def list_serviceops_tickets():
     }
 
 
-@app.get("/api/serviceops/tickets/trash")
-def list_serviceops_trash(
-    demo_role: str = Header(default="admin", alias="X-Demo-Role"),
-):
+def list_serviceops_archived_tickets_response(demo_role: str):
     require_role(demo_role, "operator")
     db = require_db()
 
     with db.connect() as conn:
         rows = conn.execute(
             text(
-                """
+                f"""
                 SELECT
-                    id, title, status, owner, project,
-                    estimate_hours, actual_hours, task,
-                    display_order, created_at, updated_at,
-                    deleted_at, deleted_by, delete_reason
+                    {SERVICEOPS_TICKET_COLUMNS}
                 FROM serviceops_tickets
                 WHERE deleted_at IS NOT NULL
                 ORDER BY deleted_at DESC, id DESC
@@ -893,6 +892,20 @@ def list_serviceops_trash(
     }
 
 
+@app.get("/api/serviceops/tickets/archive")
+def list_serviceops_archive(
+    demo_role: str = Header(default="admin", alias="X-Demo-Role"),
+):
+    return list_serviceops_archived_tickets_response(demo_role)
+
+
+@app.get("/api/serviceops/tickets/trash")
+def list_serviceops_trash_compat(
+    demo_role: str = Header(default="admin", alias="X-Demo-Role"),
+):
+    return list_serviceops_archived_tickets_response(demo_role)
+
+
 @app.get("/api/serviceops/tickets/{ticket_id}")
 def get_serviceops_ticket(ticket_id: int):
     db = require_db()
@@ -900,12 +913,9 @@ def get_serviceops_ticket(ticket_id: int):
     with db.connect() as conn:
         row = conn.execute(
             text(
-                """
+                f"""
                 SELECT
-                    id, title, status, owner, project,
-                    estimate_hours, actual_hours, task,
-                    display_order, created_at, updated_at,
-                    deleted_at, deleted_by, delete_reason
+                    {SERVICEOPS_TICKET_COLUMNS}
                 FROM serviceops_tickets
                 WHERE id = :ticket_id
                 """
@@ -937,16 +947,13 @@ def create_serviceops_ticket(
 
         row = conn.execute(
             text(
-                """
+                f"""
                 INSERT INTO serviceops_tickets
                     (title, status, owner, project, estimate_hours, actual_hours, task, display_order)
                 VALUES
                     (:title, :status, :owner, :project, :estimate_hours, :actual_hours, :task, :display_order)
                 RETURNING
-                    id, title, status, owner, project,
-                    estimate_hours, actual_hours, task,
-                    display_order, created_at, updated_at,
-                    deleted_at, deleted_by, delete_reason
+                    {SERVICEOPS_TICKET_COLUMNS}
                 """
             ),
             {
@@ -1023,10 +1030,7 @@ def update_serviceops_ticket(
                 WHERE id = :ticket_id
                   AND deleted_at IS NULL
                 RETURNING
-                    id, title, status, owner, project,
-                    estimate_hours, actual_hours, task,
-                    display_order, created_at, updated_at,
-                    deleted_at, deleted_by, delete_reason
+                    {SERVICEOPS_TICKET_COLUMNS}
                 """
             ),
             params,
@@ -1044,7 +1048,7 @@ def update_serviceops_ticket(
             )
 
     if row is None:
-        raise HTTPException(status_code=404, detail="Ticket not found or in trash")
+        raise HTTPException(status_code=404, detail="Ticket not found or archived")
 
     return {
         "status": "updated",
@@ -1063,7 +1067,7 @@ def restore_serviceops_ticket(
     with db.begin() as conn:
         row = conn.execute(
             text(
-                """
+                f"""
                 UPDATE serviceops_tickets
                 SET
                     deleted_at = NULL,
@@ -1073,10 +1077,7 @@ def restore_serviceops_ticket(
                 WHERE id = :ticket_id
                   AND deleted_at IS NOT NULL
                 RETURNING
-                    id, title, status, owner, project,
-                    estimate_hours, actual_hours, task,
-                    display_order, created_at, updated_at,
-                    deleted_at, deleted_by, delete_reason
+                    {SERVICEOPS_TICKET_COLUMNS}
                 """
             ),
             {"ticket_id": ticket_id},
@@ -1089,12 +1090,12 @@ def restore_serviceops_ticket(
                 entity_type="ticket",
                 entity_id=row["id"],
                 action="restore",
-                summary=f"Restored ServiceOps ticket from trash: {row['title']}",
+                summary=f"Restored ServiceOps ticket from archive: {row['title']}",
                 actor=role,
             )
 
     if row is None:
-        raise HTTPException(status_code=404, detail="Ticket not found or not in trash")
+        raise HTTPException(status_code=404, detail="Ticket not found or not archived")
 
     return {
         "status": "restored",
@@ -1103,7 +1104,7 @@ def restore_serviceops_ticket(
 
 
 @app.delete("/api/serviceops/tickets/{ticket_id}")
-def trash_serviceops_ticket(
+def archive_serviceops_ticket(
     ticket_id: int,
     demo_role: str = Header(default="admin", alias="X-Demo-Role"),
 ):
@@ -1113,7 +1114,7 @@ def trash_serviceops_ticket(
     with db.begin() as conn:
         row = conn.execute(
             text(
-                """
+                f"""
                 UPDATE serviceops_tickets
                 SET
                     deleted_at = NOW(),
@@ -1123,16 +1124,13 @@ def trash_serviceops_ticket(
                 WHERE id = :ticket_id
                   AND deleted_at IS NULL
                 RETURNING
-                    id, title, status, owner, project,
-                    estimate_hours, actual_hours, task,
-                    display_order, created_at, updated_at,
-                    deleted_at, deleted_by, delete_reason
+                    {SERVICEOPS_TICKET_COLUMNS}
                 """
             ),
             {
                 "ticket_id": ticket_id,
                 "deleted_by": role,
-                "delete_reason": "Moved to trash from ServiceOps UI",
+                "delete_reason": "Archived from ServiceOps UI",
             },
         ).mappings().first()
 
@@ -1142,16 +1140,16 @@ def trash_serviceops_ticket(
                 module="serviceops",
                 entity_type="ticket",
                 entity_id=row["id"],
-                action="trash",
-                summary=f"Moved ServiceOps ticket to trash: {row['title']}",
+                action="archive",
+                summary=f"Archived ServiceOps ticket: {row['title']}",
                 actor=role,
             )
 
     if row is None:
-        raise HTTPException(status_code=404, detail="Ticket not found or already trashed")
+        raise HTTPException(status_code=404, detail="Ticket not found or already archived")
 
     return {
-        "status": "trashed",
+        "status": "archived",
         "ticket": ticket_row_to_dict(row),
     }
 
