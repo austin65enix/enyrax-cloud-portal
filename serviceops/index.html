@@ -846,7 +846,7 @@
       archiveStatus.textContent = "Loading...";
 
       try {
-        const res = await fetch("/api/serviceops/tickets/trash", {
+        const res = await fetch("/api/serviceops/tickets/archive", {
           headers: window.ENYRAXRole ? window.ENYRAXRole.header() : {}
         });
 
