@@ -1,5 +1,95 @@
 # ENYRAX Cloud Portal Release Notes
 
+## v0.4.0-auth-users-demo
+
+Release date: 2026-05-20
+
+## Summary
+
+This release upgrades ENYRAX Cloud Portal from header-based RBAC demo controls into a login-aware user identity demo.
+
+Demo users can now log in through `/login/`, store a demo auth token and user profile in localStorage, and have the shared Role Switcher automatically use the logged-in user's role across SOC, ServiceOps, ProjectOps and Audit Logs.
+
+## Live URL
+
+- https://portal.soc-monitoring.dev
+- https://portal.soc-monitoring.dev/login/
+
+## Completed
+
+- Users table initializer
+- Demo users seed
+- Demo Auth API
+- `/api/auth/login`
+- `/api/auth/me`
+- Login page at `/login/`
+- Demo account quick-select buttons
+- localStorage demo auth token support
+- localStorage auth user profile support
+- Shared Role Switcher connected to login identity
+- Logged-in Role Switcher UI
+- Logout support
+- Existing demo role switcher preserved for non-login mode
+
+## Demo Users
+
+```text
+viewer@enyrax.local      Viewer      demo1234
+operator@enyrax.local    Operator    demo1234
+supervisor@enyrax.local  Supervisor  demo1234
+admin@enyrax.local       Admin       demo1234
+```
+
+## Auth Flow
+
+```text
+Login Page
+  ↓ POST /api/auth/login
+FastAPI
+  ↓ users table
+PostgreSQL
+  ↓ returns demo token + user profile
+Browser localStorage
+  ├── enyrax_auth_token
+  └── enyrax_auth_user
+        ↓
+Shared Role Switcher
+        ↓
+SOC / ServiceOps / ProjectOps / Audit Logs use logged-in role
+```
+
+## API Changes
+
+### Auth
+
+- `POST /api/auth/login`
+- `GET /api/auth/me`
+
+## Current Product Status
+
+```text
+Portal        Module entry complete
+Login         Demo auth page enabled
+Users         Demo users table enabled
+SOC           RBAC demo controls enabled
+ServiceOps    RBAC + Archive / Restore enabled
+ProjectOps    RBAC + Archive / Restore enabled
+Audit Logs    API-connected and role-protected
+Role Source   Login identity first, demo role fallback
+```
+
+## Next Phase
+
+- Use `/api/auth/me` to validate token on page load
+- Replace demo token with signed JWT
+- Replace `X-Demo-Role` with authenticated role from backend
+- Store password hashes instead of demo password
+- Add user management page
+- Add actor identity to audit logs
+- Add session expiration / logout redirect
+
+---
+
 ## v0.3.0-rbac-archive-demo
 
 Release date: 2026-05-20
