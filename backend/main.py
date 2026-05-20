@@ -108,6 +108,18 @@ class SocIncidentUpdate(BaseModel):
     mitre: Optional[str] = Field(default=None, max_length=160)
 
 
+class AuthLoginRequest(BaseModel):
+    email: str = Field(..., min_length=1, max_length=255)
+    password: str = Field(..., min_length=1)
+
+
+class AuthUserResponse(BaseModel):
+    id: int
+    email: str
+    display_name: str
+    role: str
+
+
 MODULES = [
     {
         "key": "portal",
@@ -162,6 +174,16 @@ ROLE_LEVELS = {
 }
 
 
+DEMO_PASSWORD = "demo1234"
+
+DEMO_TOKENS = {
+    "demo-token-viewer": "viewer@enyrax.local",
+    "demo-token-operator": "operator@enyrax.local",
+    "demo-token-supervisor": "supervisor@enyrax.local",
+    "demo-token-admin": "admin@enyrax.local",
+}
+
+
 def normalize_demo_role(role: Optional[str]) -> str:
     normalized = (role or "viewer").strip().lower()
 
@@ -187,6 +209,45 @@ def require_db():
     if engine is None:
         raise HTTPException(status_code=503, detail="Database is not configured")
     return engine
+
+
+def get_user_by_email(conn, email):
+    return conn.execute(
+        text(
+            """
+            SELECT
+                id, email, display_name, role, is_active
+            FROM users
+            WHERE email = :email
+            """
+        ),
+        {"email": email},
+    ).mappings().first()
+
+
+def token_to_email(token):
+    return DEMO_TOKENS.get(token)
+
+
+def extract_bearer_token(authorization):
+    if not authorization:
+        return None
+
+    scheme, _, token = authorization.partition(" ")
+
+    if scheme.lower() != "bearer" or not token.strip():
+        return None
+
+    return token.strip()
+
+
+def auth_user_response(row):
+    return {
+        "id": row["id"],
+        "email": row["email"],
+        "display_name": row["display_name"],
+        "role": row["role"],
+    }
 
 
 SERVICEOPS_TICKET_COLUMNS = """
@@ -310,8 +371,57 @@ def health():
             "serviceops": "api-driven",
             "projectops": "api-driven",
             "audit": "api-connected",
+            "auth": "api-connected",
             "status": "api-connected",
         },
+    }
+
+
+@app.post("/api/auth/login")
+def auth_login(payload: AuthLoginRequest):
+    if payload.password != DEMO_PASSWORD:
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+
+    db = require_db()
+
+    with db.connect() as conn:
+        user = get_user_by_email(conn, payload.email)
+
+    if user is None:
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+
+    if not user["is_active"]:
+        raise HTTPException(status_code=403, detail="User is inactive")
+
+    return {
+        "status": "ok",
+        "token": f"demo-token-{user['role']}",
+        "user": auth_user_response(user),
+    }
+
+
+@app.get("/api/auth/me")
+def auth_me(authorization: Optional[str] = Header(default=None, alias="Authorization")):
+    token = extract_bearer_token(authorization)
+    email = token_to_email(token)
+
+    if email is None:
+        raise HTTPException(status_code=401, detail="Invalid or missing token")
+
+    db = require_db()
+
+    with db.connect() as conn:
+        user = get_user_by_email(conn, email)
+
+    if user is None:
+        raise HTTPException(status_code=401, detail="Invalid or missing token")
+
+    if not user["is_active"]:
+        raise HTTPException(status_code=403, detail="User is inactive")
+
+    return {
+        "status": "ok",
+        "user": auth_user_response(user),
     }
 
 
