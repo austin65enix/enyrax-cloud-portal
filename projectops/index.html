@@ -6,17 +6,17 @@
   <title>ENYRAX ProjectOps</title>
   <style>
     :root {
-      --bg: #080a18;
-      --panel: rgba(13, 17, 38, .86);
-      --panel2: rgba(17, 24, 55, .92);
-      --line: rgba(255, 215, 130, .22);
+      --bg: #071018;
+      --card: rgba(255,255,255,.06);
+      --text: #f7f2df;
+      --muted: rgba(247,242,223,.68);
+      --line: rgba(255,255,255,.12);
       --gold: #f5d37a;
       --cyan: #73f4df;
       --green: #8ff7b2;
       --orange: #ffb86b;
       --red: #ff6b86;
-      --text: #f7f2df;
-      --muted: rgba(247, 242, 223, .68);
+      --purple: #b894ff;
     }
 
     * { box-sizing: border-box; }
@@ -25,296 +25,212 @@
       margin: 0;
       min-height: 100vh;
       color: var(--text);
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       background:
-        radial-gradient(circle at 12% 8%, rgba(245, 211, 122, .14), transparent 30%),
-        radial-gradient(circle at 88% 8%, rgba(115, 244, 223, .13), transparent 28%),
-        linear-gradient(135deg, #080a18 0%, #121842 55%, #070813 100%);
+        radial-gradient(circle at top left, rgba(115,244,223,.16), transparent 32%),
+        radial-gradient(circle at top right, rgba(245,211,122,.12), transparent 30%),
+        linear-gradient(180deg, #071018 0%, #090d16 100%);
     }
 
     .wrap {
-      width: min(1160px, calc(100% - 36px));
+      width: min(1180px, calc(100% - 32px));
       margin: 0 auto;
-      padding: 44px 0;
+      padding: 34px 0 48px;
     }
 
-    .top {
+    .nav {
       display: flex;
       justify-content: space-between;
-      align-items: flex-start;
-      gap: 20px;
-      flex-wrap: wrap;
-      margin-bottom: 26px;
-    }
-
-    .badge {
-      display: inline-flex;
-      gap: 10px;
+      gap: 16px;
       align-items: center;
-      padding: 8px 14px;
-      border: 1px solid rgba(115, 244, 223, .32);
-      border-radius: 999px;
-      color: var(--cyan);
-      background: rgba(115, 244, 223, .06);
-      font-size: 14px;
-      font-weight: 900;
+      margin-bottom: 28px;
+      padding-right: 230px;
     }
 
-    h1 {
-      margin: 18px 0 10px;
-      font-size: clamp(36px, 6vw, 68px);
-      line-height: 1;
-      letter-spacing: .04em;
+    .brand {
+      display: grid;
+      gap: 4px;
     }
 
-    .subtitle {
-      color: var(--muted);
-      font-size: 18px;
-      line-height: 1.6;
-      max-width: 780px;
-    }
-
-    .api-line {
-      margin-top: 8px;
-      color: rgba(247, 242, 223, .48);
+    .brand strong {
+      color: var(--gold);
+      letter-spacing: .14em;
       font-size: 13px;
     }
 
-    .back {
-      text-decoration: none;
-      color: #081018;
-      background: linear-gradient(135deg, var(--gold), #fff0b8);
-      padding: 12px 16px;
-      border-radius: 14px;
-      font-weight: 900;
-      box-shadow: 0 16px 48px rgba(245, 211, 122, .16);
+    .brand span {
+      color: var(--muted);
+      font-size: 13px;
     }
 
-    .metrics {
+    .links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .links a {
+      color: var(--text);
+      text-decoration: none;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.04);
+      padding: 9px 12px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .hero {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
       gap: 14px;
-      margin: 26px 0;
+      margin-bottom: 22px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(34px, 6vw, 64px);
+      line-height: .95;
+      letter-spacing: -.05em;
+    }
+
+    .subtitle {
+      max-width: 850px;
+      color: var(--muted);
+      font-size: 16px;
+      line-height: 1.7;
+    }
+
+    .role-note {
+      display: inline-flex;
+      width: fit-content;
+      gap: 8px;
+      align-items: center;
+      border: 1px solid rgba(245, 211, 122, .22);
+      background: rgba(245, 211, 122, .06);
+      color: var(--muted);
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-size: 13px;
+      font-weight: 800;
+      flex-wrap: wrap;
+    }
+
+    .role-note strong { color: var(--gold); }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 12px;
+      margin: 22px 0;
     }
 
     .metric {
-      padding: 20px;
-      border-radius: 22px;
       border: 1px solid var(--line);
-      background: var(--panel);
-      box-shadow: 0 20px 70px rgba(0, 0, 0, .24);
+      background: var(--card);
+      border-radius: 22px;
+      padding: 16px;
+      box-shadow: 0 24px 80px rgba(0,0,0,.18);
     }
 
     .metric .label {
       color: var(--muted);
-      font-size: 13px;
-      font-weight: 800;
+      font-size: 11px;
+      font-weight: 900;
       text-transform: uppercase;
       letter-spacing: .08em;
     }
 
-    .metric .num {
-      margin-top: 10px;
-      font-size: 34px;
+    .metric .value {
+      margin-top: 8px;
+      color: var(--gold);
+      font-size: 28px;
       font-weight: 950;
-    }
-
-    .metric .hint {
-      margin-top: 6px;
-      color: var(--muted);
-      font-size: 13px;
     }
 
     .layout {
       display: grid;
-      grid-template-columns: 1.05fr .95fr;
+      grid-template-columns: 1.15fr .85fr;
       gap: 16px;
+      align-items: start;
     }
 
     .card {
-      padding: 22px;
-      border-radius: 24px;
       border: 1px solid var(--line);
-      background: var(--panel);
-      box-shadow: 0 20px 70px rgba(0, 0, 0, .24);
+      background: var(--card);
+      border-radius: 26px;
+      padding: 20px;
+      box-shadow: 0 24px 80px rgba(0,0,0,.22);
     }
 
-    .card h2 {
-      margin: 0 0 16px;
-      color: var(--gold);
-      font-size: 22px;
-    }
+    .card + .card { margin-top: 16px; }
 
-    .project {
-      padding: 16px;
-      border-radius: 18px;
-      background: var(--panel2);
-      border: 1px solid rgba(255, 255, 255, .08);
-      margin-bottom: 12px;
-    }
-
-    .project:last-child { margin-bottom: 0; }
-
-    .project-top {
+    .card-top,
+    .project-top,
+    .flow-top {
       display: flex;
-      justify-content: space-between;
-      gap: 14px;
       align-items: center;
-      margin-bottom: 8px;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 20px;
+      letter-spacing: -.02em;
+    }
+
+    .status {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .project,
+    .flow-card,
+    .gantt-row {
+      border: 1px solid rgba(255,255,255,.1);
+      background: rgba(255,255,255,.045);
+      border-radius: 20px;
+      padding: 16px;
+      margin-top: 12px;
+    }
+
+    .project:first-child,
+    .flow-card:first-child,
+    .gantt-row:first-child {
+      margin-top: 0;
     }
 
     .title {
+      font-size: 16px;
       font-weight: 950;
-      font-size: 17px;
+      color: var(--text);
+    }
+
+    .meta {
+      color: var(--muted);
+      line-height: 1.55;
+      font-size: 14px;
+      margin-top: 8px;
     }
 
     .pill {
-      padding: 5px 10px;
+      display: inline-flex;
+      align-items: center;
       border-radius: 999px;
+      padding: 5px 9px;
       font-size: 12px;
       font-weight: 950;
-      white-space: nowrap;
       text-transform: uppercase;
+      white-space: nowrap;
     }
 
     .ontrack { color: #062014; background: var(--green); }
     .watch { color: #241203; background: var(--orange); }
     .risk { color: #26060c; background: var(--red); }
-
-    .meta {
-      color: var(--muted);
-      font-size: 14px;
-      line-height: 1.55;
-    }
-
-    .bar {
-      margin-top: 12px;
-      height: 10px;
-      border-radius: 999px;
-      background: rgba(255, 255, 255, .08);
-      overflow: hidden;
-    }
-
-    .fill {
-      height: 100%;
-      border-radius: 999px;
-      background: linear-gradient(90deg, var(--cyan), var(--gold));
-    }
-
-    .gantt {
-      display: grid;
-      gap: 12px;
-    }
-
-    .phase {
-      display: grid;
-      grid-template-columns: 150px 1fr 70px;
-      gap: 12px;
-      align-items: center;
-    }
-
-    .phase-name {
-      color: var(--muted);
-      font-weight: 800;
-      font-size: 14px;
-    }
-
-    .lane {
-      height: 18px;
-      border-radius: 999px;
-      background: rgba(255,255,255,.07);
-      position: relative;
-      overflow: hidden;
-    }
-
-    .lane span {
-      position: absolute;
-      top: 0;
-      bottom: 0;
-      border-radius: 999px;
-      background: linear-gradient(90deg, var(--cyan), var(--gold));
-    }
-
-    .pct {
-      color: var(--cyan);
-      font-weight: 900;
-      font-size: 13px;
-      text-align: right;
-    }
-
-    .wide {
-      grid-column: span 2;
-      margin-top: 16px;
-    }
-
-    .cost-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 14px;
-    }
-
-    .cost {
-      padding: 16px;
-      border-radius: 18px;
-      background: rgba(255,255,255,.04);
-      border: 1px solid rgba(115, 244, 223, .16);
-    }
-
-    .cost .k {
-      color: var(--muted);
-      font-size: 13px;
-      font-weight: 900;
-      margin-bottom: 8px;
-    }
-
-    .cost .v {
-      font-size: 24px;
-      font-weight: 950;
-    }
-
-    .cost .d {
-      color: var(--muted);
-      font-size: 13px;
-      line-height: 1.5;
-      margin-top: 8px;
-    }
-
-    .flow {
-      display: grid;
-      grid-template-columns: repeat(5, 1fr);
-      gap: 12px;
-      margin-top: 16px;
-    }
-
-    .step {
-      padding: 16px;
-      border-radius: 18px;
-      background: rgba(255,255,255,.04);
-      border: 1px solid rgba(255,255,255,.08);
-      min-height: 128px;
-    }
-
-    .step .k {
-      color: var(--cyan);
-      font-size: 13px;
-      font-weight: 950;
-      letter-spacing: .06em;
-      text-transform: uppercase;
-      margin-bottom: 10px;
-    }
-
-    .step .name {
-      font-weight: 950;
-      margin-bottom: 8px;
-    }
-
-    .step .desc {
-      color: var(--muted);
-      line-height: 1.5;
-      font-size: 14px;
-    }
-
-
+    .done { color: #062014; background: var(--green); }
+    .create { color: #081018; background: linear-gradient(135deg, var(--gold), #fff0b8); }
 
     .project-actions {
       display: flex;
@@ -334,19 +250,25 @@
       font-size: 12px;
     }
 
-    .mini-btn.track-btn {
+    .ontrack-btn {
       color: #062014;
       background: var(--green);
       border-color: rgba(143, 247, 178, .4);
     }
 
-    .mini-btn.risk-btn {
+    .watch-btn {
+      color: #241203;
+      background: var(--orange);
+      border-color: rgba(255, 184, 107, .4);
+    }
+
+    .risk-btn {
       color: #26060c;
       background: var(--red);
       border-color: rgba(255, 107, 134, .4);
     }
 
-    .mini-btn.delete-btn {
+    .delete-btn {
       color: #26060c;
       background: var(--red);
       border-color: rgba(255, 107, 134, .4);
@@ -354,6 +276,39 @@
 
     .mini-btn:hover {
       transform: translateY(-1px);
+    }
+
+    .progress-wrap {
+      margin-top: 12px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.04);
+      height: 12px;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--cyan), var(--gold));
+      border-radius: 999px;
+    }
+
+    .gantt-track {
+      position: relative;
+      height: 18px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.06);
+      overflow: hidden;
+      margin-top: 10px;
+    }
+
+    .gantt-bar {
+      position: absolute;
+      top: 0;
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--cyan), var(--gold));
     }
 
     .form-grid {
@@ -386,6 +341,10 @@
       background: rgba(255,255,255,.05);
       outline: none;
       font: inherit;
+    }
+
+    input[type="date"] {
+      color-scheme: dark;
     }
 
     textarea {
@@ -422,197 +381,262 @@
     .form-message {
       color: var(--muted);
       font-size: 14px;
+      font-weight: 800;
+    }
+
+    .error-text {
+      color: var(--red);
+      font-weight: 850;
+    }
+
+    .empty-text {
+      color: var(--muted);
+      font-weight: 800;
+      line-height: 1.55;
+    }
+
+    .cost-box {
+      display: grid;
+      gap: 10px;
+    }
+
+    .cost-item {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      border: 1px solid rgba(255,255,255,.1);
+      background: rgba(255,255,255,.045);
+      border-radius: 16px;
+      padding: 12px;
+      color: var(--muted);
+      font-weight: 800;
+    }
+
+    .cost-item strong {
+      color: var(--gold);
     }
 
     .footer {
-      margin-top: 30px;
-      display: flex;
-      justify-content: space-between;
-      gap: 14px;
-      flex-wrap: wrap;
-      color: rgba(247, 242, 223, .52);
-      font-size: 14px;
-      border-top: 1px solid rgba(255,255,255,.08);
-      padding-top: 18px;
+      margin-top: 22px;
+      color: var(--muted);
+      font-size: 13px;
+      text-align: center;
     }
 
-    @media (max-width: 960px) {
-      .metrics { grid-template-columns: 1fr 1fr; }
+    @media (max-width: 1080px) {
+      .grid { grid-template-columns: repeat(2, 1fr); }
       .layout { grid-template-columns: 1fr; }
-      .wide { grid-column: span 1; }
-      .cost-grid { grid-template-columns: 1fr 1fr; }
-      .flow { grid-template-columns: 1fr; }
-      .form-grid { grid-template-columns: 1fr; }
-      .form-full { grid-column: span 1; }
     }
 
-    @media (max-width: 620px) {
-      .metrics { grid-template-columns: 1fr; }
-      .cost-grid { grid-template-columns: 1fr; }
-      .project-top { align-items: flex-start; flex-direction: column; }
-      .phase { grid-template-columns: 1fr; }
-      .pct { text-align: left; }
+    @media (max-width: 760px) {
+      .nav {
+        align-items: flex-start;
+        flex-direction: column;
+        padding-right: 0;
+      }
+
+      .grid,
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .form-full {
+        grid-column: span 1;
+      }
     }
   </style>
 </head>
+
 <body>
   <main class="wrap">
-    <section class="top">
-      <div>
-        <div class="badge">ProjectOps · API-Driven Demo · Timeline · Budget · Risk View</div>
-        <h1>ENYRAX ProjectOps</h1>
-        <p class="subtitle">
-          A project operation layer that connects delivery timeline, infrastructure work,
-          labor hours, budget usage and overrun risk into one management view.
-        </p>
-        <div class="api-line" id="api-time">Loading ProjectOps summary from API...</div>
+    <nav class="nav">
+      <div class="brand">
+        <strong>ENYRAX</strong>
+        <span>ProjectOps / Portfolio Delivery Control</span>
       </div>
-      <a class="back" href="/">Back to Portal</a>
+
+      <div class="links">
+        <a href="/">Portal</a>
+        <a href="/soc/">SOC</a>
+        <a href="/serviceops/">ServiceOps</a>
+        <a href="/audit/">Audit Logs</a>
+        <a href="/status/">Status</a>
+      </div>
+    </nav>
+
+    <section class="hero">
+      <h1>ProjectOps</h1>
+      <div class="subtitle">
+        Project schedule, budget usage, linked ServiceOps work hours and overrun risk.
+        This page reads from <strong>/api/projectops/summary</strong> and writes to
+        <strong>/api/projectops/projects</strong>.
+      </div>
+      <div class="role-note">
+        Current role: <strong id="current-role-label">Admin</strong>
+        <span>· Viewer read-only · Operator updates projects · Admin deletes</span>
+      </div>
     </section>
 
-    <section class="metrics">
+    <section class="grid">
       <div class="metric">
-        <div class="label">Active Projects</div>
-        <div class="num" id="metric-active-projects">-</div>
-        <div class="hint" id="metric-project-summary">Loading project summary...</div>
+        <div class="label">Projects</div>
+        <div class="value" id="metric-projects">-</div>
+      </div>
+      <div class="metric">
+        <div class="label">On Track</div>
+        <div class="value" id="metric-ontrack">-</div>
+      </div>
+      <div class="metric">
+        <div class="label">Watch</div>
+        <div class="value" id="metric-watch">-</div>
+      </div>
+      <div class="metric">
+        <div class="label">Risk</div>
+        <div class="value" id="metric-risk">-</div>
       </div>
       <div class="metric">
         <div class="label">Budget Used</div>
-        <div class="num" id="metric-budget-used">-</div>
-        <div class="hint">Across active project portfolio</div>
+        <div class="value" id="metric-budget">-</div>
       </div>
       <div class="metric">
-        <div class="label">ServiceOps Hours</div>
-        <div class="num" id="metric-serviceops-hours">-</div>
-        <div class="hint">Worklogs mapped to projects</div>
+        <div class="label">Ops Hours</div>
+        <div class="value" id="metric-hours">-</div>
       </div>
       <div class="metric">
-        <div class="label">Overrun Risk</div>
-        <div class="num" id="metric-overrun-risk">-</div>
-        <div class="hint">Projects require management review</div>
+        <div class="label">Overrun</div>
+        <div class="value" id="metric-overrun">-</div>
       </div>
     </section>
 
     <section class="layout">
-      <div class="card">
-        <h2>Project Portfolio</h2>
-        <div id="project-list">
-          <div class="project">
-            <div class="meta">Loading project portfolio...</div>
-          </div>
-        </div>
-      </div>
-
-      
-        <div class="project" style="margin-top: 16px;">
-          <div class="project-top">
-            <div class="title">Add ProjectOps Project</div>
-            <div class="pill watch">CREATE</div>
+      <div>
+        <div class="card">
+          <div class="card-top">
+            <h2>Project Portfolio</h2>
+            <div class="status" id="load-status">Loading...</div>
           </div>
 
-          <form id="project-form">
-            <div class="form-grid">
-              <label>
-                Title
-                <input id="project-title" name="title" required maxlength="200" placeholder="Example: ServiceOps Workflow Expansion">
-              </label>
+          <div id="project-list">
+            <div class="project">
+              <div class="meta">Loading ProjectOps projects...</div>
+            </div>
+          </div>
 
-              <label>
-                Status
-                <select id="project-status" name="status">
-                  <option value="watch">Watch</option>
-                  <option value="ontrack">On Track</option>
-                  <option value="risk">Risk</option>
-                </select>
-              </label>
-
-              <label>
-                Owner
-                <input id="project-owner" name="owner" required maxlength="120" value="ENYRAX / Infra">
-              </label>
-
-              <label>
-                Progress
-                <input id="project-progress" name="progress" type="number" min="0" max="100" value="10">
-              </label>
-
-              <label>
-                Start Date
-                <input id="project-start-date" name="start_date" type="date">
-              </label>
-
-              <label>
-                End Date
-                <input id="project-end-date" name="end_date" type="date">
-              </label>
-
-              <label>
-                Budget Hours
-                <input id="project-budget" name="budget_hours" type="number" step="1" min="0" value="60">
-              </label>
-
-              <label>
-                Actual Hours
-                <input id="project-actual" name="actual_hours" type="number" step="1" min="0" value="0">
-              </label>
-
-              <label>
-                Linked Tickets
-                <input id="project-linked" name="linked_tickets" type="number" step="1" min="0" value="0">
-              </label>
-
-              <label class="form-full">
-                Scope
-                <textarea id="project-scope" name="scope" required placeholder="Describe the project scope..."></textarea>
-              </label>
+          <div class="project" id="project-create-panel" style="margin-top: 16px;">
+            <div class="project-top">
+              <div class="title">Add Project</div>
+              <div class="pill create">CREATE</div>
             </div>
 
-            <div class="submit-row">
-              <button class="submit-btn" type="submit">Create Project</button>
-              <span class="form-message" id="project-form-message">Ready.</span>
+            <form id="project-form">
+              <div class="form-grid">
+                <label>
+                  Title
+                  <input id="project-title" required maxlength="200" placeholder="Example: ERP Upgrade Phase 2">
+                </label>
+
+                <label>
+                  Status
+                  <select id="project-status">
+                    <option value="ontrack">On Track</option>
+                    <option value="watch">Watch</option>
+                    <option value="risk">Risk</option>
+                  </select>
+                </label>
+
+                <label>
+                  Owner
+                  <input id="project-owner" required maxlength="120" value="IT / Infra">
+                </label>
+
+                <label>
+                  Progress %
+                  <input id="project-progress" type="number" min="0" max="100" value="10">
+                </label>
+
+                <label>
+                  Budget Hours
+                  <input id="project-budget-hours" type="number" step="1" min="0" value="40">
+                </label>
+
+                <label>
+                  Actual Hours
+                  <input id="project-actual-hours" type="number" step="1" min="0" value="0">
+                </label>
+
+                <label>
+                  Linked Tickets
+                  <input id="project-linked-tickets" type="number" step="1" min="0" value="0">
+                </label>
+
+                <label>
+                  Start Date
+                  <input id="project-start-date" type="date">
+                </label>
+
+                <label>
+                  End Date
+                  <input id="project-end-date" type="date">
+                </label>
+
+                <label class="form-full">
+                  Scope
+                  <textarea id="project-scope" required placeholder="Describe project scope..."></textarea>
+                </label>
+              </div>
+
+              <div class="submit-row">
+                <button class="submit-btn" type="submit">Create Project</button>
+                <span class="form-message" id="project-form-message">Ready.</span>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <aside>
+        <div class="card">
+          <div class="card-top">
+            <h2>Gantt Snapshot</h2>
+          </div>
+          <div id="gantt-list">
+            <div class="gantt-row">
+              <div class="meta">Loading gantt...</div>
             </div>
-          </form>
-        </div>
-
-      </div>
-
-      <div class="card">
-        <h2>Gantt Snapshot</h2>
-        <div class="gantt" id="gantt-list">
-          <div class="phase">
-            <div class="phase-name">Loading</div>
-            <div class="lane"><span style="left: 0%; width: 10%;"></span></div>
-            <div class="pct">...</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="card wide">
-        <h2>Budget / Labor Cost View</h2>
-
-        <div class="cost-grid" id="cost-grid">
-          <div class="cost">
-            <div class="k">Loading</div>
-            <div class="v">-</div>
-            <div class="d">Fetching cost data from API...</div>
           </div>
         </div>
 
-        <div class="flow" id="project-flow">
-          <div class="step">
-            <div class="k">Loading</div>
-            <div class="name">Fetching</div>
-            <div class="desc">Loading ProjectOps flow from API...</div>
+        <div class="card">
+          <div class="card-top">
+            <h2>Cost / Risk</h2>
+          </div>
+          <div class="cost-box" id="cost-box">
+            <div class="cost-item">
+              <span>Loading</span>
+              <strong>-</strong>
+            </div>
           </div>
         </div>
-      </div>
+
+        <div class="card">
+          <div class="card-top">
+            <h2>Workflow</h2>
+          </div>
+          <div id="flow-list">
+            <div class="flow-card">
+              <div class="meta">Loading workflow...</div>
+            </div>
+          </div>
+        </div>
+      </aside>
     </section>
 
-    <footer class="footer">
-      <span>ENYRAX ProjectOps Demo</span>
-      <span>Project → Ticket → Worklog → Cost → Risk Forecast → Management View</span>
-    </footer>
+    <div class="footer">
+      ENYRAX Cloud Portal · ProjectOps · PostgreSQL-backed project portfolio
+    </div>
   </main>
+
+  <script src="/shared/role-switcher.js"></script>
 
   <script>
     function escapeHtml(value) {
@@ -624,179 +648,259 @@
         .replaceAll("'", "&#039;");
     }
 
-    function statusLabel(status) {
-      return String(status || "")
-        .replaceAll("_", " ")
-        .toUpperCase();
+    function roleLabel(role) {
+      const labels = {
+        viewer: "Viewer",
+        operator: "Operator",
+        supervisor: "Supervisor",
+        admin: "Admin"
+      };
+
+      return labels[role] || role;
     }
 
-    function safePercent(value) {
-      const n = Number(value);
-      if (!Number.isFinite(n)) return 0;
-      return Math.max(0, Math.min(100, n));
+    function updateRoleLabel() {
+      const role = window.ENYRAXRole ? window.ENYRAXRole.get() : "admin";
+      const el = document.getElementById("current-role-label");
+      if (el) el.textContent = roleLabel(role);
+    }
+
+    function currentRole() {
+      return window.ENYRAXRole ? window.ENYRAXRole.get() : "admin";
+    }
+
+    function roleLevel(role) {
+      const levels = {
+        viewer: 1,
+        operator: 2,
+        supervisor: 3,
+        admin: 4
+      };
+
+      return levels[role] || 1;
+    }
+
+    function canWrite() {
+      return roleLevel(currentRole()) >= roleLevel("operator");
+    }
+
+    function canDelete() {
+      return roleLevel(currentRole()) >= roleLevel("admin");
+    }
+
+    function applyRoleVisibility() {
+      const createPanel = document.getElementById("project-create-panel");
+      if (createPanel) {
+        createPanel.style.display = canWrite() ? "block" : "none";
+      }
+    }
+
+    function statusLabel(status) {
+      const labels = {
+        ontrack: "On Track",
+        watch: "Watch",
+        risk: "Risk"
+      };
+
+      return labels[status] || status;
+    }
+
+    function formatDate(value) {
+      if (!value) return "-";
+      return value;
+    }
+
+    function resetMetrics() {
+      document.getElementById("metric-projects").textContent = "-";
+      document.getElementById("metric-ontrack").textContent = "-";
+      document.getElementById("metric-watch").textContent = "-";
+      document.getElementById("metric-risk").textContent = "-";
+      document.getElementById("metric-budget").textContent = "-";
+      document.getElementById("metric-hours").textContent = "-";
+      document.getElementById("metric-overrun").textContent = "-";
+    }
+
+    async function parseError(res, fallback) {
+      const errorData = await res.json().catch(() => ({}));
+      return new Error(errorData.detail || `${fallback}: ${res.status}`);
+    }
+
+    function renderProjectActions(item) {
+      const id = Number(item.id);
+
+      if (!id || !canWrite()) {
+        return "";
+      }
+
+      const actions = [];
+
+      if (item.status !== "ontrack") {
+        actions.push(`
+          <button class="mini-btn ontrack-btn" type="button" onclick="updateProjectStatus(${id}, 'ontrack')">
+            Mark On Track
+          </button>
+        `);
+      }
+
+      if (item.status !== "watch") {
+        actions.push(`
+          <button class="mini-btn watch-btn" type="button" onclick="updateProjectStatus(${id}, 'watch')">
+            Mark Watch
+          </button>
+        `);
+      }
+
+      if (item.status !== "risk") {
+        actions.push(`
+          <button class="mini-btn risk-btn" type="button" onclick="updateProjectStatus(${id}, 'risk')">
+            Mark Risk
+          </button>
+        `);
+      }
+
+      if (canDelete()) {
+        actions.push(`
+          <button class="mini-btn delete-btn" type="button" onclick="deleteProject(${id})">
+            Delete
+          </button>
+        `);
+      }
+
+      return `
+        <div class="project-actions">
+          ${actions.join("")}
+        </div>
+      `;
     }
 
     async function loadProjectOpsSummary() {
-      const apiTime = document.getElementById("api-time");
+      updateRoleLabel();
+      applyRoleVisibility();
+
+      const status = document.getElementById("load-status");
+      const projectList = document.getElementById("project-list");
+      const ganttList = document.getElementById("gantt-list");
+      const costBox = document.getElementById("cost-box");
+      const flowList = document.getElementById("flow-list");
+
+      status.textContent = "Loading...";
 
       try {
-        const res = await fetch("/api/projectops/summary", { cache: "no-store" });
+        const res = await fetch("/api/projectops/summary", {
+          headers: window.ENYRAXRole ? window.ENYRAXRole.header() : {}
+        });
 
         if (!res.ok) {
-          throw new Error("ProjectOps summary API returned " + res.status);
+          throw await parseError(res, "Load failed");
         }
 
         const data = await res.json();
         const metrics = data.metrics || {};
 
-        document.getElementById("metric-active-projects").textContent = metrics.active_projects ?? "-";
-        document.getElementById("metric-budget-used").textContent =
-          metrics.budget_used != null ? metrics.budget_used + "%" : "-";
-        document.getElementById("metric-serviceops-hours").textContent = metrics.serviceops_hours ?? "-";
-        document.getElementById("metric-overrun-risk").textContent = metrics.overrun_risk ?? "-";
-        document.getElementById("metric-project-summary").textContent =
-          `${metrics.on_track ?? 0} on track / ${metrics.watch ?? 0} watch / ${metrics.risk ?? 0} risk`;
+        document.getElementById("metric-projects").textContent = metrics.active_projects ?? "-";
+        document.getElementById("metric-ontrack").textContent = metrics.on_track ?? "-";
+        document.getElementById("metric-watch").textContent = metrics.watch ?? "-";
+        document.getElementById("metric-risk").textContent = metrics.risk ?? "-";
+        document.getElementById("metric-budget").textContent = `${metrics.budget_used ?? "-"}%`;
+        document.getElementById("metric-hours").textContent = metrics.serviceops_hours ?? "-";
+        document.getElementById("metric-overrun").textContent = metrics.overrun_risk ?? "-";
 
-        apiTime.textContent = `API Source: /api/projectops/summary · ${data.time_utc || ""}`;
+        const projects = data.projects || [];
 
-        const projects = Array.isArray(data.projects) ? data.projects : [];
-        document.getElementById("project-list").innerHTML = projects.map((project) => {
-          const status = String(project.status || "watch");
-          const statusClass = ["ontrack", "watch", "risk"].includes(status) ? status : "watch";
-          const progress = safePercent(project.progress);
-
-          return `
+        if (!projects.length) {
+          projectList.innerHTML = `
             <div class="project">
-              <div class="project-top">
-                <div class="title">${escapeHtml(project.title)}</div>
-                <div class="pill ${statusClass}">${escapeHtml(statusLabel(status))}</div>
-              </div>
-              <div class="meta">
-                Owner: ${escapeHtml(project.owner)} · Budget: ${escapeHtml(project.budget_hours)}h
-                · Actual: ${escapeHtml(project.actual_hours)}h · ServiceOps linked tickets: ${escapeHtml(project.linked_tickets)}<br>
-                Period: ${escapeHtml(project.start_date || "-")} → ${escapeHtml(project.end_date || "-")}<br>
-                Scope: ${escapeHtml(project.scope)}
-              </div>
-              <div class="bar"><div class="fill" style="width: ${progress}%"></div></div>
-              <div class="project-actions">
-                <button class="mini-btn track-btn" type="button" onclick="markProjectOnTrack(${Number(project.id)})">Mark On Track</button>
-                <button class="mini-btn risk-btn" type="button" onclick="markProjectRisk(${Number(project.id)})">Mark Risk</button>
-                <button class="mini-btn delete-btn" type="button" onclick="deleteProject(${Number(project.id)})">Delete</button>
-              </div>
+              <div class="empty-text">No ProjectOps projects found.</div>
             </div>
           `;
-        }).join("");
+        } else {
+          projectList.innerHTML = projects.map((item) => {
+            const progress = Math.max(0, Math.min(100, Number(item.progress || 0)));
 
-        const gantt = Array.isArray(data.gantt) ? data.gantt : [];
-        document.getElementById("gantt-list").innerHTML = gantt.map((item) => {
-          const offset = safePercent(item.offset);
-          const width = safePercent(item.width);
+            return `
+              <div class="project">
+                <div class="project-top">
+                  <div class="title">${escapeHtml(item.title)}</div>
+                  <div class="pill ${escapeHtml(item.status)}">${escapeHtml(statusLabel(item.status))}</div>
+                </div>
+                <div class="meta">
+                  Owner: ${escapeHtml(item.owner)}<br>
+                  Start: ${escapeHtml(formatDate(item.start_date))} · End: ${escapeHtml(formatDate(item.end_date))}<br>
+                  Budget: ${escapeHtml(item.budget_hours)}h · Actual: ${escapeHtml(item.actual_hours)}h · Linked Tickets: ${escapeHtml(item.linked_tickets)}<br>
+                  Scope: ${escapeHtml(item.scope)}
+                </div>
+                <div class="progress-wrap">
+                  <div class="progress-bar" style="width: ${progress}%"></div>
+                </div>
+                <div class="meta">Progress: ${progress}%</div>
+                ${renderProjectActions(item)}
+              </div>
+            `;
+          }).join("");
+        }
+
+        ganttList.innerHTML = (data.gantt || []).map((item) => {
+          const offset = Math.max(0, Math.min(100, Number(item.offset || 0)));
+          const width = Math.max(0, Math.min(100, Number(item.width || 0)));
 
           return `
-            <div class="phase">
-              <div class="phase-name">${escapeHtml(item.phase)}</div>
-              <div class="lane"><span style="left: ${offset}%; width: ${width}%;"></span></div>
-              <div class="pct">${escapeHtml(item.status)}</div>
+            <div class="gantt-row">
+              <div class="flow-top">
+                <div class="title">${escapeHtml(item.phase)}</div>
+                <div class="pill watch">${escapeHtml(item.status)}</div>
+              </div>
+              <div class="gantt-track">
+                <div class="gantt-bar" style="left:${offset}%; width:${width}%;"></div>
+              </div>
             </div>
           `;
         }).join("");
 
         const cost = data.cost || {};
-        document.getElementById("cost-grid").innerHTML = `
-          <div class="cost">
-            <div class="k">Planned Budget</div>
-            <div class="v">${escapeHtml(cost.planned_budget || "-")}</div>
-            <div class="d">Initial project labor estimate across infra, security and support tasks.</div>
+        costBox.innerHTML = `
+          <div class="cost-item">
+            <span>Planned Budget</span>
+            <strong>${escapeHtml(cost.planned_budget || "-")}</strong>
           </div>
-
-          <div class="cost">
-            <div class="k">Actual Worklog</div>
-            <div class="v">${escapeHtml(cost.actual_worklog || "-")}</div>
-            <div class="d">Real work hours imported from ServiceOps tickets and member reports.</div>
+          <div class="cost-item">
+            <span>Actual Worklog</span>
+            <strong>${escapeHtml(cost.actual_worklog || "-")}</strong>
           </div>
-
-          <div class="cost">
-            <div class="k">Forecast</div>
-            <div class="v">${escapeHtml(cost.forecast || "-")}</div>
-            <div class="d">Predicted total effort based on current burn rate and pending tasks.</div>
+          <div class="cost-item">
+            <span>Forecast</span>
+            <strong>${escapeHtml(cost.forecast || "-")}</strong>
           </div>
-
-          <div class="cost">
-            <div class="k">Risk Signal</div>
-            <div class="v" style="color: var(--orange);">${escapeHtml(cost.risk_signal || "-")}</div>
-            <div class="d">${escapeHtml(cost.description || "-")}</div>
+          <div class="cost-item">
+            <span>Risk Signal</span>
+            <strong>${escapeHtml(cost.risk_signal || "-")}</strong>
           </div>
+          <div class="meta">${escapeHtml(cost.description || "")}</div>
         `;
 
-        const flow = Array.isArray(data.flow) ? data.flow : [];
-        document.getElementById("project-flow").innerHTML = flow.map((step) => `
-          <div class="step">
-            <div class="k">${escapeHtml(step.step)}</div>
-            <div class="name">${escapeHtml(step.name)}</div>
-            <div class="desc">${escapeHtml(step.description)}</div>
+        flowList.innerHTML = (data.flow || []).map((item) => `
+          <div class="flow-card">
+            <div class="flow-top">
+              <div class="title">${escapeHtml(item.name)}</div>
+              <div class="pill ontrack">${escapeHtml(item.step)}</div>
+            </div>
+            <div class="meta">${escapeHtml(item.description)}</div>
           </div>
         `).join("");
+
+        status.textContent = `Loaded from ${escapeHtml(data.source || "api")}`;
       } catch (err) {
-        apiTime.textContent = "API Source: /api/projectops/summary · OFFLINE";
-        apiTime.style.color = "#ff6b86";
-        console.error("Failed to load ProjectOps summary:", err);
+        console.error("ProjectOps load failed:", err);
+        resetMetrics();
+        status.textContent = "API error";
+        projectList.innerHTML = `
+          <div class="project">
+            <div class="error-text">${escapeHtml(err.message)}</div>
+          </div>
+        `;
       }
     }
 
-
-
-    async function updateProjectStatus(projectId, status) {
-      if (!projectId) return;
-
-      try {
-        const res = await fetch(`/api/projectops/projects/${projectId}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ status })
-        });
-
-        if (!res.ok) {
-          throw new Error("Update failed: " + res.status);
-        }
-
-        await loadProjectOpsSummary();
-      } catch (err) {
-        alert("Project update failed. Check API.");
-        console.error(err);
-      }
-    }
-
-    async function markProjectOnTrack(projectId) {
-      await updateProjectStatus(projectId, "ontrack");
-    }
-
-    async function markProjectRisk(projectId) {
-      await updateProjectStatus(projectId, "risk");
-    }
-
-    async function deleteProject(projectId) {
-      if (!projectId) return;
-
-      const ok = confirm(`Delete project #${projectId}?`);
-      if (!ok) return;
-
-      try {
-        const res = await fetch(`/api/projectops/projects/${projectId}`, {
-          method: "DELETE"
-        });
-
-        if (!res.ok) {
-          throw new Error("Delete failed: " + res.status);
-        }
-
-        await loadProjectOpsSummary();
-      } catch (err) {
-        alert("Project delete failed. Check API.");
-        console.error(err);
-      }
-    }
-
-    async function createProjectOpsProject(event) {
+    async function createProject(event) {
       event.preventDefault();
 
       const message = document.getElementById("project-form-message");
@@ -806,9 +910,9 @@
         title: document.getElementById("project-title").value.trim(),
         status: document.getElementById("project-status").value,
         owner: document.getElementById("project-owner").value.trim(),
-        budget_hours: Number(document.getElementById("project-budget").value || 0),
-        actual_hours: Number(document.getElementById("project-actual").value || 0),
-        linked_tickets: Number(document.getElementById("project-linked").value || 0),
+        budget_hours: Number(document.getElementById("project-budget-hours").value || 0),
+        actual_hours: Number(document.getElementById("project-actual-hours").value || 0),
+        linked_tickets: Number(document.getElementById("project-linked-tickets").value || 0),
         scope: document.getElementById("project-scope").value.trim(),
         progress: Number(document.getElementById("project-progress").value || 0),
         start_date: document.getElementById("project-start-date").value || null,
@@ -822,17 +926,19 @@
       }
 
       message.textContent = "Creating project...";
-      message.style.color = "rgba(247, 242, 223, .68)";
+      message.style.color = "rgba(247,242,223,.68)";
 
       try {
         const res = await fetch("/api/projectops/projects", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: window.ENYRAXRole
+            ? window.ENYRAXRole.jsonHeaders()
+            : { "Content-Type": "application/json" },
           body: JSON.stringify(payload)
         });
 
         if (!res.ok) {
-          throw new Error("Create project failed: " + res.status);
+          throw await parseError(res, "Create failed");
         }
 
         const data = await res.json();
@@ -840,41 +946,76 @@
         message.style.color = "#8ff7b2";
 
         form.reset();
-        document.getElementById("project-owner").value = "ENYRAX / Infra";
-        document.getElementById("project-budget").value = "60";
-        document.getElementById("project-actual").value = "0";
-        document.getElementById("project-linked").value = "0";
+        document.getElementById("project-owner").value = "IT / Infra";
         document.getElementById("project-progress").value = "10";
+        document.getElementById("project-budget-hours").value = "40";
+        document.getElementById("project-actual-hours").value = "0";
+        document.getElementById("project-linked-tickets").value = "0";
 
         await loadProjectOpsSummary();
       } catch (err) {
-        message.textContent = "Create failed. Check API or console.";
+        console.error("Create project failed:", err);
+        message.textContent = err.message;
         message.style.color = "#ff6b86";
-        console.error("Create ProjectOps project failed:", err);
       }
     }
 
+    async function updateProjectStatus(projectId, nextStatus) {
+      if (!projectId) return;
 
-    function setDefaultProjectDates() {
-      const startEl = document.getElementById("project-start-date");
-      const endEl = document.getElementById("project-end-date");
+      try {
+        const res = await fetch(`/api/projectops/projects/${projectId}`, {
+          method: "PUT",
+          headers: window.ENYRAXRole
+            ? window.ENYRAXRole.jsonHeaders()
+            : { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: nextStatus })
+        });
 
-      if (!startEl || !endEl) return;
+        if (!res.ok) {
+          throw await parseError(res, "Update failed");
+        }
 
-      const today = new Date();
-      const end = new Date();
-      end.setDate(today.getDate() + 30);
-
-      const toDateValue = (date) => date.toISOString().slice(0, 10);
-
-      if (!startEl.value) startEl.value = toDateValue(today);
-      if (!endEl.value) endEl.value = toDateValue(end);
+        await loadProjectOpsSummary();
+      } catch (err) {
+        console.error("Update project failed:", err);
+        alert(err.message);
+      }
     }
 
-    setDefaultProjectDates();
+    async function deleteProject(projectId) {
+      if (!projectId) return;
 
-    document.getElementById("project-form").addEventListener("submit", createProjectOpsProject);
+      const ok = confirm(`Delete ProjectOps project #${projectId}?`);
+      if (!ok) return;
 
+      try {
+        const res = await fetch(`/api/projectops/projects/${projectId}`, {
+          method: "DELETE",
+          headers: window.ENYRAXRole ? window.ENYRAXRole.header() : {}
+        });
+
+        if (!res.ok) {
+          throw await parseError(res, "Delete failed");
+        }
+
+        await loadProjectOpsSummary();
+      } catch (err) {
+        console.error("Delete project failed:", err);
+        alert(err.message);
+      }
+    }
+
+    document.getElementById("project-form").addEventListener("submit", createProject);
+
+    window.addEventListener("enyrax-role-changed", () => {
+      updateRoleLabel();
+      applyRoleVisibility();
+      loadProjectOpsSummary();
+    });
+
+    updateRoleLabel();
+    applyRoleVisibility();
     loadProjectOpsSummary();
   </script>
 </body>
