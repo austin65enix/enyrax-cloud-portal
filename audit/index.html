@@ -119,6 +119,32 @@
       color: var(--gold);
     }
 
+    .access-note {
+      display: none;
+      margin-top: 14px;
+      border: 1px solid rgba(115, 244, 223, .24);
+      background: rgba(115, 244, 223, .06);
+      color: var(--text);
+      border-radius: 18px;
+      padding: 14px 16px;
+      line-height: 1.55;
+    }
+
+    .access-note.active {
+      display: block;
+    }
+
+    .access-note strong {
+      color: var(--cyan);
+    }
+
+    .access-note .subtle {
+      display: block;
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
     .grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
@@ -317,6 +343,7 @@
         Current role: <strong id="current-role-label">Admin</strong>
         <span>· Audit requires Supervisor or Admin</span>
       </div>
+      <div id="access-note" class="access-note" aria-live="polite"></div>
     </section>
 
     <section class="grid">
@@ -380,7 +407,8 @@
     </div>
   </main>
 
-  <script src="/shared/role-switcher.js?v=0264"></script>
+  <script src="/shared/auth-guard.js?v=0311"></script>
+  <script src="/shared/role-switcher.js?v=0280"></script>
 
   <script>
     function escapeHtml(value) {
@@ -427,6 +455,25 @@
       if (el) el.textContent = roleLabel(role);
     }
 
+    function updateAccessNote() {
+      const note = document.getElementById("access-note");
+      const role = window.ENYRAXRole ? window.ENYRAXRole.get() : "admin";
+
+      if (!note) return;
+
+      if (role === "viewer" || role === "operator") {
+        note.classList.add("active");
+        note.innerHTML = `
+          <strong>Audit Logs requires Supervisor or Admin.</strong>
+          <span class="subtle">Operator can create/update/archive records, but cannot view global audit history.</span>
+        `;
+        return;
+      }
+
+      note.classList.remove("active");
+      note.textContent = "";
+    }
+
     function moduleClass(moduleName) {
       if (moduleName === "soc") return "soc";
       if (moduleName === "serviceops") return "serviceops";
@@ -450,10 +497,12 @@
 
     async function loadAuditLogs() {
       updateRoleLabel();
+      updateAccessNote();
 
       const status = document.getElementById("load-status");
       const tbody = document.getElementById("audit-body");
       const limit = document.getElementById("limit-select").value || 50;
+      const role = window.ENYRAXRole ? window.ENYRAXRole.get() : "admin";
 
       status.textContent = "Loading...";
 
@@ -464,7 +513,10 @@
 
         if (!res.ok) {
           const errorData = await res.json().catch(() => ({}));
-          throw new Error(errorData.detail || ("HTTP " + res.status));
+          const detail = errorData.detail || ("HTTP " + res.status);
+          const error = new Error(detail);
+          error.status = res.status;
+          throw error;
         }
 
         const data = await res.json();
@@ -506,7 +558,32 @@
       } catch (err) {
         console.error("Failed to load audit logs:", err);
         resetMetrics();
-        status.textContent = "Access denied / API error";
+        if (err.status === 403) {
+          status.textContent = "Access restricted";
+          if (role === "viewer" || role === "operator") {
+            tbody.innerHTML = `
+              <tr>
+                <td colspan="6" class="error-text">
+                  Audit Logs requires Supervisor or Admin.<br />
+                  <span class="muted">Operator can create/update/archive records, but cannot view global audit history.</span><br />
+                  <span class="muted">API detail: ${escapeHtml(err.message)}.</span>
+                </td>
+              </tr>
+            `;
+          } else {
+            tbody.innerHTML = `
+              <tr>
+                <td colspan="6" class="error-text">
+                  Audit access is restricted for this role.<br />
+                  <span class="muted">API detail: ${escapeHtml(err.message)}.</span>
+                </td>
+              </tr>
+            `;
+          }
+          return;
+        }
+
+        status.textContent = "API error";
         tbody.innerHTML = `
           <tr>
             <td colspan="6" class="error-text">
@@ -524,6 +601,7 @@
     });
 
     updateRoleLabel();
+    updateAccessNote();
     loadAuditLogs();
   </script>
 </body>
