@@ -1,5 +1,81 @@
 # ENYRAX Cloud Portal Release Notes
 
+## v0.5.0-auth-guard-demo
+
+Release date: 2026-05-21
+
+## Summary
+
+This release adds a frontend auth guard prompt across core operation modules.
+
+The portal remains accessible for public navigation, while SOC, ServiceOps, ProjectOps and Audit Logs now display a login prompt when no demo user is signed in. The guard keeps demo flexibility by allowing users to continue in Demo Role mode.
+
+## Completed
+
+- Added shared frontend auth guard
+- Added login-required prompt for SOC
+- Added login-required prompt for ServiceOps
+- Added login-required prompt for ProjectOps
+- Added login-required prompt for Audit Logs
+- Added Go to Login action
+- Added Continue in Demo Role action
+- Preserved existing Role Switcher behavior
+- Preserved demo-mode access for presentations
+- Added session-based dismissal for the auth guard prompt
+
+## Auth Guard Behavior
+
+```text
+Portal /
+  - Public module entry
+
+/login/
+  - Public demo login page
+
+/status/
+  - Public system status page
+
+/soc/
+  - Shows login prompt when not signed in
+
+/serviceops/
+  - Shows login prompt when not signed in
+
+/projectops/
+  - Shows login prompt when not signed in
+
+/audit/
+  - Shows login prompt when not signed in
+  - Backend still requires Supervisor/Admin for audit access
+```
+
+## Current Product Status
+
+```text
+Portal        Public module entry
+Login         Demo auth page enabled
+Users         Demo users table enabled
+Auth Guard    Soft login prompt enabled
+SOC           RBAC demo controls + auth prompt
+ServiceOps    RBAC + Archive / Restore + auth prompt
+ProjectOps    RBAC + Archive / Restore + auth prompt
+Audit Logs    Supervisor/Admin protected + auth prompt
+Role Source   Login identity first, demo role fallback
+Audit Actor   Logged-in email first, role fallback
+```
+
+## Next Phase
+
+- Validate demo token with `/api/auth/me` on page load
+- Replace soft auth guard with route-level protection
+- Add user-specific My Activity page
+- Add user management page
+- Replace demo token with signed JWT
+- Replace `X-Demo-Role` with authenticated backend role
+- Add session expiration handling
+
+---
+
 ## v0.4.1-audit-actor-ui-polish
 
 Release date: 2026-05-21
