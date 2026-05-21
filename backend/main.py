@@ -6,7 +6,8 @@ import socket
 
 from fastapi import FastAPI, Header, HTTPException
 from pydantic import BaseModel, Field
-from sqlalchemy import create_engine, text
+from sqlalchemy import bindparam, create_engine, text
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.exc import SQLAlchemyError
 
 
@@ -96,6 +97,7 @@ class SocIncidentCreate(BaseModel):
     duplicate_count: int = 1
     analysis_type: str = Field(..., min_length=1, max_length=120)
     mitre: str = Field(default="Unmapped", max_length=160)
+    status: str = Field(default="open", max_length=50)
 
 
 class SocIncidentUpdate(BaseModel):
@@ -106,6 +108,17 @@ class SocIncidentUpdate(BaseModel):
     duplicate_count: Optional[int] = None
     analysis_type: Optional[str] = Field(default=None, max_length=120)
     mitre: Optional[str] = Field(default=None, max_length=160)
+    status: Optional[str] = Field(default=None, max_length=50)
+    resolution_note: Optional[str] = None
+
+
+class LocalSyncEventCreate(BaseModel):
+    source: str = Field(..., min_length=1, max_length=120)
+    system: str = Field(..., min_length=1, max_length=80)
+    event_type: str = Field(..., min_length=1, max_length=120)
+    status: str = Field(default="ok", max_length=50)
+    message: Optional[str] = None
+    payload: dict = Field(default_factory=dict)
 
 
 class AuthLoginRequest(BaseModel):
@@ -184,6 +197,14 @@ DEMO_TOKENS = {
 }
 
 
+SOC_INCIDENT_COLUMNS = """
+    id, title, severity, source_ip, target,
+    duplicate_count, analysis_type, mitre, status,
+    handled_by, handled_at, resolution_note,
+    display_order, created_at, updated_at
+"""
+
+
 def normalize_demo_role(role: Optional[str]) -> str:
     normalized = (role or "viewer").strip().lower()
 
@@ -209,6 +230,26 @@ def require_db():
     if engine is None:
         raise HTTPException(status_code=503, detail="Database is not configured")
     return engine
+
+
+def require_sync_key(x_sync_key: Optional[str]) -> None:
+    expected_key = os.environ.get("SYNC_API_KEY") or "your-demo-sync-key"
+
+    if x_sync_key != expected_key:
+        raise HTTPException(status_code=403, detail="Invalid sync key")
+
+
+def sync_event_row_to_dict(row):
+    return {
+        "id": row["id"],
+        "source": row["source"],
+        "system": row["system"],
+        "event_type": row["event_type"],
+        "status": row["status"],
+        "message": row["message"],
+        "payload": row["payload"] or {},
+        "created_at": row["created_at"].isoformat() if row["created_at"] else None,
+    }
 
 
 def get_user_by_email(conn, email):
@@ -322,6 +363,10 @@ def incident_row_to_dict(row):
         "duplicate_count": int(row["duplicate_count"]),
         "analysis_type": row["analysis_type"],
         "mitre": row["mitre"],
+        "status": row["status"],
+        "handled_by": row["handled_by"],
+        "handled_at": row["handled_at"].isoformat() if row["handled_at"] else None,
+        "resolution_note": row["resolution_note"],
         "display_order": row["display_order"],
         "created_at": row["created_at"].isoformat() if row["created_at"] else None,
         "updated_at": row["updated_at"].isoformat() if row["updated_at"] else None,
@@ -372,6 +417,7 @@ def health():
             "projectops": "api-driven",
             "audit": "api-connected",
             "auth": "api-connected",
+            "sync": "api-connected",
             "status": "api-connected",
         },
     }
@@ -496,6 +542,10 @@ def soc_summary():
             "duplicate_count": 36,
             "analysis_type": "failed_login_cluster",
             "mitre": "T1110 Brute Force",
+            "status": "open",
+            "handled_by": None,
+            "handled_at": None,
+            "resolution_note": None,
         },
         {
             "id": None,
@@ -506,6 +556,10 @@ def soc_summary():
             "duplicate_count": 8,
             "analysis_type": "attack_story",
             "mitre": "T1068 Privilege Escalation",
+            "status": "open",
+            "handled_by": None,
+            "handled_at": None,
+            "resolution_note": None,
         },
         {
             "id": None,
@@ -516,6 +570,10 @@ def soc_summary():
             "duplicate_count": 2,
             "analysis_type": "agent_state_change",
             "mitre": "Defense Evasion Review",
+            "status": "open",
+            "handled_by": None,
+            "handled_at": None,
+            "resolution_note": None,
         },
     ]
 
@@ -528,16 +586,9 @@ def soc_summary():
             with engine.connect() as conn:
                 rows = conn.execute(
                     text(
-                        """
+                        f"""
                         SELECT
-                            id,
-                            title,
-                            severity,
-                            source_ip,
-                            target,
-                            duplicate_count,
-                            analysis_type,
-                            mitre
+                            {SOC_INCIDENT_COLUMNS}
                         FROM soc_incidents
                         ORDER BY display_order ASC, id ASC
                         """
@@ -554,6 +605,10 @@ def soc_summary():
                     "duplicate_count": int(row["duplicate_count"]),
                     "analysis_type": row["analysis_type"],
                     "mitre": row["mitre"],
+                    "status": row["status"],
+                    "handled_by": row["handled_by"],
+                    "handled_at": row["handled_at"].isoformat() if row["handled_at"] else None,
+                    "resolution_note": row["resolution_note"],
                 }
                 for row in rows
             ]
@@ -1061,6 +1116,7 @@ def get_serviceops_ticket(ticket_id: int):
 def create_serviceops_ticket(
     payload: ServiceOpsTicketCreate,
     demo_role: str = Header(default="admin", alias="X-Demo-Role"),
+    demo_actor: str = Header(default=None, alias="X-Demo-Actor"),
 ):
     role = require_role(demo_role, "operator")
     db = require_db()
@@ -1100,7 +1156,7 @@ def create_serviceops_ticket(
             entity_id=row["id"],
             action="create",
             summary=f"Created ServiceOps ticket: {row['title']}",
-            actor=role,
+            actor=demo_actor or role,
         )
 
     return {
@@ -1114,6 +1170,7 @@ def update_serviceops_ticket(
     ticket_id: int,
     payload: ServiceOpsTicketUpdate,
     demo_role: str = Header(default="admin", alias="X-Demo-Role"),
+    demo_actor: str = Header(default=None, alias="X-Demo-Actor"),
 ):
     role = require_role(demo_role, "operator")
     db = require_db()
@@ -1169,7 +1226,7 @@ def update_serviceops_ticket(
                 entity_id=row["id"],
                 action="update",
                 summary=f"Updated ServiceOps ticket: {row['title']}",
-                actor=role,
+                actor=demo_actor or role,
             )
 
     if row is None:
@@ -1185,8 +1242,9 @@ def update_serviceops_ticket(
 def restore_serviceops_ticket(
     ticket_id: int,
     demo_role: str = Header(default="admin", alias="X-Demo-Role"),
+    demo_actor: str = Header(default=None, alias="X-Demo-Actor"),
 ):
-    role = require_role(demo_role, "supervisor")
+    role = require_role(demo_role, "operator")
     db = require_db()
 
     with db.begin() as conn:
@@ -1216,7 +1274,7 @@ def restore_serviceops_ticket(
                 entity_id=row["id"],
                 action="restore",
                 summary=f"Restored ServiceOps ticket from archive: {row['title']}",
-                actor=role,
+                actor=demo_actor or role,
             )
 
     if row is None:
@@ -1232,6 +1290,7 @@ def restore_serviceops_ticket(
 def archive_serviceops_ticket(
     ticket_id: int,
     demo_role: str = Header(default="admin", alias="X-Demo-Role"),
+    demo_actor: str = Header(default=None, alias="X-Demo-Actor"),
 ):
     role = require_role(demo_role, "operator")
     db = require_db()
@@ -1267,7 +1326,7 @@ def archive_serviceops_ticket(
                 entity_id=row["id"],
                 action="archive",
                 summary=f"Archived ServiceOps ticket: {row['title']}",
-                actor=role,
+                actor=demo_actor or role,
             )
 
     if row is None:
@@ -1362,6 +1421,7 @@ def get_projectops_project(project_id: int):
 def create_projectops_project(
     payload: ProjectOpsProjectCreate,
     demo_role: str = Header(default="admin", alias="X-Demo-Role"),
+    demo_actor: str = Header(default=None, alias="X-Demo-Actor"),
 ):
     role = require_role(demo_role, "operator")
     db = require_db()
@@ -1406,7 +1466,7 @@ def create_projectops_project(
             entity_id=row["id"],
             action="create",
             summary=f"Created ProjectOps project: {row['title']}",
-            actor=role,
+            actor=demo_actor or role,
         )
 
     return {
@@ -1420,6 +1480,7 @@ def update_projectops_project(
     project_id: int,
     payload: ProjectOpsProjectUpdate,
     demo_role: str = Header(default="admin", alias="X-Demo-Role"),
+    demo_actor: str = Header(default=None, alias="X-Demo-Actor"),
 ):
     role = require_role(demo_role, "operator")
     db = require_db()
@@ -1478,7 +1539,7 @@ def update_projectops_project(
                 entity_id=row["id"],
                 action="update",
                 summary=f"Updated ProjectOps project: {row['title']}",
-                actor=role,
+                actor=demo_actor or role,
             )
 
     if row is None:
@@ -1494,6 +1555,7 @@ def update_projectops_project(
 def restore_projectops_project(
     project_id: int,
     demo_role: str = Header(default="admin", alias="X-Demo-Role"),
+    demo_actor: str = Header(default=None, alias="X-Demo-Actor"),
 ):
     role = require_role(demo_role, "supervisor")
     db = require_db()
@@ -1525,7 +1587,7 @@ def restore_projectops_project(
                 entity_id=row["id"],
                 action="restore",
                 summary=f"Restored ProjectOps project from archive: {row['title']}",
-                actor=role,
+                actor=demo_actor or role,
             )
 
     if row is None:
@@ -1541,6 +1603,7 @@ def restore_projectops_project(
 def archive_projectops_project(
     project_id: int,
     demo_role: str = Header(default="admin", alias="X-Demo-Role"),
+    demo_actor: str = Header(default=None, alias="X-Demo-Actor"),
 ):
     role = require_role(demo_role, "operator")
     db = require_db()
@@ -1576,7 +1639,7 @@ def archive_projectops_project(
                 entity_id=row["id"],
                 action="archive",
                 summary=f"Archived ProjectOps project: {row['title']}",
-                actor=role,
+                actor=demo_actor or role,
             )
 
     if row is None:
@@ -1595,11 +1658,9 @@ def list_soc_incidents():
     with db.connect() as conn:
         rows = conn.execute(
             text(
-                """
+                f"""
                 SELECT
-                    id, title, severity, source_ip, target,
-                    duplicate_count, analysis_type, mitre,
-                    display_order, created_at, updated_at
+                    {SOC_INCIDENT_COLUMNS}
                 FROM soc_incidents
                 ORDER BY display_order ASC, id ASC
                 """
@@ -1621,11 +1682,9 @@ def get_soc_incident(incident_id: int):
     with db.connect() as conn:
         row = conn.execute(
             text(
-                """
+                f"""
                 SELECT
-                    id, title, severity, source_ip, target,
-                    duplicate_count, analysis_type, mitre,
-                    display_order, created_at, updated_at
+                    {SOC_INCIDENT_COLUMNS}
                 FROM soc_incidents
                 WHERE id = :incident_id
                 """
@@ -1646,6 +1705,7 @@ def get_soc_incident(incident_id: int):
 def create_soc_incident(
     payload: SocIncidentCreate,
     demo_role: str = Header(default="admin", alias="X-Demo-Role"),
+    demo_actor: str = Header(default=None, alias="X-Demo-Actor"),
 ):
     role = require_role(demo_role, "operator")
     db = require_db()
@@ -1657,17 +1717,15 @@ def create_soc_incident(
 
         row = conn.execute(
             text(
-                """
+                f"""
                 INSERT INTO soc_incidents
                     (title, severity, source_ip, target, duplicate_count,
-                     analysis_type, mitre, display_order)
+                     analysis_type, mitre, status, display_order)
                 VALUES
                     (:title, :severity, :source_ip, :target, :duplicate_count,
-                     :analysis_type, :mitre, :display_order)
+                     :analysis_type, :mitre, :status, :display_order)
                 RETURNING
-                    id, title, severity, source_ip, target,
-                    duplicate_count, analysis_type, mitre,
-                    display_order, created_at, updated_at
+                    {SOC_INCIDENT_COLUMNS}
                 """
             ),
             {
@@ -1678,6 +1736,7 @@ def create_soc_incident(
                 "duplicate_count": payload.duplicate_count,
                 "analysis_type": payload.analysis_type,
                 "mitre": payload.mitre,
+                "status": payload.status or "open",
                 "display_order": int(max_order) + 1,
             },
         ).mappings().first()
@@ -1689,7 +1748,7 @@ def create_soc_incident(
             entity_id=row["id"],
             action="create",
             summary=f"Created SOC incident: {row['title']}",
-            actor=role,
+            actor=demo_actor or role,
         )
 
     return {
@@ -1703,6 +1762,7 @@ def update_soc_incident(
     incident_id: int,
     payload: SocIncidentUpdate,
     demo_role: str = Header(default="admin", alias="X-Demo-Role"),
+    demo_actor: str = Header(default=None, alias="X-Demo-Actor"),
 ):
     role = require_role(demo_role, "operator")
     db = require_db()
@@ -1710,6 +1770,9 @@ def update_soc_incident(
 
     if not updates:
         raise HTTPException(status_code=400, detail="No fields to update")
+
+    if "status" in updates and not updates["status"]:
+        raise HTTPException(status_code=400, detail="Status cannot be empty")
 
     allowed = {
         "title",
@@ -1719,16 +1782,24 @@ def update_soc_incident(
         "duplicate_count",
         "analysis_type",
         "mitre",
+        "status",
+        "resolution_note",
     }
 
     set_clauses = []
     params = {"incident_id": incident_id}
+    status_changed = "status" in updates
 
     for key, value in updates.items():
         if key not in allowed:
             continue
         set_clauses.append(f"{key} = :{key}")
         params[key] = value
+
+    if status_changed:
+        set_clauses.append("handled_by = :handled_by")
+        set_clauses.append("handled_at = NOW()")
+        params["handled_by"] = demo_actor or role
 
     if not set_clauses:
         raise HTTPException(status_code=400, detail="No valid fields to update")
@@ -1743,23 +1814,25 @@ def update_soc_incident(
                 SET {set_sql}
                 WHERE id = :incident_id
                 RETURNING
-                    id, title, severity, source_ip, target,
-                    duplicate_count, analysis_type, mitre,
-                    display_order, created_at, updated_at
+                    {SOC_INCIDENT_COLUMNS}
                 """
             ),
             params,
         ).mappings().first()
 
         if row is not None:
+            summary = f"Updated SOC incident: {row['title']}"
+            if status_changed:
+                summary = f"Updated SOC incident status to {row['status']}: {row['title']}"
+
             write_audit_log(
                 conn,
                 module="soc",
                 entity_type="incident",
                 entity_id=row["id"],
                 action="update",
-                summary=f"Updated SOC incident: {row['title']}",
-                actor=role,
+                summary=summary,
+                actor=demo_actor or role,
             )
 
     if row is None:
@@ -1771,10 +1844,139 @@ def update_soc_incident(
     }
 
 
+def update_soc_incident_status(
+    incident_id: int,
+    new_status: str,
+    minimum_role: str,
+    demo_role: str,
+    demo_actor: Optional[str],
+):
+    role = require_role(demo_role, minimum_role)
+    actor = demo_actor or role
+    db = require_db()
+
+    with db.begin() as conn:
+        row = conn.execute(
+            text(
+                f"""
+                UPDATE soc_incidents
+                SET
+                    status = :status,
+                    handled_by = :handled_by,
+                    handled_at = NOW(),
+                    updated_at = NOW()
+                WHERE id = :incident_id
+                RETURNING
+                    {SOC_INCIDENT_COLUMNS}
+                """
+            ),
+            {
+                "incident_id": incident_id,
+                "status": new_status,
+                "handled_by": actor,
+            },
+        ).mappings().first()
+
+        if row is not None:
+            write_audit_log(
+                conn,
+                module="soc",
+                entity_type="incident",
+                entity_id=row["id"],
+                action="update",
+                summary=f"Updated SOC incident status to {row['status']}: {row['title']}",
+                actor=actor,
+            )
+
+    if row is None:
+        raise HTTPException(status_code=404, detail="Incident not found")
+
+    return {
+        "status": "updated",
+        "incident": incident_row_to_dict(row),
+    }
+
+
+@app.put("/api/soc/incidents/{incident_id}/investigate")
+def investigate_soc_incident(
+    incident_id: int,
+    demo_role: str = Header(default="admin", alias="X-Demo-Role"),
+    demo_actor: str = Header(default=None, alias="X-Demo-Actor"),
+):
+    return update_soc_incident_status(
+        incident_id,
+        "investigating",
+        "operator",
+        demo_role,
+        demo_actor,
+    )
+
+
+@app.put("/api/soc/incidents/{incident_id}/contain")
+def contain_soc_incident(
+    incident_id: int,
+    demo_role: str = Header(default="admin", alias="X-Demo-Role"),
+    demo_actor: str = Header(default=None, alias="X-Demo-Actor"),
+):
+    return update_soc_incident_status(
+        incident_id,
+        "contained",
+        "operator",
+        demo_role,
+        demo_actor,
+    )
+
+
+@app.put("/api/soc/incidents/{incident_id}/resolve")
+def resolve_soc_incident(
+    incident_id: int,
+    demo_role: str = Header(default="admin", alias="X-Demo-Role"),
+    demo_actor: str = Header(default=None, alias="X-Demo-Actor"),
+):
+    return update_soc_incident_status(
+        incident_id,
+        "resolved",
+        "operator",
+        demo_role,
+        demo_actor,
+    )
+
+
+@app.put("/api/soc/incidents/{incident_id}/false-positive")
+def mark_soc_incident_false_positive(
+    incident_id: int,
+    demo_role: str = Header(default="admin", alias="X-Demo-Role"),
+    demo_actor: str = Header(default=None, alias="X-Demo-Actor"),
+):
+    return update_soc_incident_status(
+        incident_id,
+        "false_positive",
+        "supervisor",
+        demo_role,
+        demo_actor,
+    )
+
+
+@app.put("/api/soc/incidents/{incident_id}/reopen")
+def reopen_soc_incident(
+    incident_id: int,
+    demo_role: str = Header(default="admin", alias="X-Demo-Role"),
+    demo_actor: str = Header(default=None, alias="X-Demo-Actor"),
+):
+    return update_soc_incident_status(
+        incident_id,
+        "open",
+        "supervisor",
+        demo_role,
+        demo_actor,
+    )
+
+
 @app.delete("/api/soc/incidents/{incident_id}")
 def delete_soc_incident(
     incident_id: int,
     demo_role: str = Header(default="admin", alias="X-Demo-Role"),
+    demo_actor: str = Header(default=None, alias="X-Demo-Actor"),
 ):
     role = require_role(demo_role, "admin")
     db = require_db()
@@ -1799,7 +2001,7 @@ def delete_soc_incident(
                 entity_id=row["id"],
                 action="delete",
                 summary=f"Deleted SOC incident: {row['title']}",
-                actor=role,
+                actor=demo_actor or role,
             )
 
     if row is None:
@@ -1812,6 +2014,166 @@ def delete_soc_incident(
             "title": row["title"],
         },
     }
+
+
+@app.post("/api/sync/events")
+def create_local_sync_event(
+    payload: LocalSyncEventCreate,
+    x_sync_key: Optional[str] = Header(default=None, alias="X-Sync-Key"),
+):
+    require_sync_key(x_sync_key)
+    db = require_db()
+
+    insert_sql = text(
+        """
+        INSERT INTO local_sync_events
+            (source, system, event_type, status, message, payload)
+        VALUES
+            (:source, :system, :event_type, :status, :message, :payload)
+        RETURNING
+            id, source, system, event_type, status, message, payload, created_at
+        """
+    ).bindparams(bindparam("payload", type_=JSONB))
+
+    with db.begin() as conn:
+        row = conn.execute(
+            insert_sql,
+            {
+                "source": payload.source,
+                "system": payload.system,
+                "event_type": payload.event_type,
+                "status": payload.status or "ok",
+                "message": payload.message,
+                "payload": payload.payload or {},
+            },
+        ).mappings().first()
+
+    return {
+        "status": "created",
+        "event": sync_event_row_to_dict(row),
+    }
+
+
+@app.get("/api/sync/events")
+def list_local_sync_events(
+    limit: int = 50,
+    source: Optional[str] = None,
+    system: Optional[str] = None,
+    event_type: Optional[str] = None,
+    status: Optional[str] = None,
+):
+    db = require_db()
+    bounded_limit = max(1, min(int(limit), 200))
+    filters = []
+    params = {"limit": bounded_limit}
+
+    for key, value in {
+        "source": source,
+        "system": system,
+        "event_type": event_type,
+        "status": status,
+    }.items():
+        if value:
+            filters.append(f"{key} = :{key}")
+            params[key] = value
+
+    where_sql = ""
+    if filters:
+        where_sql = "WHERE " + " AND ".join(filters)
+
+    with db.connect() as conn:
+        rows = conn.execute(
+            text(
+                f"""
+                SELECT
+                    id, source, system, event_type, status, message, payload, created_at
+                FROM local_sync_events
+                {where_sql}
+                ORDER BY created_at DESC, id DESC
+                LIMIT :limit
+                """
+            ),
+            params,
+        ).mappings().all()
+
+    return {
+        "status": "ok",
+        "count": len(rows),
+        "limit": bounded_limit,
+        "events": [sync_event_row_to_dict(row) for row in rows],
+    }
+
+
+@app.get("/api/sync/status")
+def local_sync_status():
+    db = require_db()
+
+    with db.connect() as conn:
+        summary = conn.execute(
+            text(
+                """
+                SELECT
+                    COUNT(*) AS total_events,
+                    MAX(created_at) AS latest_event_at
+                FROM local_sync_events
+                """
+            )
+        ).mappings().first()
+        sources = conn.execute(
+            text(
+                """
+                SELECT source
+                FROM local_sync_events
+                GROUP BY source
+                ORDER BY source ASC
+                """
+            )
+        ).mappings().all()
+        systems = conn.execute(
+            text(
+                """
+                SELECT system
+                FROM local_sync_events
+                GROUP BY system
+                ORDER BY system ASC
+                """
+            )
+        ).mappings().all()
+        statuses = conn.execute(
+            text(
+                """
+                SELECT status, COUNT(*) AS count
+                FROM local_sync_events
+                GROUP BY status
+                ORDER BY status ASC
+                """
+            )
+        ).mappings().all()
+        recent_rows = conn.execute(
+            text(
+                """
+                SELECT
+                    id, source, system, event_type, status, message, payload, created_at
+                FROM local_sync_events
+                ORDER BY created_at DESC, id DESC
+                LIMIT 10
+                """
+            )
+        ).mappings().all()
+
+    latest_event_at = summary["latest_event_at"] if summary else None
+
+    return {
+        "status": "ok",
+        "total_events": int(summary["total_events"] if summary else 0),
+        "latest_event_at": latest_event_at.isoformat() if latest_event_at else None,
+        "sources": [row["source"] for row in sources],
+        "systems": [row["system"] for row in systems],
+        "status_counts": {row["status"]: int(row["count"]) for row in statuses},
+        "recent_events": [sync_event_row_to_dict(row) for row in recent_rows],
+    }
+
+
 
 
 @app.get("/api/audit/logs")
