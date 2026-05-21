@@ -1,0 +1,684 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ENYRAX Local Sync Gateway</title>
+  <style>
+    :root {
+      --bg: #071018;
+      --card: rgba(255,255,255,.06);
+      --card2: rgba(255,255,255,.09);
+      --text: #f7f2df;
+      --muted: rgba(247,242,223,.68);
+      --line: rgba(255,255,255,.12);
+      --gold: #f5d37a;
+      --cyan: #73f4df;
+      --green: #8ff7b2;
+      --orange: #ffb86b;
+      --red: #ff6b86;
+      --gray: #aab3c5;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(115,244,223,.16), transparent 32%),
+        radial-gradient(circle at top right, rgba(245,211,122,.12), transparent 30%),
+        linear-gradient(180deg, #071018 0%, #090d16 100%);
+    }
+
+    .wrap {
+      width: min(1240px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 34px 0 48px;
+    }
+
+    .nav {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: center;
+      margin-bottom: 28px;
+      padding-right: 230px;
+    }
+
+    .brand {
+      display: grid;
+      gap: 4px;
+    }
+
+    .brand strong {
+      color: var(--gold);
+      letter-spacing: .14em;
+      font-size: 13px;
+    }
+
+    .brand span {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .links a {
+      color: var(--text);
+      text-decoration: none;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.04);
+      padding: 9px 12px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .hero {
+      display: grid;
+      gap: 14px;
+      margin-bottom: 22px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(34px, 6vw, 64px);
+      line-height: .95;
+      letter-spacing: -.04em;
+    }
+
+    .subtitle {
+      max-width: 780px;
+      color: var(--muted);
+      font-size: 16px;
+      line-height: 1.7;
+    }
+
+    .toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin: 6px 0 22px;
+    }
+
+    .load-status {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    button {
+      border: 0;
+      background: linear-gradient(135deg, var(--gold), #fff0b8);
+      color: #071018;
+      border-radius: 14px;
+      cursor: pointer;
+      font: inherit;
+      font-weight: 900;
+      padding: 11px 14px;
+      min-height: 42px;
+    }
+
+    button:disabled {
+      cursor: wait;
+      opacity: .68;
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 14px;
+      margin: 22px 0;
+    }
+
+    .metric,
+    .card {
+      border: 1px solid var(--line);
+      background: var(--card);
+      box-shadow: 0 24px 80px rgba(0,0,0,.2);
+    }
+
+    .metric {
+      min-width: 0;
+      border-radius: 22px;
+      padding: 18px;
+    }
+
+    .metric .label {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: .08em;
+      line-height: 1.35;
+      text-transform: uppercase;
+    }
+
+    .metric .value {
+      margin-top: 8px;
+      color: var(--gold);
+      font-size: clamp(22px, 3vw, 30px);
+      font-weight: 950;
+      overflow-wrap: anywhere;
+    }
+
+    .metric .value.time {
+      color: var(--text);
+      font-size: 15px;
+      line-height: 1.35;
+    }
+
+    .panels {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+
+    .card {
+      border-radius: 24px;
+      padding: 20px;
+    }
+
+    .card-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 20px;
+      letter-spacing: -.02em;
+    }
+
+    .count {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 850;
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .chip,
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 950;
+      text-transform: uppercase;
+    }
+
+    .chip {
+      max-width: 100%;
+      border: 1px solid rgba(245, 211, 122, .28);
+      background: rgba(245, 211, 122, .07);
+      color: var(--text);
+      padding: 7px 10px;
+      overflow-wrap: anywhere;
+    }
+
+    .empty {
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .error-box {
+      display: none;
+      margin-bottom: 14px;
+      border: 1px solid rgba(255, 107, 134, .35);
+      background: rgba(255, 107, 134, .08);
+      color: var(--text);
+      border-radius: 18px;
+      padding: 14px 16px;
+      line-height: 1.55;
+    }
+
+    .error-box.active {
+      display: block;
+    }
+
+    .error-box strong {
+      color: var(--red);
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 980px;
+    }
+
+    th,
+    td {
+      padding: 13px 14px;
+      text-align: left;
+      border-bottom: 1px solid rgba(255,255,255,.09);
+      vertical-align: top;
+      font-size: 14px;
+    }
+
+    th {
+      color: var(--muted);
+      background: rgba(255,255,255,.05);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+
+    tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .status-badge {
+      padding: 5px 9px;
+    }
+
+    .status-ok {
+      color: #062014;
+      background: var(--green);
+    }
+
+    .status-warning {
+      color: #241203;
+      background: var(--orange);
+    }
+
+    .status-error {
+      color: #26060c;
+      background: var(--red);
+    }
+
+    .status-unknown {
+      color: #071018;
+      background: var(--gray);
+    }
+
+    .message {
+      color: var(--text);
+      font-weight: 760;
+      line-height: 1.45;
+      overflow-wrap: anywhere;
+    }
+
+    .payload {
+      margin-top: 6px;
+      color: var(--muted);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size: 12px;
+      line-height: 1.45;
+      overflow-wrap: anywhere;
+    }
+
+    .muted {
+      color: var(--muted);
+    }
+
+    .footer {
+      margin-top: 22px;
+      color: var(--muted);
+      font-size: 13px;
+      text-align: center;
+    }
+
+    @media (max-width: 1120px) {
+      .metrics {
+        grid-template-columns: repeat(4, 1fr);
+      }
+    }
+
+    @media (max-width: 880px) {
+      .nav {
+        align-items: flex-start;
+        flex-direction: column;
+        padding-right: 0;
+      }
+
+      .metrics {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .panels {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .wrap {
+        width: min(100% - 24px, 1240px);
+      }
+
+      .metrics {
+        grid-template-columns: 1fr;
+      }
+
+      .toolbar {
+        align-items: stretch;
+      }
+
+      button {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="wrap">
+    <nav class="nav">
+      <div class="brand">
+        <strong>ENYRAX</strong>
+        <span>Hybrid Cloud / Local Sync Gateway</span>
+      </div>
+
+      <div class="links">
+        <a href="/">Portal</a>
+        <a href="/soc/">SOC</a>
+        <a href="/serviceops/">ServiceOps</a>
+        <a href="/projectops/">ProjectOps</a>
+        <a href="/audit/">Audit</a>
+        <a href="/status/">Status</a>
+      </div>
+    </nav>
+
+    <section class="hero">
+      <h1>Local Sync Gateway</h1>
+      <div class="subtitle">
+        Local hosts push summarized events to Tokyo cloud control plane.
+      </div>
+    </section>
+
+    <section class="toolbar" aria-label="Sync gateway controls">
+      <div class="load-status" id="load-status">Loading...</div>
+      <button type="button" id="refresh-button">Refresh</button>
+    </section>
+
+    <section id="error-box" class="error-box" aria-live="polite"></section>
+
+    <section class="metrics" aria-label="Sync gateway metrics">
+      <div class="metric">
+        <div class="label">Total Events</div>
+        <div class="value" id="metric-total-events">-</div>
+      </div>
+      <div class="metric">
+        <div class="label">Latest Event At</div>
+        <div class="value time" id="metric-latest-event-at">-</div>
+      </div>
+      <div class="metric">
+        <div class="label">Sources</div>
+        <div class="value" id="metric-source-count">-</div>
+      </div>
+      <div class="metric">
+        <div class="label">Systems</div>
+        <div class="value" id="metric-system-count">-</div>
+      </div>
+      <div class="metric">
+        <div class="label">OK</div>
+        <div class="value" id="metric-ok-count">-</div>
+      </div>
+      <div class="metric">
+        <div class="label">Warning</div>
+        <div class="value" id="metric-warning-count">-</div>
+      </div>
+      <div class="metric">
+        <div class="label">Error</div>
+        <div class="value" id="metric-error-count">-</div>
+      </div>
+    </section>
+
+    <section class="panels">
+      <section class="card">
+        <div class="card-top">
+          <h2>Sources</h2>
+          <div class="count" id="sources-count">0 sources</div>
+        </div>
+        <div class="chips" id="sources-list">
+          <div class="empty">Loading sources...</div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-top">
+          <h2>Systems</h2>
+          <div class="count" id="systems-count">0 systems</div>
+        </div>
+        <div class="chips" id="systems-list">
+          <div class="empty">Loading systems...</div>
+        </div>
+      </section>
+    </section>
+
+    <section class="card">
+      <div class="card-top">
+        <h2>Recent Events</h2>
+        <div class="count" id="events-count">0 events</div>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Created At</th>
+              <th>Source</th>
+              <th>System</th>
+              <th>Event Type</th>
+              <th>Status</th>
+              <th>Message</th>
+            </tr>
+          </thead>
+          <tbody id="events-body">
+            <tr>
+              <td colspan="6" class="muted">Loading sync events...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <div class="footer">
+      ENYRAX Cloud Portal · Local Sync Gateway · Host heartbeat and summary events
+    </div>
+  </main>
+
+  <script src="/shared/auth-guard.js?v=0311"></script>
+  <script src="/shared/role-switcher.js?v=0280"></script>
+
+  <script>
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function formatTime(value) {
+      if (!value) return "-";
+
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return value;
+
+      return date.toLocaleString("zh-TW", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit"
+      });
+    }
+
+    function metric(id, value) {
+      document.getElementById(id).textContent = value ?? "-";
+    }
+
+    function normalizeArray(value) {
+      return Array.isArray(value) ? value.filter(Boolean) : [];
+    }
+
+    function normalizeStatus(status) {
+      const normalized = String(status || "unknown").toLowerCase();
+      if (["ok", "warning", "error"].includes(normalized)) return normalized;
+      return "unknown";
+    }
+
+    function payloadSummary(payload) {
+      if (!payload || typeof payload !== "object" || Array.isArray(payload)) return "";
+
+      try {
+        return JSON.stringify(payload).slice(0, 160);
+      } catch {
+        return "";
+      }
+    }
+
+    function statusBadge(status) {
+      const normalized = normalizeStatus(status);
+      return `<span class="status-badge status-${normalized}">${escapeHtml(normalized)}</span>`;
+    }
+
+    function renderChips(id, countId, values, noun) {
+      const list = document.getElementById(id);
+      const count = document.getElementById(countId);
+      const label = values.length === 1 ? noun : noun + "s";
+
+      count.textContent = `${values.length} ${label}`;
+
+      if (!values.length) {
+        list.innerHTML = `<div class="empty">No ${noun}s reported yet.</div>`;
+        return;
+      }
+
+      list.innerHTML = values
+        .map((value) => `<span class="chip">${escapeHtml(value)}</span>`)
+        .join("");
+    }
+
+    function resetMetrics() {
+      [
+        "metric-total-events",
+        "metric-latest-event-at",
+        "metric-source-count",
+        "metric-system-count",
+        "metric-ok-count",
+        "metric-warning-count",
+        "metric-error-count"
+      ].forEach((id) => metric(id, "-"));
+      document.getElementById("sources-count").textContent = "0 sources";
+      document.getElementById("systems-count").textContent = "0 systems";
+      document.getElementById("events-count").textContent = "0 events";
+    }
+
+    function renderEvents(events) {
+      const tbody = document.getElementById("events-body");
+      document.getElementById("events-count").textContent = `${events.length} ${events.length === 1 ? "event" : "events"}`;
+
+      if (!events.length) {
+        tbody.innerHTML = `<tr><td colspan="6" class="muted">No sync events found.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = events.map((event) => {
+        const summary = payloadSummary(event.payload);
+        const message = escapeHtml(event.message || "-");
+        const payload = summary ? `<div class="payload">${escapeHtml(summary)}</div>` : "";
+
+        return `
+          <tr>
+            <td class="muted">${escapeHtml(formatTime(event.created_at))}</td>
+            <td>${escapeHtml(event.source || "-")}</td>
+            <td>${escapeHtml(event.system || "-")}</td>
+            <td>${escapeHtml(event.event_type || "-")}</td>
+            <td>${statusBadge(event.status)}</td>
+            <td><div class="message">${message}</div>${payload}</td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    function setError(message) {
+      const box = document.getElementById("error-box");
+      if (!message) {
+        box.classList.remove("active");
+        box.textContent = "";
+        return;
+      }
+
+      box.classList.add("active");
+      box.innerHTML = `<strong>Sync Gateway API error.</strong> ${escapeHtml(message)}`;
+    }
+
+    async function loadSyncStatus() {
+      const status = document.getElementById("load-status");
+      const button = document.getElementById("refresh-button");
+
+      status.textContent = "Loading...";
+      button.disabled = true;
+      setError("");
+
+      try {
+        const res = await fetch("/api/sync/status", { cache: "no-store" });
+
+        if (!res.ok) {
+          const errorData = await res.json().catch(() => ({}));
+          throw new Error(errorData.detail || ("HTTP " + res.status));
+        }
+
+        const data = await res.json();
+        const events = Array.isArray(data.recent_events) ? data.recent_events : [];
+        const sources = normalizeArray(data.sources);
+        const systems = normalizeArray(data.systems);
+        const counts = data.status_counts && typeof data.status_counts === "object" ? data.status_counts : {};
+
+        metric("metric-total-events", data.total_events ?? events.length);
+        metric("metric-latest-event-at", formatTime(data.latest_event_at));
+        metric("metric-source-count", sources.length);
+        metric("metric-system-count", systems.length);
+        metric("metric-ok-count", counts.ok || 0);
+        metric("metric-warning-count", counts.warning || 0);
+        metric("metric-error-count", counts.error || 0);
+
+        renderChips("sources-list", "sources-count", sources, "source");
+        renderChips("systems-list", "systems-count", systems, "system");
+        renderEvents(events);
+
+        status.textContent = `Loaded ${events.length} recent events`;
+      } catch (err) {
+        console.error("Failed to load sync status:", err);
+        resetMetrics();
+        renderChips("sources-list", "sources-count", [], "source");
+        renderChips("systems-list", "systems-count", [], "system");
+        renderEvents([]);
+        status.textContent = "API error";
+        setError(err.message || "Unable to load /api/sync/status.");
+      } finally {
+        button.disabled = false;
+      }
+    }
+
+    document.getElementById("refresh-button").addEventListener("click", loadSyncStatus);
+    loadSyncStatus();
+  </script>
+</body>
+</html>

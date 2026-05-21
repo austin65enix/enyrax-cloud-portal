@@ -174,7 +174,7 @@
 
     .modules {
       display: grid;
-      grid-template-columns: repeat(5, 1fr);
+      grid-template-columns: repeat(3, 1fr);
       gap: 16px;
       margin-top: 36px;
     }
@@ -452,6 +452,13 @@
         <h2>Server Status</h2>
         <p>Akamai Tokyo 3 cloud host, Ubuntu runtime, firewall status and deployment checkpoints.</p>
         <span class="module-status" data-module-status="status">CHECKING</span>
+      </a>
+
+      <a class="card" href="/sync/">
+        <div class="eyebrow">Hybrid Cloud</div>
+        <h2>Sync Gateway</h2>
+        <p>Local host sync events, heartbeat, Docker/Wazuh summaries and hybrid-cloud gateway status.</p>
+        <span class="module-status api-connected">API CONNECTED</span>
       </a>
     </section>
 
