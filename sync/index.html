@@ -188,6 +188,10 @@
       padding: 20px;
     }
 
+    main > .card + .card {
+      margin-top: 14px;
+    }
+
     .card-top {
       display: flex;
       align-items: center;
@@ -309,9 +313,132 @@
       background: var(--red);
     }
 
-    .status-unknown {
+    .status-unknown,
+    .health-unknown {
       color: #071018;
       background: var(--gray);
+    }
+
+    .health-healthy {
+      color: #062014;
+      background: var(--green);
+    }
+
+    .health-warning {
+      color: #241203;
+      background: var(--orange);
+    }
+
+    .health-stale {
+      color: #071018;
+      background: var(--gold);
+    }
+
+    .health-error {
+      color: #26060c;
+      background: var(--red);
+    }
+
+    .source-health-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .source-card {
+      min-width: 0;
+      border: 1px solid rgba(245, 211, 122, .18);
+      background: rgba(255,255,255,.045);
+      border-radius: 18px;
+      padding: 16px;
+    }
+
+    .source-card-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .source-name {
+      color: var(--text);
+      font-size: 18px;
+      font-weight: 950;
+      line-height: 1.2;
+      overflow-wrap: anywhere;
+    }
+
+    .source-meta {
+      display: grid;
+      gap: 8px;
+      margin: 12px 0;
+    }
+
+    .source-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      border-bottom: 1px solid rgba(255,255,255,.07);
+      padding-bottom: 8px;
+      font-size: 13px;
+    }
+
+    .source-row:last-child {
+      border-bottom: 0;
+      padding-bottom: 0;
+    }
+
+    .source-key {
+      color: var(--muted);
+      flex: 0 0 auto;
+    }
+
+    .source-value {
+      color: var(--text);
+      font-weight: 850;
+      text-align: right;
+      overflow-wrap: anywhere;
+      min-width: 0;
+    }
+
+    .source-counts {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .source-count {
+      border: 1px solid rgba(255,255,255,.1);
+      background: rgba(255,255,255,.04);
+      border-radius: 14px;
+      padding: 9px;
+    }
+
+    .source-count span {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    .source-count strong {
+      display: block;
+      margin-top: 4px;
+      color: var(--gold);
+      font-size: 20px;
+      line-height: 1;
+    }
+
+    .source-message {
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 760;
+      line-height: 1.45;
+      overflow-wrap: anywhere;
     }
 
     .message {
@@ -358,7 +485,8 @@
         grid-template-columns: repeat(2, 1fr);
       }
 
-      .panels {
+      .panels,
+      .source-health-grid {
         grid-template-columns: 1fr;
       }
     }
@@ -378,6 +506,15 @@
 
       button {
         width: 100%;
+      }
+
+      .source-row {
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .source-value {
+        text-align: left;
       }
     }
   </style>
@@ -470,6 +607,16 @@
 
     <section class="card">
       <div class="card-top">
+        <h2>Source Health</h2>
+        <div class="count" id="source-health-count">0 sources</div>
+      </div>
+      <div class="source-health-grid" id="source-health-list">
+        <div class="empty">Loading source health...</div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-top">
         <h2>Recent Events</h2>
         <div class="count" id="events-count">0 events</div>
       </div>
@@ -543,6 +690,12 @@
       return "unknown";
     }
 
+    function normalizeHealth(health) {
+      const normalized = String(health || "unknown").toLowerCase();
+      if (["healthy", "warning", "stale", "error", "unknown"].includes(normalized)) return normalized;
+      return "unknown";
+    }
+
     function payloadSummary(payload) {
       if (!payload || typeof payload !== "object" || Array.isArray(payload)) return "";
 
@@ -556,6 +709,11 @@
     function statusBadge(status) {
       const normalized = normalizeStatus(status);
       return `<span class="status-badge status-${normalized}">${escapeHtml(normalized)}</span>`;
+    }
+
+    function healthBadge(health) {
+      const normalized = normalizeHealth(health);
+      return `<span class="status-badge health-${normalized}">${escapeHtml(normalized)}</span>`;
     }
 
     function renderChips(id, countId, values, noun) {
@@ -588,6 +746,50 @@
       document.getElementById("sources-count").textContent = "0 sources";
       document.getElementById("systems-count").textContent = "0 systems";
       document.getElementById("events-count").textContent = "0 events";
+    }
+
+    function renderSourceHealth(sources) {
+      const list = document.getElementById("source-health-list");
+      const count = document.getElementById("source-health-count");
+      const label = sources.length === 1 ? "source" : "sources";
+
+      count.textContent = `${sources.length} ${label}`;
+
+      if (!sources.length) {
+        list.innerHTML = `<div class="empty">No sync sources detected yet.</div>`;
+        return;
+      }
+
+      list.innerHTML = sources.map((item) => {
+        const systems = normalizeArray(item.systems);
+        const systemsText = systems.length ? systems.join(", ") : "-";
+
+        return `
+          <article class="source-card">
+            <div class="source-card-top">
+              <div class="source-name">${escapeHtml(item.source || "-")}</div>
+              ${healthBadge(item.health)}
+            </div>
+            <div class="source-meta">
+              <div class="source-row"><span class="source-key">Latest Heartbeat</span><span class="source-value">${escapeHtml(formatTime(item.latest_heartbeat_at))}</span></div>
+              <div class="source-row"><span class="source-key">Latest Event</span><span class="source-value">${escapeHtml(formatTime(item.latest_event_at))}</span></div>
+              <div class="source-row"><span class="source-key">Systems</span><span class="source-value">${escapeHtml(systemsText)}</span></div>
+              <div class="source-row"><span class="source-key">Total Events</span><span class="source-value">${escapeHtml(item.total_events ?? 0)}</span></div>
+            </div>
+            <div class="source-counts">
+              <div class="source-count"><span>OK</span><strong>${escapeHtml(item.ok_count ?? 0)}</strong></div>
+              <div class="source-count"><span>Warning</span><strong>${escapeHtml(item.warning_count ?? 0)}</strong></div>
+              <div class="source-count"><span>Error</span><strong>${escapeHtml(item.error_count ?? 0)}</strong></div>
+            </div>
+            <div class="source-message">${escapeHtml(item.latest_message || "-")}</div>
+          </article>
+        `;
+      }).join("");
+    }
+
+    function renderSourceHealthError() {
+      document.getElementById("source-health-count").textContent = "0 sources";
+      document.getElementById("source-health-list").innerHTML = `<div class="empty">Source health API unavailable.</div>`;
     }
 
     function renderEvents(events) {
@@ -630,13 +832,6 @@
     }
 
     async function loadSyncStatus() {
-      const status = document.getElementById("load-status");
-      const button = document.getElementById("refresh-button");
-
-      status.textContent = "Loading...";
-      button.disabled = true;
-      setError("");
-
       try {
         const res = await fetch("/api/sync/status", { cache: "no-store" });
 
@@ -663,22 +858,69 @@
         renderChips("systems-list", "systems-count", systems, "system");
         renderEvents(events);
 
-        status.textContent = `Loaded ${events.length} recent events`;
+        return events.length;
       } catch (err) {
         console.error("Failed to load sync status:", err);
         resetMetrics();
         renderChips("sources-list", "sources-count", [], "source");
         renderChips("systems-list", "systems-count", [], "system");
         renderEvents([]);
-        status.textContent = "API error";
         setError(err.message || "Unable to load /api/sync/status.");
+        throw err;
+      }
+    }
+
+    async function loadSyncSources() {
+      try {
+        const res = await fetch("/api/sync/sources", { cache: "no-store" });
+
+        if (!res.ok) {
+          throw new Error("HTTP " + res.status);
+        }
+
+        const data = await res.json();
+        const sources = Array.isArray(data.sources) ? data.sources : [];
+        renderSourceHealth(sources);
+        return sources.length;
+      } catch (err) {
+        console.error("Failed to load sync source health:", err);
+        renderSourceHealthError();
+        throw err;
+      }
+    }
+
+    async function refreshSyncGateway() {
+      const status = document.getElementById("load-status");
+      const button = document.getElementById("refresh-button");
+
+      status.textContent = "Loading...";
+      button.disabled = true;
+      setError("");
+
+      try {
+        const [statusResult, sourcesResult] = await Promise.allSettled([
+          loadSyncStatus(),
+          loadSyncSources()
+        ]);
+        const loadedEvents = statusResult.status === "fulfilled" ? statusResult.value : 0;
+        const loadedSources = sourcesResult.status === "fulfilled" ? sourcesResult.value : 0;
+
+        if (statusResult.status === "rejected" && sourcesResult.status === "rejected") {
+          status.textContent = "API error";
+        } else if (statusResult.status === "rejected") {
+          status.textContent = `Loaded ${loadedSources} source health records; status API error`;
+        } else if (sourcesResult.status === "rejected") {
+          status.textContent = `Loaded ${loadedEvents} recent events; source health API error`;
+        } else {
+          status.textContent = `Loaded ${loadedEvents} recent events and ${loadedSources} source health records`;
+        }
       } finally {
         button.disabled = false;
       }
     }
 
-    document.getElementById("refresh-button").addEventListener("click", loadSyncStatus);
-    loadSyncStatus();
+    document.getElementById("refresh-button").addEventListener("click", refreshSyncGateway);
+    refreshSyncGateway();
   </script>
 </body>
 </html>
