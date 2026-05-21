@@ -47,6 +47,18 @@
       margin-bottom: 26px;
     }
 
+    .top-left {
+      flex: 1 1 620px;
+      min-width: 0;
+    }
+
+    .top-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 18px;
+    }
+
     .badge {
       display: inline-flex;
       gap: 10px;
@@ -75,6 +87,8 @@
     }
 
     .back {
+      display: inline-flex;
+      align-items: center;
       text-decoration: none;
       color: #081018;
       background: linear-gradient(135deg, var(--gold), #fff0b8);
@@ -82,6 +96,8 @@
       border-radius: 14px;
       font-weight: 900;
       box-shadow: 0 16px 48px rgba(245, 211, 122, .16);
+      width: fit-content;
+      max-width: 100%;
     }
 
     .metrics {
@@ -388,6 +404,7 @@
     @media (max-width: 900px) {
       .metrics { grid-template-columns: 1fr 1fr; }
       .layout { grid-template-columns: 1fr; }
+      .top-left { flex-basis: 100%; }
     }
 
     @media (max-width: 560px) {
@@ -401,7 +418,7 @@
 <body>
   <main class="wrap">
     <section class="top">
-      <div>
+      <div class="top-left">
         <div class="badge">SOC Monitoring · API-Driven Demo · AI-Assisted Investigation</div>
         <h1>ENYRAX SOC</h1>
         <p class="subtitle">
@@ -414,8 +431,10 @@
           <span>· Viewer read-only · Operator updates incidents · Admin deletes</span>
         </div>
         <div class="management-note" id="management-note">Supervisor management controls are enabled for incident triage operations.</div>
+        <div class="top-actions">
+          <a class="back" href="/">Back to Portal</a>
+        </div>
       </div>
-      <a class="back" href="/">Back to Portal</a>
     </section>
 
     <section class="metrics">
