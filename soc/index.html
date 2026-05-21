@@ -428,7 +428,7 @@
         <div class="api-line" id="api-time">Loading SOC summary from API...</div>
         <div class="role-note">
           Current role: <strong id="current-role-label">Admin</strong>
-          <span>· Viewer read-only · Operator updates incidents · Admin deletes</span>
+          <span>· View-only demo mode · Login required for create, update and delete</span>
         </div>
         <div class="management-note" id="management-note">Supervisor management controls are enabled for incident triage operations.</div>
         <div class="top-actions">
@@ -598,16 +598,33 @@
       return levels[role] || 1;
     }
 
+    function canWriteSession() {
+      return Boolean(window.ENYRAXRole && window.ENYRAXRole.canWriteSession && window.ENYRAXRole.canWriteSession());
+    }
+
     function canWrite() {
-      return roleLevel(currentRole()) >= roleLevel("operator");
+      return canWriteSession() && roleLevel(currentRole()) >= roleLevel("operator");
     }
 
     function canDelete() {
-      return roleLevel(currentRole()) >= roleLevel("admin");
+      return canWriteSession() && roleLevel(currentRole()) >= roleLevel("admin");
     }
 
     function canSeeManagementHint() {
-      return roleLevel(currentRole()) >= roleLevel("supervisor");
+      return canWriteSession() && roleLevel(currentRole()) >= roleLevel("supervisor");
+    }
+
+    function showWriteLoginRequired(target) {
+      const message = target ? document.getElementById(target) : null;
+      const text = "Preview only. Please log in with a write role to continue.";
+
+      if (message) {
+        message.textContent = text;
+        message.style.color = "#ff6b86";
+        return;
+      }
+
+      alert(text);
     }
 
     function updateRoleLabel() {
@@ -744,6 +761,11 @@
       const message = document.getElementById("incident-form-message");
       const form = document.getElementById("incident-form");
 
+      if (!canWrite()) {
+        showWriteLoginRequired("incident-form-message");
+        return;
+      }
+
       const payload = {
         title: document.getElementById("incident-title").value.trim(),
         severity: document.getElementById("incident-severity").value,
@@ -795,6 +817,10 @@
 
     async function markIncidentSeverity(incidentId, severity) {
       if (!incidentId) return;
+      if (!canWrite()) {
+        showWriteLoginRequired();
+        return;
+      }
 
       try {
         const res = await fetch(`/api/soc/incidents/${incidentId}`, {
@@ -816,6 +842,10 @@
 
     async function deleteIncident(incidentId) {
       if (!incidentId) return;
+      if (!canDelete()) {
+        showWriteLoginRequired();
+        return;
+      }
 
       const ok = confirm(`Delete incident #${incidentId}?`);
       if (!ok) return;
@@ -838,6 +868,10 @@
     document.getElementById("incident-form").addEventListener("submit", createSocIncident);
 
     window.addEventListener("enyrax-role-changed", () => {
+      loadSocSummary();
+    });
+
+    window.addEventListener("enyrax-auth-session-changed", () => {
       loadSocSummary();
     });
 

@@ -3,6 +3,7 @@
   const AUTH_USER_KEY = "enyrax_auth_user";
   const DISMISS_KEY = "enyrax_auth_guard_dismissed";
   const ROOT_ID = "enyrax-auth-guard";
+  const SESSION_EVENT = "enyrax-auth-session-changed";
 
   function getAuthUser() {
     const storedUser = localStorage.getItem(AUTH_USER_KEY);
@@ -18,6 +19,26 @@
 
   function isLoggedIn() {
     return Boolean(localStorage.getItem(AUTH_TOKEN_KEY) && getAuthUser());
+  }
+
+  function dispatchSessionChange(loggedIn, user) {
+    window.dispatchEvent(new CustomEvent(SESSION_EVENT, {
+      detail: {
+        loggedIn: loggedIn,
+        user: user || null
+      }
+    }));
+  }
+
+  function setAuthUser(user) {
+    localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
+    dispatchSessionChange(true, user);
+  }
+
+  function clearAuthSession() {
+    localStorage.removeItem(AUTH_TOKEN_KEY);
+    localStorage.removeItem(AUTH_USER_KEY);
+    dispatchSessionChange(false, null);
   }
 
   function createLinkButton(text, href, primary) {
@@ -143,10 +164,10 @@
     document.head.appendChild(style);
   }
 
-  function createGuard() {
-    if (document.getElementById(ROOT_ID)) return;
-    if (isLoggedIn()) return;
-    if (sessionStorage.getItem(DISMISS_KEY) === "1") return;
+  function renderGuard(titleText, messageText, showActions, force) {
+    const existingRoot = document.getElementById(ROOT_ID);
+    if (existingRoot) existingRoot.remove();
+    if (!force && sessionStorage.getItem(DISMISS_KEY) === "1") return;
 
     const root = document.createElement("section");
     const card = document.createElement("div");
@@ -154,8 +175,6 @@
     const title = document.createElement("div");
     const text = document.createElement("div");
     const actions = document.createElement("div");
-    const loginLink = createLinkButton("Go to Login", "/login/", true);
-    const dismissButton = createDismissButton("Continue in Demo Role");
 
     root.id = ROOT_ID;
     root.setAttribute("aria-live", "polite");
@@ -165,27 +184,98 @@
     text.className = "enyrax-auth-guard-text";
     actions.className = "enyrax-auth-guard-actions";
 
-    title.textContent = "Login required";
-    text.textContent = "Please sign in to access this module.";
-
-    dismissButton.addEventListener("click", () => {
-      sessionStorage.setItem(DISMISS_KEY, "1");
-      root.remove();
-    });
+    title.textContent = titleText;
+    text.textContent = messageText;
 
     copy.appendChild(title);
     copy.appendChild(text);
-    actions.appendChild(loginLink);
-    actions.appendChild(dismissButton);
+
+    if (showActions) {
+      const loginLink = createLinkButton("Go to Login", "/login/", true);
+      const dismissButton = createDismissButton("Continue in Demo Role");
+
+      dismissButton.addEventListener("click", () => {
+        sessionStorage.setItem(DISMISS_KEY, "1");
+        root.remove();
+      });
+
+      actions.appendChild(loginLink);
+      actions.appendChild(dismissButton);
+    }
+
     card.appendChild(copy);
-    card.appendChild(actions);
+
+    if (showActions) {
+      card.appendChild(actions);
+    }
+
     root.appendChild(card);
 
     document.body.insertBefore(root, document.body.firstChild);
   }
 
+  function removeGuard() {
+    const root = document.getElementById(ROOT_ID);
+    if (root) root.remove();
+  }
+
+  function createGuard(messageText, force) {
+    if (isLoggedIn()) {
+      removeGuard();
+      return;
+    }
+
+    renderGuard(
+      "Login required",
+      messageText || "Please sign in to access this module.",
+      true,
+      Boolean(force)
+    );
+  }
+
+  function showCheckingSession() {
+    renderGuard("Checking session...", "Validating your saved sign-in before loading this module.", false, true);
+  }
+
+  async function validateSession(token) {
+    const response = await fetch("/api/auth/me", {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`
+      },
+      cache: "no-store"
+    });
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok || !data.user) {
+      throw new Error(data.detail || "Session validation failed");
+    }
+
+    return data.user;
+  }
+
+  async function initializeAuthGuard() {
+    const token = localStorage.getItem(AUTH_TOKEN_KEY);
+
+    if (!token) {
+      createGuard();
+      return;
+    }
+
+    showCheckingSession();
+
+    try {
+      const user = await validateSession(token);
+      setAuthUser(user);
+      removeGuard();
+    } catch (_error) {
+      clearAuthSession();
+      createGuard("Session expired or invalid. Please sign in again.", true);
+    }
+  }
+
   document.addEventListener("DOMContentLoaded", () => {
     injectStyle();
-    createGuard();
+    initializeAuthGuard();
   });
 })();

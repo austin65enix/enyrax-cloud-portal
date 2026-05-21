@@ -484,7 +484,7 @@
       </div>
       <div class="role-note">
         Current role: <strong id="current-role-label">Admin</strong>
-        <span>· Viewer read-only · Operator updates / archives · Supervisor restores</span>
+        <span>· View-only demo mode · Login required for create, update, archive and restore</span>
       </div>
     </section>
 
@@ -705,12 +705,16 @@
       return levels[role] || 1;
     }
 
+    function canWriteSession() {
+      return Boolean(window.ENYRAXRole && window.ENYRAXRole.canWriteSession && window.ENYRAXRole.canWriteSession());
+    }
+
     function canWrite() {
-      return roleLevel(currentRole()) >= roleLevel("operator");
+      return canWriteSession() && roleLevel(currentRole()) >= roleLevel("operator");
     }
 
     function canArchive() {
-      return roleLevel(currentRole()) >= roleLevel("operator");
+      return canWriteSession() && roleLevel(currentRole()) >= roleLevel("operator");
     }
 
     function canViewArchive() {
@@ -718,7 +722,20 @@
     }
 
     function canRestore() {
-      return roleLevel(currentRole()) >= roleLevel("supervisor");
+      return canWriteSession() && roleLevel(currentRole()) >= roleLevel("supervisor");
+    }
+
+    function showWriteLoginRequired(target) {
+      const message = target ? document.getElementById(target) : null;
+      const text = "Preview only. Please log in with a write role to continue.";
+
+      if (message) {
+        message.textContent = text;
+        message.style.color = "#ff6b86";
+        return;
+      }
+
+      alert(text);
     }
 
     function applyRoleVisibility() {
@@ -1045,6 +1062,11 @@
       const message = document.getElementById("project-form-message");
       const form = document.getElementById("project-form");
 
+      if (!canWrite()) {
+        showWriteLoginRequired("project-form-message");
+        return;
+      }
+
       const payload = {
         title: document.getElementById("project-title").value.trim(),
         status: document.getElementById("project-status").value,
@@ -1101,6 +1123,10 @@
 
     async function updateProjectStatus(projectId, nextStatus) {
       if (!projectId) return;
+      if (!canWrite()) {
+        showWriteLoginRequired();
+        return;
+      }
 
       try {
         const res = await fetch(`/api/projectops/projects/${projectId}`, {
@@ -1124,6 +1150,10 @@
 
     async function archiveProject(projectId) {
       if (!projectId) return;
+      if (!canArchive()) {
+        showWriteLoginRequired();
+        return;
+      }
 
       const ok = confirm(`Archive ProjectOps project #${projectId}?`);
       if (!ok) return;
@@ -1147,6 +1177,10 @@
 
     async function restoreProject(projectId) {
       if (!projectId) return;
+      if (!canRestore()) {
+        showWriteLoginRequired();
+        return;
+      }
 
       const ok = confirm(`Restore ProjectOps project #${projectId}?`);
       if (!ok) return;
@@ -1178,6 +1212,10 @@
     document.getElementById("project-form").addEventListener("submit", createProject);
 
     window.addEventListener("enyrax-role-changed", () => {
+      reloadAll();
+    });
+
+    window.addEventListener("enyrax-auth-session-changed", () => {
       reloadAll();
     });
 

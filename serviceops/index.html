@@ -422,7 +422,7 @@
       </div>
       <div class="role-note">
         Current role: <strong id="current-role-label">Admin</strong>
-        <span>· Viewer read-only · Operator closes work / archives work · Supervisor restores</span>
+        <span>· Viewer read-only · Operator works / archives / restores tickets · Supervisor reviews</span>
       </div>
     </section>
 
@@ -617,12 +617,16 @@
       return levels[role] || 1;
     }
 
+    function canWriteSession() {
+      return Boolean(window.ENYRAXRole && window.ENYRAXRole.canWriteSession && window.ENYRAXRole.canWriteSession());
+    }
+
     function canWrite() {
-      return roleLevel(currentRole()) >= roleLevel("operator");
+      return canWriteSession() && roleLevel(currentRole()) >= roleLevel("operator");
     }
 
     function canArchive() {
-      return roleLevel(currentRole()) >= roleLevel("operator");
+      return canWriteSession() && roleLevel(currentRole()) >= roleLevel("operator");
     }
 
     function canViewArchive() {
@@ -630,7 +634,20 @@
     }
 
     function canRestore() {
-      return roleLevel(currentRole()) >= roleLevel("supervisor");
+      return canWriteSession() && roleLevel(currentRole()) >= roleLevel("operator");
+    }
+
+    function showWriteLoginRequired(target) {
+      const message = target ? document.getElementById(target) : null;
+      const text = "Preview only. Please log in with a write role to continue.";
+
+      if (message) {
+        message.textContent = text;
+        message.style.color = "#ff6b86";
+        return;
+      }
+
+      alert(text);
     }
 
     function applyRoleVisibility() {
@@ -904,6 +921,11 @@
       const message = document.getElementById("ticket-form-message");
       const form = document.getElementById("ticket-form");
 
+      if (!canWrite()) {
+        showWriteLoginRequired("ticket-form-message");
+        return;
+      }
+
       const payload = {
         title: document.getElementById("ticket-title").value.trim(),
         status: document.getElementById("ticket-status").value,
@@ -956,6 +978,10 @@
 
     async function markTicketDone(ticketId) {
       if (!ticketId) return;
+      if (!canWrite()) {
+        showWriteLoginRequired();
+        return;
+      }
 
       try {
         const res = await fetch(`/api/serviceops/tickets/${ticketId}`, {
@@ -979,6 +1005,10 @@
 
     async function markTicketPending(ticketId) {
       if (!ticketId) return;
+      if (!canWrite()) {
+        showWriteLoginRequired();
+        return;
+      }
 
       try {
         const res = await fetch(`/api/serviceops/tickets/${ticketId}`, {
@@ -1002,6 +1032,10 @@
 
     async function archiveTicket(ticketId) {
       if (!ticketId) return;
+      if (!canArchive()) {
+        showWriteLoginRequired();
+        return;
+      }
 
       const ok = confirm(`Archive ServiceOps ticket #${ticketId}?`);
       if (!ok) return;
@@ -1025,6 +1059,10 @@
 
     async function restoreTicket(ticketId) {
       if (!ticketId) return;
+      if (!canRestore()) {
+        showWriteLoginRequired();
+        return;
+      }
 
       const ok = confirm(`Restore ServiceOps ticket #${ticketId}?`);
       if (!ok) return;
@@ -1056,6 +1094,10 @@
     document.getElementById("ticket-form").addEventListener("submit", createServiceOpsTicket);
 
     window.addEventListener("enyrax-role-changed", () => {
+      reloadAll();
+    });
+
+    window.addEventListener("enyrax-auth-session-changed", () => {
       reloadAll();
     });
 
