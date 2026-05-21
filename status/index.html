@@ -164,6 +164,59 @@
       line-height: 1.45;
     }
 
+    .sync-health-summary {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      margin: 12px 0 2px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 850;
+      line-height: 1.45;
+    }
+
+    .sync-health-summary strong {
+      color: var(--text);
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      border-radius: 999px;
+      padding: 4px 8px;
+      font-size: 11px;
+      font-weight: 950;
+      line-height: 1;
+      text-transform: uppercase;
+    }
+
+    .status-pill.ok,
+    .status-pill.healthy {
+      color: #062014;
+      background: var(--green);
+    }
+
+    .status-pill.warning {
+      color: #241203;
+      background: var(--gold);
+    }
+
+    .status-pill.error {
+      color: #26060c;
+      background: var(--red);
+    }
+
+    .status-pill.stale {
+      color: #071018;
+      background: #ffb86b;
+    }
+
+    .status-pill.unknown {
+      color: #071018;
+      background: rgba(247, 242, 223, .72);
+    }
+
     .wide {
       grid-column: span 3;
     }
@@ -281,6 +334,9 @@
         <div class="row"><span class="key">OK</span><span class="value ok" id="sync-ok-count">-</span></div>
         <div class="row"><span class="key">Warning</span><span class="value warn" id="sync-warning-count">-</span></div>
         <div class="row"><span class="key">Error</span><span class="value bad" id="sync-error-count">-</span></div>
+        <div class="sync-health-summary" id="sync-health-summary">
+          Healthy - · Warning - · Stale - · Error - · Unknown -
+        </div>
         <div class="sync-event" id="sync-recent-event">
           <h3>Latest Local Event</h3>
           <div class="key">Checking sync gateway...</div>
@@ -382,6 +438,40 @@
       document.getElementById(id).textContent = value ?? "-";
     }
 
+    function normalizeSyncStatus(value) {
+      const normalized = String(value || "unknown").toLowerCase();
+      if (["ok", "warning", "error", "healthy", "stale", "unknown"].includes(normalized)) return normalized;
+      return "unknown";
+    }
+
+    function statusBadge(value) {
+      const normalized = normalizeSyncStatus(value);
+      return `<span class="status-pill ${normalized}">${escapeHtml(normalized)}</span>`;
+    }
+
+    function normalizeHealthSummary(summary) {
+      const value = summary && typeof summary === "object" ? summary : {};
+
+      return {
+        healthy: Number(value.healthy || 0),
+        warning: Number(value.warning || 0),
+        stale: Number(value.stale || 0),
+        error: Number(value.error || 0),
+        unknown: Number(value.unknown || 0)
+      };
+    }
+
+    function renderHealthSummary(summary) {
+      const counts = normalizeHealthSummary(summary);
+      document.getElementById("sync-health-summary").innerHTML = `
+        <span>Healthy <strong>${escapeHtml(counts.healthy)}</strong></span>
+        <span>· Warning <strong>${escapeHtml(counts.warning)}</strong></span>
+        <span>· Stale <strong>${escapeHtml(counts.stale)}</strong></span>
+        <span>· Error <strong>${escapeHtml(counts.error)}</strong></span>
+        <span>· Unknown <strong>${escapeHtml(counts.unknown)}</strong></span>
+      `;
+    }
+
     function setSyncUnavailable() {
       setSyncValue("sync-total-events", "-");
       setSyncValue("sync-latest-event-at", "-");
@@ -390,6 +480,7 @@
       setSyncValue("sync-ok-count", "-");
       setSyncValue("sync-warning-count", "-");
       setSyncValue("sync-error-count", "-");
+      renderHealthSummary({});
       document.getElementById("sync-recent-event").innerHTML = `
         <h3>Latest Local Event</h3>
         <div class="bad">Sync Gateway API unavailable.</div>
@@ -407,17 +498,13 @@
         return;
       }
 
-      const status = String(event.status || "unknown").toLowerCase();
-      const statusClass = status === "ok" ? "ok" : status === "warning" ? "warn" : status === "error" ? "bad" : "";
-
       target.innerHTML = `
         <h3>Latest Local Event</h3>
         <div class="row"><span class="key">Source</span><span class="value">${escapeHtml(event.source || "-")}</span></div>
         <div class="row"><span class="key">System</span><span class="value">${escapeHtml(event.system || "-")}</span></div>
         <div class="row"><span class="key">Event Type</span><span class="value">${escapeHtml(event.event_type || "-")}</span></div>
-        <div class="row"><span class="key">Status</span><span class="value ${statusClass}">${escapeHtml(status)}</span></div>
+        <div class="row"><span class="key">Status</span><span class="value">${statusBadge(event.status)}</span></div>
         <div class="row"><span class="key">Created At</span><span class="value">${escapeHtml(formatTime(event.created_at))}</span></div>
-        <div class="row"><span class="key">Message</span><span class="value sync-message">${escapeHtml(event.message || "-")}</span></div>
       `;
     }
 
@@ -442,6 +529,7 @@
         setSyncValue("sync-ok-count", counts.ok || 0);
         setSyncValue("sync-warning-count", counts.warning || 0);
         setSyncValue("sync-error-count", counts.error || 0);
+        renderHealthSummary(data.source_health_summary);
         renderSyncEvent(recentEvents[0]);
       } catch (err) {
         console.error("Sync Gateway status check failed:", err);
