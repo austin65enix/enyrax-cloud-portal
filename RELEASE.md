@@ -1,5 +1,136 @@
 # ENYRAX Cloud Portal Release Notes
 
+## v0.6.0-sync-gateway-demo
+
+Release date: 2026-05-21
+
+## Summary
+
+This release introduces the Local Sync Gateway architecture for ENYRAX Cloud Portal.
+
+The Tokyo cloud portal can now receive summarized events from local hosts through a controlled inbound API. Local machines can push heartbeat, host, Docker and Wazuh summaries without exposing local inbound ports.
+
+This establishes the first version of ENYRAX hybrid-cloud operation monitoring:
+
+```text
+Tokyo Cloud Portal
+  = Control Plane
+
+Local Host / Lab / On-Prem Services
+  = Data Plane
+
+Local Sync Agent
+  = Push-based sync bridge
+```
+
+## Completed
+
+- Local Sync Gateway backend API
+- `POST /api/sync/events`
+- `GET /api/sync/events`
+- `GET /api/sync/status`
+- `local_sync_events` PostgreSQL table
+- Sync API key protection with `X-Sync-Key`
+- Local Sync Agent prototype
+- `agents/local_sync_agent.py`
+- Local heartbeat collector
+- Local host summary collector
+- Docker service status collector
+- Wazuh alert summary collector
+- `agents/README.md`
+- `/sync/` frontend dashboard
+- Portal homepage Sync Gateway module card
+- `/status/` Sync Gateway status card
+- Recent sync events display
+- Warning / error sync status visibility
+
+## API Endpoints
+
+### Sync Gateway
+
+- `POST /api/sync/events`
+- `GET /api/sync/events`
+- `GET /api/sync/status`
+
+## Local Agent
+
+```text
+agents/local_sync_agent.py
+
+Supported event types:
+- heartbeat
+- host_summary
+- docker_service_status
+- wazuh_alert_summary
+```
+
+## Environment Variables
+
+```text
+ENYRAX_SYNC_URL
+  Default: https://portal.soc-monitoring.dev/api/sync/events
+
+ENYRAX_SYNC_KEY
+  Default: your-demo-sync-key
+
+ENYRAX_SYNC_SOURCE
+  Default: atn-local-lab
+```
+
+## Architecture
+
+```text
+Local Host
+  ├── Docker
+  ├── Wazuh
+  ├── ERP / MES / HRM future systems
+  └── local_sync_agent.py
+          ↓ HTTPS POST + X-Sync-Key
+
+Tokyo ENYRAX Cloud Portal
+  ├── FastAPI /api/sync/events
+  ├── PostgreSQL local_sync_events
+  ├── /api/sync/status
+  ├── /sync/
+  └── /status/
+```
+
+## Current Product Status
+
+```text
+Portal        Public module entry
+Login         Demo auth page enabled
+Users         Demo users table enabled
+SOC           RBAC + incident lifecycle backend
+ServiceOps    RBAC + Archive / Restore
+ProjectOps    RBAC + Archive / Restore
+Audit Logs    Supervisor/Admin protected
+Sync Gateway  Local push API + dashboard enabled
+Local Agent   Prototype event collector enabled
+Status Page   Cloud status + sync gateway summary
+```
+
+## Security Notes
+
+- Local hosts push summaries to Tokyo cloud.
+- Tokyo cloud does not need inbound access to local hosts.
+- Sync API requires `X-Sync-Key`.
+- Demo fallback key should be replaced before production use.
+- First version syncs summaries, not full raw logs.
+
+## Next Phase
+
+- Add `/sync/events` filtering UI
+- Add source health state calculation
+- Add stale heartbeat detection
+- Add Wazuh agent status visualization
+- Add local agent cron or systemd timer
+- Add stronger sync key rotation
+- Add per-source registration table
+- Connect sync warning events into SOC incidents
+
+---
+
 ## v0.5.0-auth-guard-demo
 
 Release date: 2026-05-21
