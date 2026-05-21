@@ -131,6 +131,39 @@
       font-weight: 900;
     }
 
+    .action {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 14px;
+      color: #081018;
+      background: linear-gradient(135deg, var(--gold), #fff0b8);
+      padding: 10px 12px;
+      border-radius: 14px;
+      font-size: 13px;
+      font-weight: 900;
+      text-decoration: none;
+    }
+
+    .sync-event {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(255,255,255,.07);
+    }
+
+    .sync-event h3 {
+      margin: 0 0 8px;
+      color: var(--cyan);
+      font-size: 13px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .sync-message {
+      overflow-wrap: anywhere;
+      line-height: 1.45;
+    }
+
     .wide {
       grid-column: span 3;
     }
@@ -239,6 +272,22 @@
         <div class="row"><span class="key">Firewall</span><span class="value">Akamai + UFW</span></div>
       </div>
 
+      <div class="card">
+        <h2>Sync Gateway</h2>
+        <div class="row"><span class="key">Total Events</span><span class="value" id="sync-total-events">-</span></div>
+        <div class="row"><span class="key">Latest Event</span><span class="value" id="sync-latest-event-at">-</span></div>
+        <div class="row"><span class="key">Sources</span><span class="value" id="sync-sources-count">-</span></div>
+        <div class="row"><span class="key">Systems</span><span class="value" id="sync-systems-count">-</span></div>
+        <div class="row"><span class="key">OK</span><span class="value ok" id="sync-ok-count">-</span></div>
+        <div class="row"><span class="key">Warning</span><span class="value warn" id="sync-warning-count">-</span></div>
+        <div class="row"><span class="key">Error</span><span class="value bad" id="sync-error-count">-</span></div>
+        <div class="sync-event" id="sync-recent-event">
+          <h3>Latest Local Event</h3>
+          <div class="key">Checking sync gateway...</div>
+        </div>
+        <a class="action" href="/sync/">Open Sync Gateway →</a>
+      </div>
+
       <div class="card wide">
         <h2>Service Map</h2>
         <div class="services">
@@ -304,7 +353,104 @@
       }
     }
 
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll(String.fromCharCode(34), "&quot;")
+        .replaceAll(String.fromCharCode(39), "&#039;");
+    }
+
+    function formatTime(value) {
+      if (!value) return "-";
+
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return value;
+
+      return date.toLocaleString("zh-TW", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit"
+      });
+    }
+
+    function setSyncValue(id, value) {
+      document.getElementById(id).textContent = value ?? "-";
+    }
+
+    function setSyncUnavailable() {
+      setSyncValue("sync-total-events", "-");
+      setSyncValue("sync-latest-event-at", "-");
+      setSyncValue("sync-sources-count", "-");
+      setSyncValue("sync-systems-count", "-");
+      setSyncValue("sync-ok-count", "-");
+      setSyncValue("sync-warning-count", "-");
+      setSyncValue("sync-error-count", "-");
+      document.getElementById("sync-recent-event").innerHTML = `
+        <h3>Latest Local Event</h3>
+        <div class="bad">Sync Gateway API unavailable.</div>
+      `;
+    }
+
+    function renderSyncEvent(event) {
+      const target = document.getElementById("sync-recent-event");
+
+      if (!event) {
+        target.innerHTML = `
+          <h3>Latest Local Event</h3>
+          <div class="key">No local sync events received yet.</div>
+        `;
+        return;
+      }
+
+      const status = String(event.status || "unknown").toLowerCase();
+      const statusClass = status === "ok" ? "ok" : status === "warning" ? "warn" : status === "error" ? "bad" : "";
+
+      target.innerHTML = `
+        <h3>Latest Local Event</h3>
+        <div class="row"><span class="key">Source</span><span class="value">${escapeHtml(event.source || "-")}</span></div>
+        <div class="row"><span class="key">System</span><span class="value">${escapeHtml(event.system || "-")}</span></div>
+        <div class="row"><span class="key">Event Type</span><span class="value">${escapeHtml(event.event_type || "-")}</span></div>
+        <div class="row"><span class="key">Status</span><span class="value ${statusClass}">${escapeHtml(status)}</span></div>
+        <div class="row"><span class="key">Created At</span><span class="value">${escapeHtml(formatTime(event.created_at))}</span></div>
+        <div class="row"><span class="key">Message</span><span class="value sync-message">${escapeHtml(event.message || "-")}</span></div>
+      `;
+    }
+
+    async function loadSyncGatewayStatus() {
+      try {
+        const res = await fetch("/api/sync/status", { cache: "no-store" });
+
+        if (!res.ok) {
+          throw new Error("Sync Gateway API returned " + res.status);
+        }
+
+        const data = await res.json();
+        const sources = Array.isArray(data.sources) ? data.sources : [];
+        const systems = Array.isArray(data.systems) ? data.systems : [];
+        const counts = data.status_counts && typeof data.status_counts === "object" ? data.status_counts : {};
+        const recentEvents = Array.isArray(data.recent_events) ? data.recent_events : [];
+
+        setSyncValue("sync-total-events", data.total_events ?? 0);
+        setSyncValue("sync-latest-event-at", formatTime(data.latest_event_at));
+        setSyncValue("sync-sources-count", sources.length);
+        setSyncValue("sync-systems-count", systems.length);
+        setSyncValue("sync-ok-count", counts.ok || 0);
+        setSyncValue("sync-warning-count", counts.warning || 0);
+        setSyncValue("sync-error-count", counts.error || 0);
+        renderSyncEvent(recentEvents[0]);
+      } catch (err) {
+        console.error("Sync Gateway status check failed:", err);
+        setSyncUnavailable();
+      }
+    }
+
     loadApiHealth();
+    loadSyncGatewayStatus();
   </script>
 </body>
 </html>
