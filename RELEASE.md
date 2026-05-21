@@ -1,5 +1,93 @@
 # ENYRAX Cloud Portal Release Notes
 
+## v0.6.1-sync-health-ui
+
+Release date: 2026-05-21
+
+## Summary
+
+This release improves the Local Sync Gateway by adding source-level health detection and visual health summaries.
+
+ENYRAX Cloud Portal can now determine whether each local source is healthy, warning, stale, error or unknown based on heartbeat freshness and recent error events.
+
+## Completed
+
+- Added Sync Source Health API
+- Added `GET /api/sync/sources`
+- Added stale heartbeat detection
+- Added source health summary to `/api/sync/status`
+- Added Source Health section to `/sync/`
+- Added source health cards for local sync sources
+- Added health badges for healthy / warning / stale / error / unknown
+- Added source health summary row to `/status/`
+- Added recent sync event compact display on `/status/`
+- Improved Sync Gateway monitoring visibility
+
+## Source Health Rules
+
+```text
+Recent 30 events include error
+  → error
+
+Latest heartbeat within 10 minutes
+  → healthy
+
+Latest heartbeat between 10 and 30 minutes
+  → warning
+
+Latest heartbeat older than 30 minutes
+  → stale
+
+No heartbeat
+  → unknown
+```
+
+## API Changes
+
+### Sync Gateway
+
+- `GET /api/sync/sources`
+- `GET /api/sync/status` now includes `source_health_summary`
+
+## UI Changes
+
+```text
+/sync/
+  - Source Health cards
+  - Source health badge
+  - Latest heartbeat
+  - Latest event
+  - Per-source ok / warning / error counts
+
+/status/
+  - Compact source health summary
+  - Recent sync event display
+  - Open Sync Gateway link remains available
+```
+
+## Current Product Status
+
+```text
+Sync Gateway  Local push API + dashboard enabled
+Source Health  Healthy / Warning / Stale / Error / Unknown detection enabled
+Local Agent   Prototype heartbeat / host / Docker / Wazuh collector enabled
+Status Page   Cloud status + sync gateway source health summary
+Sync Page     Detailed local source health dashboard
+```
+
+## Next Phase
+
+- Add stale source alert generation
+- Convert stale sync source into SOC incident candidate
+- Add `/sync/events` filtering UI
+- Add per-source detail page
+- Add source registration table
+- Add Wazuh agent status visualization
+- Add local agent cron / systemd timer deployment guide
+- Replace demo sync key with production key rotation
+
+---
+
 ## v0.6.0-sync-gateway-demo
 
 Release date: 2026-05-21
