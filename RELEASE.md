@@ -1,5 +1,66 @@
 # ENYRAX Cloud Portal Release Notes
 
+## v0.4.1-audit-actor-ui-polish
+
+Release date: 2026-05-21
+
+## Summary
+
+This release polishes the v0.4.0 login-aware workflow by improving audit actor identity, logged-in header layout, and audit access messaging.
+
+Audit Logs now record demo actor identity from the logged-in user, while the shared Role Switcher sends both role and actor headers to backend APIs.
+
+## Completed
+
+- Shared Role Switcher now sends `X-Demo-Actor`
+- `ENYRAXRole.actor()` added
+- Audit Logs actor now supports logged-in user email
+- Backend audit writers now prefer `X-Demo-Actor` over role fallback
+- Logged-in identity card layout improved
+- Login identity card no longer shows role select after login
+- Audit Logs permission message improved for Viewer / Operator
+- SOC header layout adjusted to avoid overlap with login identity card
+
+## Header Flow
+
+```text
+Login
+  ↓
+localStorage.enyrax_auth_user
+  ↓
+shared/role-switcher.js
+  ├── X-Demo-Role: role
+  └── X-Demo-Actor: email
+        ↓
+FastAPI audit writer
+        ↓
+audit_logs.actor
+```
+
+## Current Product Status
+
+```text
+Login         Demo auth page enabled
+Users         Demo users table enabled
+Role Source   Login identity first, demo role fallback
+Audit Actor   Logged-in email first, role fallback
+SOC           RBAC demo controls enabled
+ServiceOps    RBAC + Archive / Restore enabled
+ProjectOps    RBAC + Archive / Restore enabled
+Audit Logs    Supervisor/Admin protected with clearer access message
+```
+
+## Next Phase
+
+- Validate demo token with `/api/auth/me` on page load
+- Replace demo token with signed JWT
+- Replace `X-Demo-Role` with authenticated backend role
+- Add user management page
+- Add user-specific My Activity page
+- Add audit detail view per event
+
+---
+
 ## v0.4.0-auth-users-demo
 
 Release date: 2026-05-20
