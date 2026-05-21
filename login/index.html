@@ -210,9 +210,17 @@
 
     .quick {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: repeat(3, 1fr);
       gap: 8px;
       margin-bottom: 18px;
+    }
+
+    .quick-note {
+      grid-column: 1 / -1;
+      margin: 0 0 2px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
     }
 
     button,
@@ -374,7 +382,7 @@
           <p class="subtitle">Use a seeded local account to receive a demo token and unlock portal navigation for the current browser session.</p>
         </div>
         <div class="mini-grid" aria-label="Demo account summary">
-          <div class="mini"><span>Viewer</span><strong>Read access</strong></div>
+          <div class="mini"><span>Preview</span><strong>Read-only before login</strong></div>
           <div class="mini"><span>Operator</span><strong>Operations</strong></div>
           <div class="mini"><span>Supervisor</span><strong>Approvals</strong></div>
           <div class="mini"><span>Admin</span><strong>Full demo</strong></div>
@@ -388,7 +396,7 @@
         </div>
 
         <div class="quick" aria-label="Demo account shortcuts">
-          <button type="button" data-email="viewer@enyrax.local">Viewer</button>
+          <p class="quick-note">Preview mode covers read-only access before login.</p>
           <button type="button" data-email="operator@enyrax.local">Operator</button>
           <button type="button" data-email="supervisor@enyrax.local">Supervisor</button>
           <button type="button" data-email="admin@enyrax.local">Admin</button>
