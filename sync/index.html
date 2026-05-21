@@ -339,13 +339,30 @@
       background: var(--red);
     }
 
+    .severity-high {
+      color: #26060c;
+      background: var(--red);
+    }
+
+    .severity-medium {
+      color: #241203;
+      background: var(--orange);
+    }
+
+    .severity-low {
+      color: #071018;
+      background: var(--gold);
+    }
+
+    .candidate-grid,
     .source-health-grid {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 14px;
     }
 
-    .source-card {
+    .source-card,
+    .candidate-card {
       min-width: 0;
       border: 1px solid rgba(245, 211, 122, .18);
       background: rgba(255,255,255,.045);
@@ -353,7 +370,12 @@
       padding: 16px;
     }
 
-    .source-card-top {
+    .candidate-card {
+      border-color: rgba(255, 184, 107, .24);
+    }
+
+    .source-card-top,
+    .candidate-card-top {
       display: flex;
       align-items: flex-start;
       justify-content: space-between;
@@ -361,7 +383,8 @@
       margin-bottom: 12px;
     }
 
-    .source-name {
+    .source-name,
+    .candidate-title {
       color: var(--text);
       font-size: 18px;
       font-weight: 950;
@@ -369,13 +392,23 @@
       overflow-wrap: anywhere;
     }
 
-    .source-meta {
+    .candidate-badges {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 6px;
+      flex: 0 0 auto;
+    }
+
+    .source-meta,
+    .candidate-meta {
       display: grid;
       gap: 8px;
       margin: 12px 0;
     }
 
-    .source-row {
+    .source-row,
+    .candidate-row {
       display: flex;
       justify-content: space-between;
       gap: 12px;
@@ -384,17 +417,20 @@
       font-size: 13px;
     }
 
-    .source-row:last-child {
+    .source-row:last-child,
+    .candidate-row:last-child {
       border-bottom: 0;
       padding-bottom: 0;
     }
 
-    .source-key {
+    .source-key,
+    .candidate-key {
       color: var(--muted);
       flex: 0 0 auto;
     }
 
-    .source-value {
+    .source-value,
+    .candidate-value {
       color: var(--text);
       font-weight: 850;
       text-align: right;
@@ -432,13 +468,25 @@
       line-height: 1;
     }
 
-    .source-message {
+    .source-message,
+    .candidate-message,
+    .candidate-action {
       margin-top: 12px;
       color: var(--muted);
       font-size: 13px;
       font-weight: 760;
       line-height: 1.45;
       overflow-wrap: anywhere;
+    }
+
+    .candidate-action {
+      border-top: 1px solid rgba(255,255,255,.07);
+      padding-top: 12px;
+    }
+
+    .candidate-action strong,
+    .candidate-message strong {
+      color: var(--gold);
     }
 
     .message {
@@ -486,6 +534,7 @@
       }
 
       .panels,
+      .candidate-grid,
       .source-health-grid {
         grid-template-columns: 1fr;
       }
@@ -508,13 +557,23 @@
         width: 100%;
       }
 
-      .source-row {
+      .source-row,
+      .candidate-row {
         flex-direction: column;
         gap: 4px;
       }
 
-      .source-value {
+      .source-value,
+      .candidate-value {
         text-align: left;
+      }
+
+      .candidate-card-top {
+        flex-direction: column;
+      }
+
+      .candidate-badges {
+        justify-content: flex-start;
       }
     }
   </style>
@@ -617,6 +676,16 @@
 
     <section class="card">
       <div class="card-top">
+        <h2>SOC Incident Candidates</h2>
+        <div class="count" id="candidate-count">0 candidates</div>
+      </div>
+      <div class="candidate-grid" id="candidate-list">
+        <div class="empty">Loading incident candidates...</div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-top">
         <h2>Recent Events</h2>
         <div class="count" id="events-count">0 events</div>
       </div>
@@ -696,6 +765,12 @@
       return "unknown";
     }
 
+    function normalizeSeverity(severity) {
+      const normalized = String(severity || "low").toLowerCase();
+      if (["high", "medium", "low"].includes(normalized)) return normalized;
+      return "low";
+    }
+
     function payloadSummary(payload) {
       if (!payload || typeof payload !== "object" || Array.isArray(payload)) return "";
 
@@ -714,6 +789,11 @@
     function healthBadge(health) {
       const normalized = normalizeHealth(health);
       return `<span class="status-badge health-${normalized}">${escapeHtml(normalized)}</span>`;
+    }
+
+    function severityBadge(severity) {
+      const normalized = normalizeSeverity(severity);
+      return `<span class="status-badge severity-${normalized}">${escapeHtml(normalized)}</span>`;
     }
 
     function renderChips(id, countId, values, noun) {
@@ -790,6 +870,50 @@
     function renderSourceHealthError() {
       document.getElementById("source-health-count").textContent = "0 sources";
       document.getElementById("source-health-list").innerHTML = `<div class="empty">Source health API unavailable.</div>`;
+    }
+
+    function renderIncidentCandidates(candidates) {
+      const list = document.getElementById("candidate-list");
+      const count = document.getElementById("candidate-count");
+      const label = candidates.length === 1 ? "candidate" : "candidates";
+
+      count.textContent = `${candidates.length} ${label}`;
+
+      if (!candidates.length) {
+        list.innerHTML = `<div class="empty">No SOC incident candidates from sync sources.</div>`;
+        return;
+      }
+
+      list.innerHTML = candidates.map((item) => {
+        const systems = normalizeArray(item.systems);
+        const systemsText = systems.length ? systems.join(", ") : "-";
+
+        return `
+          <article class="candidate-card">
+            <div class="candidate-card-top">
+              <div class="candidate-title">${escapeHtml(item.title || "-")}</div>
+              <div class="candidate-badges">
+                ${severityBadge(item.severity)}
+                ${healthBadge(item.health)}
+              </div>
+            </div>
+            <div class="candidate-meta">
+              <div class="candidate-row"><span class="candidate-key">Source</span><span class="candidate-value">${escapeHtml(item.source || "-")}</span></div>
+              <div class="candidate-row"><span class="candidate-key">Systems</span><span class="candidate-value">${escapeHtml(systemsText)}</span></div>
+              <div class="candidate-row"><span class="candidate-key">Reason</span><span class="candidate-value">${escapeHtml(item.reason || "-")}</span></div>
+              <div class="candidate-row"><span class="candidate-key">Latest Event</span><span class="candidate-value">${escapeHtml(formatTime(item.latest_event_at))}</span></div>
+              <div class="candidate-row"><span class="candidate-key">Latest Heartbeat</span><span class="candidate-value">${escapeHtml(formatTime(item.latest_heartbeat_at))}</span></div>
+            </div>
+            <div class="candidate-message"><strong>Latest message:</strong> ${escapeHtml(item.latest_message || "-")}</div>
+            <div class="candidate-action"><strong>Recommended action:</strong> ${escapeHtml(item.recommended_action || "-")}</div>
+          </article>
+        `;
+      }).join("");
+    }
+
+    function renderIncidentCandidatesError() {
+      document.getElementById("candidate-count").textContent = "0 candidates";
+      document.getElementById("candidate-list").innerHTML = `<div class="empty">Incident candidate API unavailable.</div>`;
     }
 
     function renderEvents(events) {
@@ -889,6 +1013,25 @@
       }
     }
 
+    async function loadIncidentCandidates() {
+      try {
+        const res = await fetch("/api/sync/incident-candidates", { cache: "no-store" });
+
+        if (!res.ok) {
+          throw new Error("HTTP " + res.status);
+        }
+
+        const data = await res.json();
+        const candidates = Array.isArray(data.candidates) ? data.candidates : [];
+        renderIncidentCandidates(candidates);
+        return candidates.length;
+      } catch (err) {
+        console.error("Failed to load sync incident candidates:", err);
+        renderIncidentCandidatesError();
+        throw err;
+      }
+    }
+
     async function refreshSyncGateway() {
       const status = document.getElementById("load-status");
       const button = document.getElementById("refresh-button");
@@ -898,21 +1041,22 @@
       setError("");
 
       try {
-        const [statusResult, sourcesResult] = await Promise.allSettled([
+        const [statusResult, sourcesResult, candidatesResult] = await Promise.allSettled([
           loadSyncStatus(),
-          loadSyncSources()
+          loadSyncSources(),
+          loadIncidentCandidates()
         ]);
         const loadedEvents = statusResult.status === "fulfilled" ? statusResult.value : 0;
         const loadedSources = sourcesResult.status === "fulfilled" ? sourcesResult.value : 0;
+        const loadedCandidates = candidatesResult.status === "fulfilled" ? candidatesResult.value : 0;
+        const failed = [statusResult, sourcesResult, candidatesResult].filter((result) => result.status === "rejected").length;
 
-        if (statusResult.status === "rejected" && sourcesResult.status === "rejected") {
+        if (failed === 3) {
           status.textContent = "API error";
-        } else if (statusResult.status === "rejected") {
-          status.textContent = `Loaded ${loadedSources} source health records; status API error`;
-        } else if (sourcesResult.status === "rejected") {
-          status.textContent = `Loaded ${loadedEvents} recent events; source health API error`;
+        } else if (failed > 0) {
+          status.textContent = `Loaded ${loadedEvents} events, ${loadedSources} source health records and ${loadedCandidates} candidates; ${failed} API error${failed === 1 ? "" : "s"}`;
         } else {
-          status.textContent = `Loaded ${loadedEvents} recent events and ${loadedSources} source health records`;
+          status.textContent = `Loaded ${loadedEvents} events, ${loadedSources} source health records and ${loadedCandidates} candidates`;
         }
       } finally {
         button.disabled = false;
