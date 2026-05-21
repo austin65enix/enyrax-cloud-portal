@@ -252,6 +252,81 @@ def sync_event_row_to_dict(row):
     }
 
 
+def sync_source_row_to_dict(row):
+    return {
+        "source": row["source"],
+        "health": row["health"],
+        "latest_event_at": row["latest_event_at"].isoformat() if row["latest_event_at"] else None,
+        "latest_heartbeat_at": row["latest_heartbeat_at"].isoformat() if row["latest_heartbeat_at"] else None,
+        "systems": row["systems"] or [],
+        "total_events": int(row["total_events"] or 0),
+        "ok_count": int(row["ok_count"] or 0),
+        "warning_count": int(row["warning_count"] or 0),
+        "error_count": int(row["error_count"] or 0),
+        "latest_message": row["latest_message"],
+    }
+
+
+def fetch_sync_source_rows(conn):
+    return conn.execute(
+        text(
+            """
+            WITH ranked_events AS (
+                SELECT
+                    source, system, event_type, status, message, created_at, id,
+                    ROW_NUMBER() OVER (
+                        PARTITION BY source
+                        ORDER BY created_at DESC, id DESC
+                    ) AS source_rank
+                FROM local_sync_events
+            ),
+            source_rollup AS (
+                SELECT
+                    source,
+                    MAX(created_at) AS latest_event_at,
+                    MAX(created_at) FILTER (WHERE event_type = 'heartbeat') AS latest_heartbeat_at,
+                    ARRAY_AGG(DISTINCT system ORDER BY system) AS systems,
+                    COUNT(*) AS total_events,
+                    COUNT(*) FILTER (WHERE status = 'ok') AS ok_count,
+                    COUNT(*) FILTER (WHERE status = 'warning') AS warning_count,
+                    COUNT(*) FILTER (WHERE status = 'error') AS error_count,
+                    (ARRAY_AGG(message ORDER BY created_at DESC, id DESC))[1] AS latest_message
+                FROM local_sync_events
+                GROUP BY source
+            ),
+            recent_errors AS (
+                SELECT
+                    source,
+                    BOOL_OR(status = 'error') AS has_recent_error
+                FROM ranked_events
+                WHERE source_rank <= 30
+                GROUP BY source
+            )
+            SELECT
+                source_rollup.source,
+                CASE
+                    WHEN COALESCE(recent_errors.has_recent_error, FALSE) THEN 'error'
+                    WHEN source_rollup.latest_heartbeat_at IS NULL THEN 'unknown'
+                    WHEN source_rollup.latest_heartbeat_at >= NOW() - INTERVAL '10 minutes' THEN 'healthy'
+                    WHEN source_rollup.latest_heartbeat_at >= NOW() - INTERVAL '30 minutes' THEN 'warning'
+                    ELSE 'stale'
+                END AS health,
+                source_rollup.latest_event_at,
+                source_rollup.latest_heartbeat_at,
+                source_rollup.systems,
+                source_rollup.total_events,
+                source_rollup.ok_count,
+                source_rollup.warning_count,
+                source_rollup.error_count,
+                source_rollup.latest_message
+            FROM source_rollup
+            LEFT JOIN recent_errors ON recent_errors.source = source_rollup.source
+            ORDER BY source_rollup.source ASC
+            """
+        )
+    ).mappings().all()
+
+
 def get_user_by_email(conn, email):
     return conn.execute(
         text(
@@ -2104,6 +2179,22 @@ def list_local_sync_events(
     }
 
 
+@app.get("/api/sync/sources")
+def list_local_sync_sources():
+    db = require_db()
+
+    with db.connect() as conn:
+        rows = fetch_sync_source_rows(conn)
+
+    sources = [sync_source_row_to_dict(row) for row in rows]
+
+    return {
+        "status": "ok",
+        "count": len(sources),
+        "sources": sources,
+    }
+
+
 @app.get("/api/sync/status")
 def local_sync_status():
     db = require_db()
@@ -2160,8 +2251,20 @@ def local_sync_status():
                 """
             )
         ).mappings().all()
+        source_health_rows = fetch_sync_source_rows(conn)
 
     latest_event_at = summary["latest_event_at"] if summary else None
+    source_health_summary = {
+        "healthy": 0,
+        "warning": 0,
+        "stale": 0,
+        "error": 0,
+        "unknown": 0,
+    }
+
+    for row in source_health_rows:
+        health = row["health"] if row["health"] in source_health_summary else "unknown"
+        source_health_summary[health] += 1
 
     return {
         "status": "ok",
@@ -2170,6 +2273,7 @@ def local_sync_status():
         "sources": [row["source"] for row in sources],
         "systems": [row["system"] for row in systems],
         "status_counts": {row["status"]: int(row["count"]) for row in statuses},
+        "source_health_summary": source_health_summary,
         "recent_events": [sync_event_row_to_dict(row) for row in recent_rows],
     }
 
