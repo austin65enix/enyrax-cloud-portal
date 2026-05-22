@@ -186,14 +186,49 @@
       text-transform: uppercase;
     }
 
+    .badge-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
     .critical { color: #26060c; background: var(--red); }
     .high { color: #241203; background: var(--orange); }
     .medium { color: #062014; background: var(--green); }
+
+    .status-pill {
+      color: var(--gold);
+      background: rgba(245, 211, 122, .08);
+      border: 1px solid rgba(245, 211, 122, .22);
+    }
 
     .meta {
       color: var(--muted);
       font-size: 14px;
       line-height: 1.55;
+    }
+
+    .incident-details {
+      display: grid;
+      gap: 3px;
+      margin-top: 8px;
+      color: rgba(247, 242, 223, .78);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .incident-details strong {
+      color: var(--gold);
+    }
+
+    .incident-details-title {
+      color: var(--cyan);
+      font-size: 12px;
+      font-weight: 950;
+      letter-spacing: .08em;
+      text-transform: uppercase;
     }
 
     .timeline {
@@ -377,6 +412,21 @@
     .high-btn {
       color: #241203;
       background: var(--orange);
+    }
+
+    .operator-btn {
+      color: #062014;
+      background: var(--green);
+    }
+
+    .infra-btn {
+      color: #061c1a;
+      background: var(--cyan);
+    }
+
+    .supervisor-btn {
+      color: #081018;
+      background: linear-gradient(135deg, var(--gold), #fff0b8);
     }
 
     .delete-btn {
@@ -611,7 +661,7 @@
     }
 
     function canSeeManagementHint() {
-      return canWriteSession() && roleLevel(currentRole()) >= roleLevel("supervisor");
+      return canWriteSession() && roleLevel(currentRole()) >= roleLevel("operator");
     }
 
     function showWriteLoginRequired(target) {
@@ -642,29 +692,119 @@
 
       if (managementNote) {
         managementNote.style.display = canSeeManagementHint() ? "block" : "none";
+
+        if (canSeeManagementHint()) {
+          managementNote.textContent = roleLevel(currentRole()) >= roleLevel("supervisor")
+            ? "Supervisor can review audit trail, mark false positive or reopen incidents."
+            : "Operator can investigate, resolve, verify, confirm normal and close the incident.";
+        }
       }
+    }
+
+    function jsonHeaders() {
+      return window.ENYRAXRole
+        ? window.ENYRAXRole.jsonHeaders()
+        : {
+            "Content-Type": "application/json",
+            "X-Demo-Role": "viewer",
+            "X-Demo-Actor": "demo-viewer"
+          };
     }
 
     async function parseError(res, fallback) {
       const errorData = await res.json().catch(() => ({}));
-      return new Error(errorData.detail || `${fallback}: ${res.status}`);
+      const detail = errorData.detail;
+
+      if (typeof detail === "string") {
+        return new Error(detail);
+      }
+
+      if (detail) {
+        return new Error(JSON.stringify(detail));
+      }
+
+      return new Error(`${fallback}: ${res.status}`);
+    }
+
+    function canOperatorActions() {
+      return canWriteSession() && currentRole() === "operator";
+    }
+
+    function canCloseActions() {
+      return canWriteSession() && roleLevel(currentRole()) >= roleLevel("operator");
+    }
+
+    function canSupervisorActions() {
+      return canWriteSession() && roleLevel(currentRole()) >= roleLevel("supervisor");
+    }
+
+    function formatDateTime(value) {
+      if (!value) return "";
+
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return String(value);
+
+      return date.toLocaleString();
+    }
+
+    function renderDetailLine(label, value, formatter) {
+      if (value === undefined || value === null || value === "") return "";
+
+      const rendered = formatter ? formatter(value) : value;
+      return `<div><strong>${escapeHtml(label)}:</strong> ${escapeHtml(rendered)}</div>`;
+    }
+
+    function renderIncidentDetails(item) {
+      const lines = [
+        renderDetailLine("Status", item.status),
+        renderDetailLine("Handled By", item.handled_by),
+        renderDetailLine("Handled At", item.handled_at, formatDateTime),
+        renderDetailLine("Resolution Note", item.resolution_note),
+        renderDetailLine("Infra Verified By", item.infra_verified_by),
+        renderDetailLine("Infra Verified At", item.infra_verified_at, formatDateTime),
+        renderDetailLine("Infra Result", item.infra_verification_result),
+        renderDetailLine("Infra Note", item.infra_verification_note)
+      ].filter(Boolean);
+
+      if (!lines.length) return "";
+
+      return `<div class="incident-details"><div class="incident-details-title">Handling Trail</div>${lines.join("")}</div>`;
     }
 
     function renderIncidentActions(item) {
       const id = Number(item.id);
 
-      if (!id || !canWrite()) {
+      if (!id || !canWriteSession()) {
         return "";
       }
 
       const actions = [];
 
-      if (String(item.severity || "").toLowerCase() !== "critical") {
-        actions.push(`<button class="mini-btn critical-btn" type="button" onclick="markIncidentSeverity(${id}, 'critical')">Mark Critical</button>`);
+      if (canWrite()) {
+        if (String(item.severity || "").toLowerCase() !== "critical") {
+          actions.push(`<button class="mini-btn critical-btn" type="button" onclick="markIncidentSeverity(${id}, 'critical')">Mark Critical</button>`);
+        }
+
+        if (String(item.severity || "").toLowerCase() !== "high") {
+          actions.push(`<button class="mini-btn high-btn" type="button" onclick="markIncidentSeverity(${id}, 'high')">Mark High</button>`);
+        }
       }
 
-      if (String(item.severity || "").toLowerCase() !== "high") {
-        actions.push(`<button class="mini-btn high-btn" type="button" onclick="markIncidentSeverity(${id}, 'high')">Mark High</button>`);
+      if (canOperatorActions()) {
+        actions.push(`<button class="mini-btn operator-btn" type="button" onclick="runIncidentAction(${id}, 'investigate')">Investigate</button>`);
+        actions.push(`<button class="mini-btn operator-btn" type="button" onclick="runIncidentAction(${id}, 'contain')">Contain</button>`);
+        actions.push(`<button class="mini-btn operator-btn" type="button" onclick="runIncidentAction(${id}, 'resolve')">Resolve</button>`);
+        actions.push(`<button class="mini-btn infra-btn" type="button" onclick="runIncidentAction(${id}, 'infra-verify')">Infra Verify</button>`);
+        actions.push(`<button class="mini-btn infra-btn" type="button" onclick="runIncidentAction(${id}, 'infra-confirm')">Infra Confirm Normal</button>`);
+      }
+
+      if (canCloseActions()) {
+        actions.push(`<button class="mini-btn supervisor-btn" type="button" onclick="runIncidentAction(${id}, 'close')">Close Incident</button>`);
+      }
+
+      if (canSupervisorActions()) {
+        actions.push(`<button class="mini-btn supervisor-btn" type="button" onclick="runIncidentAction(${id}, 'false-positive')">False Positive</button>`);
+        actions.push(`<button class="mini-btn supervisor-btn" type="button" onclick="runIncidentAction(${id}, 'reopen')">Reopen</button>`);
       }
 
       if (canDelete()) {
@@ -691,11 +831,11 @@
       try {
         const res = await fetch("/api/soc/summary", {
           cache: "no-store",
-          headers: window.ENYRAXRole ? window.ENYRAXRole.header() : {}
+          headers: jsonHeaders()
         });
 
         if (!res.ok) {
-          throw new Error("SOC summary API returned " + res.status);
+          throw await parseError(res, "SOC summary API failed");
         }
 
         const data = await res.json();
@@ -716,17 +856,22 @@
         document.getElementById("hot-incidents").innerHTML = incidents.map((item) => {
           const sev = String(item.severity || "medium").toLowerCase();
           const cls = severityClass[sev] || "medium";
+          const status = String(item.status || "open");
 
           return `
             <div class="incident">
               <div class="incident-top">
                 <div class="title">${escapeHtml(item.title)}</div>
-                <div class="sev ${cls}">${escapeHtml(sev)}</div>
+                <div class="badge-row">
+                  <div class="sev status-pill">${escapeHtml(status)}</div>
+                  <div class="sev ${cls}">${escapeHtml(sev)}</div>
+                </div>
               </div>
               <div class="meta">
                 Source IP: ${escapeHtml(item.source_ip)} · Target: ${escapeHtml(item.target)} · Duplicate Count: ${escapeHtml(item.duplicate_count)}<br>
                 Analysis Type: ${escapeHtml(item.analysis_type)} · MITRE: ${escapeHtml(item.mitre)}
               </div>
+              ${renderIncidentDetails(item)}
               ${renderIncidentActions(item)}
             </div>
           `;
@@ -788,9 +933,7 @@
       try {
         const res = await fetch("/api/soc/incidents", {
           method: "POST",
-          headers: window.ENYRAXRole
-            ? window.ENYRAXRole.jsonHeaders()
-            : { "Content-Type": "application/json" },
+          headers: jsonHeaders(),
           body: JSON.stringify(payload)
         });
 
@@ -825,13 +968,87 @@
       try {
         const res = await fetch(`/api/soc/incidents/${incidentId}`, {
           method: "PUT",
-          headers: window.ENYRAXRole
-            ? window.ENYRAXRole.jsonHeaders()
-            : { "Content-Type": "application/json" },
+          headers: jsonHeaders(),
           body: JSON.stringify({ severity })
         });
 
         if (!res.ok) throw await parseError(res, "Update failed");
+
+        await loadSocSummary();
+      } catch (err) {
+        alert(err.message);
+        console.error(err);
+      }
+    }
+
+    const incidentActionConfig = {
+      investigate: {
+        role: "operator",
+        fallback: "Investigate failed"
+      },
+      contain: {
+        role: "operator",
+        fallback: "Contain failed"
+      },
+      resolve: {
+        role: "operator",
+        fallback: "Resolve failed"
+      },
+      "infra-verify": {
+        role: "operator",
+        fallback: "Infra verify failed",
+        body: {
+          note: "Checking host heartbeat, Wazuh agent and Docker service status."
+        }
+      },
+      "infra-confirm": {
+        role: "operator",
+        fallback: "Infra confirm failed",
+        body: {
+          note: "Host heartbeat recovered. Wazuh agent connected. No new sync error events."
+        }
+      },
+      "false-positive": {
+        role: "supervisor",
+        fallback: "False positive failed"
+      },
+      reopen: {
+        role: "supervisor",
+        fallback: "Reopen failed"
+      },
+      close: {
+        role: "operator",
+        fallback: "Close failed",
+        body: {
+          note: "Reviewed SOC and Infra verification evidence. Incident closed."
+        }
+      }
+    };
+
+    async function runIncidentAction(incidentId, action) {
+      if (!incidentId) return;
+
+      const config = incidentActionConfig[action];
+      if (!config) return;
+
+      if (!canWriteSession() || roleLevel(currentRole()) < roleLevel(config.role)) {
+        showWriteLoginRequired();
+        return;
+      }
+
+      const options = {
+        method: "PUT",
+        headers: jsonHeaders()
+      };
+
+      if (config.body) {
+        options.body = JSON.stringify(config.body);
+      }
+
+      try {
+        const res = await fetch(`/api/soc/incidents/${incidentId}/${action}`, options);
+
+        if (!res.ok) throw await parseError(res, config.fallback);
 
         await loadSocSummary();
       } catch (err) {
@@ -853,7 +1070,7 @@
       try {
         const res = await fetch(`/api/soc/incidents/${incidentId}`, {
           method: "DELETE",
-          headers: window.ENYRAXRole ? window.ENYRAXRole.header() : {}
+          headers: jsonHeaders()
         });
 
         if (!res.ok) throw await parseError(res, "Delete failed");

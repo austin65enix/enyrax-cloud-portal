@@ -112,6 +112,10 @@ class SocIncidentUpdate(BaseModel):
     resolution_note: Optional[str] = None
 
 
+class SocIncidentNoteUpdate(BaseModel):
+    note: Optional[str] = None
+
+
 class LocalSyncEventCreate(BaseModel):
     source: str = Field(..., min_length=1, max_length=120)
     system: str = Field(..., min_length=1, max_length=80)
@@ -201,6 +205,8 @@ SOC_INCIDENT_COLUMNS = """
     id, title, severity, source_ip, target,
     duplicate_count, analysis_type, mitre, status,
     handled_by, handled_at, resolution_note,
+    infra_verified_by, infra_verified_at,
+    infra_verification_note, infra_verification_result,
     display_order, created_at, updated_at
 """
 
@@ -264,6 +270,38 @@ def sync_source_row_to_dict(row):
         "warning_count": int(row["warning_count"] or 0),
         "error_count": int(row["error_count"] or 0),
         "latest_message": row["latest_message"],
+    }
+
+
+SYNC_INCIDENT_RECOMMENDED_ACTION = (
+    "Check local agent service, network path, Docker/Wazuh status and sync key configuration."
+)
+
+
+def sync_incident_candidate_from_source(row):
+    health = row["health"]
+    severity_by_health = {
+        "error": "high",
+        "stale": "medium",
+        "unknown": "low",
+    }
+    reason_by_health = {
+        "error": "Recent sync event reported error status.",
+        "stale": "No heartbeat received for more than 30 minutes.",
+        "unknown": "No heartbeat event found for this source.",
+    }
+
+    return {
+        "source": row["source"],
+        "health": health,
+        "severity": severity_by_health[health],
+        "title": f"Local sync source {health}: {row['source']}",
+        "reason": reason_by_health[health],
+        "latest_event_at": row["latest_event_at"].isoformat() if row["latest_event_at"] else None,
+        "latest_heartbeat_at": row["latest_heartbeat_at"].isoformat() if row["latest_heartbeat_at"] else None,
+        "systems": row["systems"] or [],
+        "latest_message": row["latest_message"],
+        "recommended_action": SYNC_INCIDENT_RECOMMENDED_ACTION,
     }
 
 
@@ -442,6 +480,10 @@ def incident_row_to_dict(row):
         "handled_by": row["handled_by"],
         "handled_at": row["handled_at"].isoformat() if row["handled_at"] else None,
         "resolution_note": row["resolution_note"],
+        "infra_verified_by": row["infra_verified_by"],
+        "infra_verified_at": row["infra_verified_at"].isoformat() if row["infra_verified_at"] else None,
+        "infra_verification_note": row["infra_verification_note"],
+        "infra_verification_result": row["infra_verification_result"],
         "display_order": row["display_order"],
         "created_at": row["created_at"].isoformat() if row["created_at"] else None,
         "updated_at": row["updated_at"].isoformat() if row["updated_at"] else None,
@@ -2032,6 +2074,172 @@ def mark_soc_incident_false_positive(
     )
 
 
+@app.put("/api/soc/incidents/{incident_id}/infra-verify")
+def start_soc_infra_verification(
+    incident_id: int,
+    payload: Optional[SocIncidentNoteUpdate] = None,
+    demo_role: str = Header(default="admin", alias="X-Demo-Role"),
+    demo_actor: str = Header(default=None, alias="X-Demo-Actor"),
+):
+    role = require_role(demo_role, "operator")
+    actor = demo_actor or role
+    note = payload.note if payload else None
+    db = require_db()
+
+    with db.begin() as conn:
+        row = conn.execute(
+            text(
+                f"""
+                UPDATE soc_incidents
+                SET
+                    status = 'infra_verifying',
+                    handled_by = :handled_by,
+                    handled_at = NOW(),
+                    infra_verification_note = :note,
+                    updated_at = NOW()
+                WHERE id = :incident_id
+                RETURNING
+                    {SOC_INCIDENT_COLUMNS}
+                """
+            ),
+            {
+                "incident_id": incident_id,
+                "handled_by": actor,
+                "note": note,
+            },
+        ).mappings().first()
+
+        if row is not None:
+            write_audit_log(
+                conn,
+                module="soc",
+                entity_type="incident",
+                entity_id=row["id"],
+                action="infra_verify",
+                summary=f"Infra verification started for SOC incident: {row['title']}",
+                actor=actor,
+            )
+
+    if row is None:
+        raise HTTPException(status_code=404, detail="Incident not found")
+
+    return {
+        "status": "updated",
+        "incident": incident_row_to_dict(row),
+    }
+
+
+@app.put("/api/soc/incidents/{incident_id}/infra-confirm")
+def confirm_soc_infra_normal(
+    incident_id: int,
+    payload: Optional[SocIncidentNoteUpdate] = None,
+    demo_role: str = Header(default="admin", alias="X-Demo-Role"),
+    demo_actor: str = Header(default=None, alias="X-Demo-Actor"),
+):
+    role = require_role(demo_role, "operator")
+    actor = demo_actor or role
+    note = payload.note if payload else None
+    db = require_db()
+
+    with db.begin() as conn:
+        row = conn.execute(
+            text(
+                f"""
+                UPDATE soc_incidents
+                SET
+                    status = 'infra_confirmed',
+                    infra_verified_by = :infra_verified_by,
+                    infra_verified_at = NOW(),
+                    infra_verification_result = 'normal',
+                    infra_verification_note = :note,
+                    updated_at = NOW()
+                WHERE id = :incident_id
+                RETURNING
+                    {SOC_INCIDENT_COLUMNS}
+                """
+            ),
+            {
+                "incident_id": incident_id,
+                "infra_verified_by": actor,
+                "note": note,
+            },
+        ).mappings().first()
+
+        if row is not None:
+            write_audit_log(
+                conn,
+                module="soc",
+                entity_type="incident",
+                entity_id=row["id"],
+                action="infra_confirm",
+                summary=f"Infra confirmed normal for SOC incident: {row['title']}",
+                actor=actor,
+            )
+
+    if row is None:
+        raise HTTPException(status_code=404, detail="Incident not found")
+
+    return {
+        "status": "updated",
+        "incident": incident_row_to_dict(row),
+    }
+
+
+@app.put("/api/soc/incidents/{incident_id}/close")
+def close_soc_incident(
+    incident_id: int,
+    payload: Optional[SocIncidentNoteUpdate] = None,
+    demo_role: str = Header(default="admin", alias="X-Demo-Role"),
+    demo_actor: str = Header(default=None, alias="X-Demo-Actor"),
+):
+    role = require_role(demo_role, "operator")
+    actor = demo_actor or role
+    note = payload.note if payload else None
+    db = require_db()
+
+    with db.begin() as conn:
+        row = conn.execute(
+            text(
+                f"""
+                UPDATE soc_incidents
+                SET
+                    status = 'closed',
+                    handled_by = :handled_by,
+                    handled_at = NOW(),
+                    resolution_note = :note,
+                    updated_at = NOW()
+                WHERE id = :incident_id
+                RETURNING
+                    {SOC_INCIDENT_COLUMNS}
+                """
+            ),
+            {
+                "incident_id": incident_id,
+                "handled_by": actor,
+                "note": note,
+            },
+        ).mappings().first()
+
+        if row is not None:
+            write_audit_log(
+                conn,
+                module="soc",
+                entity_type="incident",
+                entity_id=row["id"],
+                action="close",
+                summary=f"Closed SOC incident after Infra verification: {row['title']}",
+                actor=actor,
+            )
+
+    if row is None:
+        raise HTTPException(status_code=404, detail="Incident not found")
+
+    return {
+        "status": "updated",
+        "incident": incident_row_to_dict(row),
+    }
+
+
 @app.put("/api/soc/incidents/{incident_id}/reopen")
 def reopen_soc_incident(
     incident_id: int,
@@ -2192,6 +2400,117 @@ def list_local_sync_sources():
         "status": "ok",
         "count": len(sources),
         "sources": sources,
+    }
+
+
+@app.get("/api/sync/incident-candidates")
+def list_sync_incident_candidates():
+    db = require_db()
+
+    with db.connect() as conn:
+        rows = fetch_sync_source_rows(conn)
+
+    candidates = [
+        sync_incident_candidate_from_source(row)
+        for row in rows
+        if row["health"] in {"stale", "error", "unknown"}
+    ]
+
+    return {
+        "status": "ok",
+        "count": len(candidates),
+        "candidates": candidates,
+    }
+
+
+@app.post("/api/sync/incident-candidates/{source}/create-soc-incident")
+def create_soc_incident_from_sync_candidate(
+    source: str,
+    demo_role: str = Header(default="admin", alias="X-Demo-Role"),
+    demo_actor: str = Header(default=None, alias="X-Demo-Actor"),
+):
+    role = require_role(demo_role, "operator")
+    actor = demo_actor or role
+    db = require_db()
+
+    with db.begin() as conn:
+        source_rows = fetch_sync_source_rows(conn)
+        source_row = next((row for row in source_rows if row["source"] == source), None)
+
+        if source_row is None or source_row["health"] not in {"stale", "error", "unknown"}:
+            raise HTTPException(status_code=400, detail="Source is not an incident candidate.")
+
+        candidate = sync_incident_candidate_from_source(source_row)
+        existing = conn.execute(
+            text(
+                f"""
+                SELECT
+                    {SOC_INCIDENT_COLUMNS}
+                FROM soc_incidents
+                WHERE analysis_type = 'local_sync_candidate'
+                  AND source_ip = :source
+                  AND status NOT IN ('closed', 'false_positive')
+                ORDER BY created_at DESC, id DESC
+                LIMIT 1
+                """
+            ),
+            {"source": source},
+        ).mappings().first()
+
+        if existing is not None:
+            return {
+                "status": "existing",
+                "incident": incident_row_to_dict(existing),
+            }
+
+        max_order = conn.execute(
+            text("SELECT COALESCE(MAX(display_order), 0) FROM soc_incidents")
+        ).scalar_one()
+        resolution_note = (
+            candidate["reason"]
+            + " Recommended action: "
+            + candidate["recommended_action"]
+        )
+        row = conn.execute(
+            text(
+                f"""
+                INSERT INTO soc_incidents
+                    (title, severity, source_ip, target, duplicate_count,
+                     analysis_type, mitre, status, resolution_note, display_order)
+                VALUES
+                    (:title, :severity, :source_ip, :target, :duplicate_count,
+                     :analysis_type, :mitre, :status, :resolution_note, :display_order)
+                RETURNING
+                    {SOC_INCIDENT_COLUMNS}
+                """
+            ),
+            {
+                "title": candidate["title"],
+                "severity": candidate["severity"],
+                "source_ip": candidate["source"],
+                "target": "local-sync-gateway",
+                "duplicate_count": 1,
+                "analysis_type": "local_sync_candidate",
+                "mitre": "Operational Monitoring",
+                "status": "open",
+                "resolution_note": resolution_note,
+                "display_order": int(max_order) + 1,
+            },
+        ).mappings().first()
+
+        write_audit_log(
+            conn,
+            module="soc",
+            entity_type="incident",
+            entity_id=row["id"],
+            action="create",
+            summary=f"Created SOC incident from sync candidate: {row['title']}",
+            actor=actor,
+        )
+
+    return {
+        "status": "created",
+        "incident": incident_row_to_dict(row),
     }
 
 

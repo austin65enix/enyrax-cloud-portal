@@ -489,6 +489,57 @@
       color: var(--gold);
     }
 
+    .candidate-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 14px;
+      align-items: center;
+    }
+
+    .candidate-create,
+    .candidate-open-soc {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 38px;
+      border-radius: 12px;
+      padding: 9px 11px;
+      font-size: 12px;
+      font-weight: 950;
+      text-decoration: none;
+    }
+
+    .candidate-create {
+      border: 0;
+      color: #071018;
+      background: linear-gradient(135deg, var(--gold), #fff0b8);
+      cursor: pointer;
+    }
+
+    .candidate-open-soc {
+      border: 1px solid rgba(115, 244, 223, .26);
+      color: var(--cyan);
+      background: rgba(115, 244, 223, .07);
+    }
+
+    .candidate-result {
+      flex-basis: 100%;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 850;
+      line-height: 1.45;
+      overflow-wrap: anywhere;
+    }
+
+    .candidate-result.ok {
+      color: var(--green);
+    }
+
+    .candidate-result.error {
+      color: var(--red);
+    }
+
     .message {
       color: var(--text);
       font-weight: 760;
@@ -574,6 +625,11 @@
 
       .candidate-badges {
         justify-content: flex-start;
+      }
+
+      .candidate-create,
+      .candidate-open-soc {
+        width: 100%;
       }
     }
   </style>
@@ -771,6 +827,24 @@
       return "low";
     }
 
+    function roleLevel(role) {
+      const levels = {
+        viewer: 1,
+        operator: 2,
+        supervisor: 3,
+        admin: 4
+      };
+
+      return levels[String(role || "viewer").toLowerCase()] || 0;
+    }
+
+    function canCreateSocIncident() {
+      if (!window.ENYRAXRole) return false;
+      if (!window.ENYRAXRole.isLoggedIn || !window.ENYRAXRole.isLoggedIn()) return false;
+      if (!window.ENYRAXRole.canWriteSession || !window.ENYRAXRole.canWriteSession()) return false;
+      return roleLevel(window.ENYRAXRole.get ? window.ENYRAXRole.get() : "viewer") >= roleLevel("operator");
+    }
+
     function payloadSummary(payload) {
       if (!payload || typeof payload !== "object" || Array.isArray(payload)) return "";
 
@@ -872,6 +946,21 @@
       document.getElementById("source-health-list").innerHTML = `<div class="empty">Source health API unavailable.</div>`;
     }
 
+    function candidateControls(item) {
+      const source = escapeHtml(item.source || "");
+      const createButton = canCreateSocIncident()
+        ? `<button type="button" class="candidate-create" data-create-source="${source}">Create SOC Incident</button>`
+        : "";
+
+      return `
+        <div class="candidate-controls">
+          ${createButton}
+          <a class="candidate-open-soc" href="/soc/">Open SOC</a>
+          <div class="candidate-result" data-candidate-result="${source}" aria-live="polite"></div>
+        </div>
+      `;
+    }
+
     function renderIncidentCandidates(candidates) {
       const list = document.getElementById("candidate-list");
       const count = document.getElementById("candidate-count");
@@ -906,6 +995,7 @@
             </div>
             <div class="candidate-message"><strong>Latest message:</strong> ${escapeHtml(item.latest_message || "-")}</div>
             <div class="candidate-action"><strong>Recommended action:</strong> ${escapeHtml(item.recommended_action || "-")}</div>
+            ${candidateControls(item)}
           </article>
         `;
       }).join("");
@@ -1032,6 +1122,52 @@
       }
     }
 
+    function candidateResultEl(source) {
+      return Array.from(document.querySelectorAll("[data-candidate-result]"))
+        .find((el) => el.dataset.candidateResult === source);
+    }
+
+    function setCandidateResult(source, message, state) {
+      const el = candidateResultEl(source);
+      if (!el) return;
+
+      el.textContent = message;
+      el.className = `candidate-result ${state || ""}`.trim();
+    }
+
+    async function createSocIncidentFromCandidate(source, button) {
+      if (!canCreateSocIncident()) return;
+
+      button.disabled = true;
+      setCandidateResult(source, "Creating SOC incident...", "");
+
+      try {
+        const headers = window.ENYRAXRole && window.ENYRAXRole.header ? window.ENYRAXRole.header() : {};
+        const res = await fetch(`/api/sync/incident-candidates/${encodeURIComponent(source)}/create-soc-incident`, {
+          method: "POST",
+          headers: headers,
+          cache: "no-store"
+        });
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok) {
+          throw new Error(data.detail || ("HTTP " + res.status));
+        }
+
+        const id = data.incident && data.incident.id ? data.incident.id : "-";
+        if (data.status === "existing") {
+          setCandidateResult(source, `Existing SOC incident #${id}`, "ok");
+        } else {
+          setCandidateResult(source, `Created SOC incident #${id}`, "ok");
+        }
+      } catch (err) {
+        console.error("Failed to create SOC incident from sync candidate:", err);
+        setCandidateResult(source, err.message || "Unable to create SOC incident.", "error");
+      } finally {
+        button.disabled = false;
+      }
+    }
+
     async function refreshSyncGateway() {
       const status = document.getElementById("load-status");
       const button = document.getElementById("refresh-button");
@@ -1064,6 +1200,14 @@
     }
 
     document.getElementById("refresh-button").addEventListener("click", refreshSyncGateway);
+    document.getElementById("candidate-list").addEventListener("click", (event) => {
+      const button = event.target.closest("[data-create-source]");
+      if (!button) return;
+
+      createSocIncidentFromCandidate(button.dataset.createSource, button);
+    });
+    window.addEventListener("enyrax-role-changed", loadIncidentCandidates);
+    window.addEventListener("enyrax-auth-session-changed", loadIncidentCandidates);
     refreshSyncGateway();
   </script>
 </body>
