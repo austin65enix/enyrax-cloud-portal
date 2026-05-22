@@ -1,5 +1,111 @@
 # ENYRAX Cloud Portal Release Notes
 
+## v0.6.2-sync-to-soc-workflow
+
+Release date: 2026-05-22
+
+## Summary
+
+This release connects Local Sync Gateway abnormalities into the SOC incident handling workflow.
+
+ENYRAX Cloud Portal can now detect stale / error / unknown local sync sources, show them as SOC incident candidates, create SOC incidents from those candidates, and let Infra / Operator complete the handling workflow with verification, confirmation and closure.
+
+## Completed
+
+- Sync incident candidates API
+- `GET /api/sync/incident-candidates`
+- Create SOC incident from sync candidate API
+- `POST /api/sync/incident-candidates/{source}/create-soc-incident`
+- Duplicate prevention for existing sync-origin SOC incidents
+- SOC infra verification backend workflow
+- `PUT /api/soc/incidents/{id}/infra-verify`
+- `PUT /api/soc/incidents/{id}/infra-confirm`
+- `PUT /api/soc/incidents/{id}/close`
+- Operator can close incidents after Infra confirmation
+- SOC Handling Trail displayed on incident cards
+- Sync Candidate UI create action
+- `/sync/` candidate cards can create or link existing SOC incidents
+- Audit trail for sync candidate creation
+- Audit trail for investigate / resolve / infra verify / infra confirm / close
+
+## Workflow
+
+```text
+Local Sync Source
+  ↓ stale / error / unknown
+
+Sync Incident Candidate
+  ↓ operator creates SOC incident
+
+SOC Incident
+  ↓ investigate
+  ↓ resolve
+  ↓ infra verify
+  ↓ infra confirm normal
+  ↓ close
+
+Audit Logs
+  ↓ complete actor trail
+```
+
+## Role Behavior
+
+```text
+Operator / Infra
+  - Create SOC incident from sync candidate
+  - Investigate incident
+  - Resolve incident
+  - Start Infra verification
+  - Confirm normal
+  - Close incident
+
+Supervisor
+  - Review Audit Logs
+  - Mark false positive
+  - Reopen incident if needed
+
+Admin
+  - Full access
+  - Delete remains admin-only
+```
+
+## API Changes
+
+### Sync to SOC
+
+- `GET /api/sync/incident-candidates`
+- `POST /api/sync/incident-candidates/{source}/create-soc-incident`
+
+### SOC Infra Verification
+
+- `PUT /api/soc/incidents/{incident_id}/infra-verify`
+- `PUT /api/soc/incidents/{incident_id}/infra-confirm`
+- `PUT /api/soc/incidents/{incident_id}/close`
+
+## Current Product Status
+
+```text
+Sync Gateway  Detects local source health
+Sync Candidate  Converts stale/error/unknown sources into SOC candidates
+SOC             Incident lifecycle + Infra verification workflow
+Infra / Operator Handles, verifies, confirms and closes incidents
+Supervisor      Reviews audit trail and reopens if needed
+Audit Logs      Records full handling trail with actor identity
+```
+
+## Next Phase
+
+- Add SOC incident detail page
+- Add per-incident timeline view
+- Add source-to-incident relation view
+- Add ServiceOps ticket creation from SOC incident
+- Add automatic stale source SOC candidate refresh
+- Add handled / ignored state for sync candidates
+- Add source registration and ownership mapping
+- Add SLA timer for unresolved incidents
+
+---
+
 ## v0.6.1-sync-health-ui
 
 Release date: 2026-05-21
