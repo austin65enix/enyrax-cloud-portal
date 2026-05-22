@@ -1,0 +1,730 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ENYRAX SOC Incident Detail</title>
+  <style>
+    :root {
+      --bg: #070914;
+      --panel: rgba(13, 17, 38, .88);
+      --panel2: rgba(17, 24, 55, .94);
+      --line: rgba(255, 215, 130, .22);
+      --gold: #f5d37a;
+      --cyan: #73f4df;
+      --red: #ff6b86;
+      --orange: #ffb86b;
+      --green: #8ff7b2;
+      --text: #f7f2df;
+      --muted: rgba(247, 242, 223, .68);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at 10% 10%, rgba(115, 244, 223, .14), transparent 30%),
+        radial-gradient(circle at 90% 0%, rgba(255, 107, 134, .12), transparent 28%),
+        linear-gradient(135deg, #070914 0%, #11183c 55%, #070813 100%);
+    }
+
+    .wrap {
+      width: min(1160px, calc(100% - 36px));
+      margin: 0 auto;
+      padding: 44px 0;
+    }
+
+    .top {
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      margin-bottom: 24px;
+    }
+
+    .badge {
+      display: inline-flex;
+      gap: 10px;
+      align-items: center;
+      padding: 8px 14px;
+      border: 1px solid rgba(115, 244, 223, .32);
+      border-radius: 999px;
+      color: var(--cyan);
+      background: rgba(115, 244, 223, .06);
+      font-size: 14px;
+      font-weight: 900;
+    }
+
+    h1 {
+      margin: 16px 0 10px;
+      font-size: clamp(32px, 5vw, 58px);
+      line-height: 1;
+      letter-spacing: .04em;
+      overflow-wrap: anywhere;
+    }
+
+    .subtitle,
+    .api-line,
+    .muted {
+      color: var(--muted);
+    }
+
+    .subtitle {
+      margin: 0;
+      font-size: 17px;
+      line-height: 1.55;
+      max-width: 760px;
+    }
+
+    .api-line {
+      margin-top: 8px;
+      font-size: 13px;
+    }
+
+    .top-actions,
+    .action-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .back,
+    .mini-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+      border: 0;
+      cursor: pointer;
+      border-radius: 14px;
+      font-weight: 950;
+      font: inherit;
+      max-width: 100%;
+    }
+
+    .back {
+      color: #081018;
+      background: linear-gradient(135deg, var(--gold), #fff0b8);
+      padding: 12px 16px;
+      box-shadow: 0 16px 48px rgba(245, 211, 122, .16);
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(320px, .82fr);
+      gap: 16px;
+    }
+
+    .card {
+      padding: 22px;
+      border-radius: 24px;
+      border: 1px solid var(--line);
+      background: var(--panel);
+      box-shadow: 0 20px 70px rgba(0, 0, 0, .24);
+      min-width: 0;
+    }
+
+    .card h2 {
+      margin: 0 0 16px;
+      color: var(--gold);
+      font-size: 22px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .field,
+    .trail-line,
+    .audit-item {
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, .04);
+      border: 1px solid rgba(255, 255, 255, .07);
+      min-width: 0;
+    }
+
+    .field span,
+    .trail-line span,
+    .audit-meta {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 850;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+
+    .field strong,
+    .trail-line strong {
+      display: block;
+      margin-top: 6px;
+      color: var(--text);
+      overflow-wrap: anywhere;
+    }
+
+    .pill-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin: 0 0 14px;
+    }
+
+    .pill {
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 950;
+      text-transform: uppercase;
+    }
+
+    .critical { color: #26060c; background: var(--red); }
+    .high { color: #241203; background: var(--orange); }
+    .medium { color: #062014; background: var(--green); }
+    .low { color: #061c1a; background: var(--cyan); }
+
+    .status-pill {
+      color: var(--gold);
+      background: rgba(245, 211, 122, .08);
+      border: 1px solid rgba(245, 211, 122, .22);
+    }
+
+    .section {
+      margin-top: 16px;
+    }
+
+    .timeline {
+      position: relative;
+      display: grid;
+      gap: 0;
+      padding-left: 18px;
+    }
+
+    .timeline::before {
+      content: "";
+      position: absolute;
+      left: 5px;
+      top: 6px;
+      bottom: 6px;
+      width: 1px;
+      background: rgba(115, 244, 223, .28);
+    }
+
+    .event {
+      position: relative;
+      padding: 0 0 18px 14px;
+      min-width: 0;
+    }
+
+    .event::before {
+      content: "";
+      position: absolute;
+      left: -17px;
+      top: 5px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--cyan);
+      box-shadow: 0 0 18px rgba(115, 244, 223, .72);
+    }
+
+    .event .time {
+      color: var(--cyan);
+      font-size: 13px;
+      font-weight: 900;
+      overflow-wrap: anywhere;
+    }
+
+    .event .desc {
+      margin-top: 5px;
+      color: var(--muted);
+      line-height: 1.55;
+      overflow-wrap: anywhere;
+    }
+
+    .action-row {
+      margin-top: 10px;
+    }
+
+    .mini-btn {
+      padding: 9px 12px;
+      font-size: 12px;
+    }
+
+    .operator-btn { color: #062014; background: var(--green); }
+    .infra-btn { color: #061c1a; background: var(--cyan); }
+    .supervisor-btn { color: #081018; background: linear-gradient(135deg, var(--gold), #fff0b8); }
+    .delete-btn { color: #26060c; background: var(--red); }
+
+    .audit-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .audit-item strong {
+      display: block;
+      margin: 6px 0;
+      overflow-wrap: anywhere;
+    }
+
+    .audit-meta {
+      text-transform: none;
+      letter-spacing: 0;
+      font-weight: 750;
+    }
+
+    .error-text {
+      color: var(--red);
+      font-weight: 850;
+    }
+
+    @media (max-width: 900px) {
+      .layout { grid-template-columns: 1fr; }
+      .grid { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 560px) {
+      .wrap { width: min(100% - 24px, 1160px); padding: 28px 0; }
+      .card { padding: 16px; border-radius: 18px; }
+      .top-actions,
+      .action-row { align-items: stretch; }
+      .back,
+      .mini-btn { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="top">
+      <div>
+        <div class="badge">SOC Incident Detail · Timeline · Audit Trail</div>
+        <h1 id="incident-title">Loading incident...</h1>
+        <p class="subtitle" id="incident-subtitle">Fetching SOC incident detail from API.</p>
+        <div class="api-line" id="api-time">Loading /api/soc/incidents detail...</div>
+      </div>
+      <div class="top-actions">
+        <a class="back" href="/soc/">Back to SOC</a>
+      </div>
+    </section>
+
+    <section class="layout">
+      <div class="card">
+        <h2>Incident Summary</h2>
+        <div class="pill-row" id="incident-pills"></div>
+        <div class="grid" id="summary-grid">
+          <div class="field"><span>Status</span><strong>Loading...</strong></div>
+        </div>
+
+        <div class="section">
+          <h2>Handling Trail</h2>
+          <div class="grid" id="handling-grid">
+            <div class="field"><span>Trail</span><strong>Loading...</strong></div>
+          </div>
+        </div>
+
+        <div class="section">
+          <h2>Actions</h2>
+          <div class="action-row" id="action-row">
+            <span class="muted">Loading actions...</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Lifecycle Timeline</h2>
+        <div class="timeline" id="timeline">
+          <div class="event"><div class="time">Loading</div><div class="desc">Building lifecycle timeline...</div></div>
+        </div>
+
+        <div class="section">
+          <h2>Audit Trail</h2>
+          <div class="audit-list" id="audit-list">
+            <div class="audit-item muted">Loading audit trail...</div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="/shared/auth-guard.js?v=0311"></script>
+  <script src="/shared/role-switcher.js?v=0264"></script>
+
+  <script>
+    const severityClass = {
+      critical: "critical",
+      high: "high",
+      medium: "medium",
+      low: "low"
+    };
+
+    const params = new URLSearchParams(window.location.search);
+    const incidentId = Number(params.get("id"));
+    let currentIncident = null;
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function currentRole() {
+      return window.ENYRAXRole ? window.ENYRAXRole.get() : "viewer";
+    }
+
+    function roleLevel(role) {
+      const levels = {
+        viewer: 1,
+        operator: 2,
+        supervisor: 3,
+        admin: 4
+      };
+
+      return levels[role] || 1;
+    }
+
+    function canWriteSession() {
+      return Boolean(window.ENYRAXRole && window.ENYRAXRole.canWriteSession && window.ENYRAXRole.canWriteSession());
+    }
+
+    function canOperatorActions() {
+      return canWriteSession() && currentRole() === "operator";
+    }
+
+    function canCloseActions() {
+      return canWriteSession() && roleLevel(currentRole()) >= roleLevel("operator");
+    }
+
+    function canSupervisorActions() {
+      return canWriteSession() && roleLevel(currentRole()) >= roleLevel("supervisor");
+    }
+
+    function canDelete() {
+      return canWriteSession() && roleLevel(currentRole()) >= roleLevel("admin");
+    }
+
+    function canViewAudit() {
+      return canSupervisorActions();
+    }
+
+    function jsonHeaders() {
+      return window.ENYRAXRole
+        ? window.ENYRAXRole.jsonHeaders()
+        : {
+            "Content-Type": "application/json",
+            "X-Demo-Role": "viewer",
+            "X-Demo-Actor": "demo-viewer"
+          };
+    }
+
+    async function parseError(res, fallback) {
+      const errorData = await res.json().catch(() => ({}));
+      const detail = errorData.detail;
+
+      if (typeof detail === "string") return new Error(detail);
+      if (detail) return new Error(JSON.stringify(detail));
+
+      return new Error(`${fallback}: ${res.status}`);
+    }
+
+    function formatDateTime(value) {
+      if (!value) return "";
+
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return String(value);
+
+      return date.toLocaleString();
+    }
+
+    function field(label, value, formatter) {
+      if (value === undefined || value === null || value === "") return "";
+
+      const rendered = formatter ? formatter(value) : value;
+      return `<div class="field"><span>${escapeHtml(label)}</span><strong>${escapeHtml(rendered)}</strong></div>`;
+    }
+
+    function eventLine(time, desc) {
+      return `
+        <div class="event">
+          <div class="time">${escapeHtml(time || "Recorded")}</div>
+          <div class="desc">${escapeHtml(desc)}</div>
+        </div>
+      `;
+    }
+
+    function renderSummary(incident) {
+      const severity = String(incident.severity || "medium").toLowerCase();
+      const status = String(incident.status || "open");
+      const cls = severityClass[severity] || "medium";
+
+      document.getElementById("incident-title").textContent = incident.title || `Incident #${incident.id}`;
+      document.getElementById("incident-subtitle").textContent = `Incident #${incident.id} · ${status}`;
+      document.getElementById("incident-pills").innerHTML = `
+        <span class="pill status-pill">${escapeHtml(status)}</span>
+        <span class="pill ${cls}">${escapeHtml(severity)}</span>
+      `;
+
+      document.getElementById("summary-grid").innerHTML = [
+        field("Title", incident.title),
+        field("Severity", incident.severity),
+        field("Status", incident.status),
+        field("Source IP", incident.source_ip),
+        field("Target", incident.target),
+        field("Duplicate Count", incident.duplicate_count),
+        field("Analysis Type", incident.analysis_type),
+        field("MITRE", incident.mitre),
+        field("Created At", incident.created_at, formatDateTime),
+        field("Updated At", incident.updated_at, formatDateTime)
+      ].filter(Boolean).join("") || `<div class="field"><span>Summary</span><strong>No summary fields available.</strong></div>`;
+    }
+
+    function renderHandlingTrail(incident) {
+      document.getElementById("handling-grid").innerHTML = [
+        field("Handled By", incident.handled_by),
+        field("Handled At", incident.handled_at, formatDateTime),
+        field("Resolution Note", incident.resolution_note),
+        field("Infra Verified By", incident.infra_verified_by),
+        field("Infra Verified At", incident.infra_verified_at, formatDateTime),
+        field("Infra Result", incident.infra_verification_result),
+        field("Infra Note", incident.infra_verification_note)
+      ].filter(Boolean).join("") || `<div class="field"><span>Handling Trail</span><strong>No handling activity recorded yet.</strong></div>`;
+    }
+
+    function renderTimeline(incident) {
+      const rows = [
+        eventLine(formatDateTime(incident.created_at), "Created"),
+        eventLine(formatDateTime(incident.updated_at), `Current Status: ${incident.status || "open"}`)
+      ];
+
+      if (incident.handled_by || incident.handled_at || incident.resolution_note) {
+        const detail = [
+          incident.handled_by ? `by ${incident.handled_by}` : "",
+          incident.resolution_note ? `- ${incident.resolution_note}` : ""
+        ].filter(Boolean).join(" ");
+        rows.push(eventLine(formatDateTime(incident.handled_at), `Handled ${detail}`.trim()));
+      }
+
+      if (incident.infra_verified_by || incident.infra_verified_at || incident.infra_verification_result || incident.infra_verification_note) {
+        const detail = [
+          incident.infra_verified_by ? `by ${incident.infra_verified_by}` : "",
+          incident.infra_verification_result ? `result: ${incident.infra_verification_result}` : "",
+          incident.infra_verification_note ? `- ${incident.infra_verification_note}` : ""
+        ].filter(Boolean).join(" ");
+        rows.push(eventLine(formatDateTime(incident.infra_verified_at), `Infra Verified ${detail}`.trim()));
+      }
+
+      if (String(incident.status || "").toLowerCase() === "closed") {
+        rows.push(eventLine(formatDateTime(incident.handled_at || incident.updated_at), "Closed"));
+      }
+
+      document.getElementById("timeline").innerHTML = rows.join("");
+    }
+
+    function renderActions() {
+      const row = document.getElementById("action-row");
+
+      if (!incidentId || !canWriteSession()) {
+        row.innerHTML = `<span class="muted">Preview only. Login required for incident actions.</span>`;
+        return;
+      }
+
+      const actions = [];
+
+      if (canOperatorActions()) {
+        actions.push(`<button class="mini-btn operator-btn" type="button" onclick="runIncidentAction('investigate')">Investigate</button>`);
+        actions.push(`<button class="mini-btn operator-btn" type="button" onclick="runIncidentAction('contain')">Contain</button>`);
+        actions.push(`<button class="mini-btn operator-btn" type="button" onclick="runIncidentAction('resolve')">Resolve</button>`);
+        actions.push(`<button class="mini-btn infra-btn" type="button" onclick="runIncidentAction('infra-verify')">Infra Verify</button>`);
+        actions.push(`<button class="mini-btn infra-btn" type="button" onclick="runIncidentAction('infra-confirm')">Infra Confirm Normal</button>`);
+      }
+
+      if (canCloseActions()) {
+        actions.push(`<button class="mini-btn supervisor-btn" type="button" onclick="runIncidentAction('close')">Close Incident</button>`);
+      }
+
+      if (canSupervisorActions()) {
+        actions.push(`<button class="mini-btn supervisor-btn" type="button" onclick="runIncidentAction('false-positive')">False Positive</button>`);
+        actions.push(`<button class="mini-btn supervisor-btn" type="button" onclick="runIncidentAction('reopen')">Reopen</button>`);
+      }
+
+      if (canDelete()) {
+        actions.push(`<button class="mini-btn delete-btn" type="button" onclick="deleteIncident()">Delete</button>`);
+      }
+
+      row.innerHTML = actions.join("") || `<span class="muted">No actions available for this role.</span>`;
+    }
+
+    const incidentActionConfig = {
+      investigate: { fallback: "Investigate failed" },
+      contain: { fallback: "Contain failed" },
+      resolve: { fallback: "Resolve failed" },
+      "infra-verify": {
+        fallback: "Infra verify failed",
+        body: { note: "Checking host heartbeat, Wazuh agent and Docker service status." }
+      },
+      "infra-confirm": {
+        fallback: "Infra confirm failed",
+        body: { note: "Host heartbeat recovered. Wazuh agent connected. No new sync error events." }
+      },
+      close: {
+        fallback: "Close failed",
+        body: { note: "Reviewed SOC and Infra verification evidence. Incident closed." }
+      },
+      "false-positive": { fallback: "False positive failed" },
+      reopen: { fallback: "Reopen failed" }
+    };
+
+    async function runIncidentAction(action) {
+      if (!incidentId) return;
+
+      const config = incidentActionConfig[action];
+      if (!config) return;
+
+      const options = {
+        method: "PUT",
+        headers: jsonHeaders()
+      };
+
+      if (config.body) {
+        options.body = JSON.stringify(config.body);
+      }
+
+      try {
+        const res = await fetch(`/api/soc/incidents/${incidentId}/${action}`, options);
+        if (!res.ok) throw await parseError(res, config.fallback);
+        await loadIncidentDetail();
+      } catch (err) {
+        alert(err.message);
+        console.error(err);
+      }
+    }
+
+    async function deleteIncident() {
+      if (!incidentId || !canDelete()) return;
+
+      const ok = confirm(`Delete incident #${incidentId}?`);
+      if (!ok) return;
+
+      try {
+        const res = await fetch(`/api/soc/incidents/${incidentId}`, {
+          method: "DELETE",
+          headers: jsonHeaders()
+        });
+
+        if (!res.ok) throw await parseError(res, "Delete failed");
+        window.location.href = "/soc/";
+      } catch (err) {
+        alert(err.message);
+        console.error(err);
+      }
+    }
+
+    async function loadAuditTrail() {
+      const auditList = document.getElementById("audit-list");
+
+      if (!incidentId) {
+        auditList.innerHTML = `<div class="audit-item error-text">Missing incident id.</div>`;
+        return;
+      }
+
+      if (!canViewAudit()) {
+        auditList.innerHTML = `<div class="audit-item muted">Audit trail requires Supervisor or Admin.</div>`;
+        return;
+      }
+
+      try {
+        const res = await fetch("/api/audit/logs?limit=100", {
+          cache: "no-store",
+          headers: jsonHeaders()
+        });
+
+        if (!res.ok) throw await parseError(res, "Audit trail failed");
+
+        const data = await res.json();
+        const logs = (Array.isArray(data.logs) ? data.logs : []).filter((log) =>
+          log.module === "soc" &&
+          log.entity_type === "incident" &&
+          Number(log.entity_id) === incidentId
+        );
+
+        auditList.innerHTML = logs.map((log) => `
+          <div class="audit-item">
+            <span class="audit-meta">${escapeHtml(formatDateTime(log.created_at))} · ${escapeHtml(log.actor || "system")}</span>
+            <strong>${escapeHtml(log.action || "audit")}</strong>
+            <div class="muted">${escapeHtml(log.summary || "-")}</div>
+          </div>
+        `).join("") || `<div class="audit-item muted">No audit logs found for this incident.</div>`;
+      } catch (err) {
+        auditList.innerHTML = `<div class="audit-item error-text">${escapeHtml(err.message)}</div>`;
+        console.error(err);
+      }
+    }
+
+    async function loadIncidentDetail() {
+      const apiTime = document.getElementById("api-time");
+
+      if (!incidentId) {
+        apiTime.textContent = "Missing incident id in URL.";
+        apiTime.className = "api-line error-text";
+        document.getElementById("incident-title").textContent = "Incident not found";
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/soc/incidents/${incidentId}`, {
+          cache: "no-store",
+          headers: jsonHeaders()
+        });
+
+        if (!res.ok) throw await parseError(res, "Incident detail failed");
+
+        const data = await res.json();
+        currentIncident = data.incident || null;
+
+        if (!currentIncident) {
+          throw new Error("Incident detail response missing incident.");
+        }
+
+        apiTime.textContent = `API Source: /api/soc/incidents/${incidentId}`;
+        apiTime.className = "api-line";
+        renderSummary(currentIncident);
+        renderHandlingTrail(currentIncident);
+        renderTimeline(currentIncident);
+        renderActions();
+        await loadAuditTrail();
+      } catch (err) {
+        apiTime.textContent = err.message;
+        apiTime.className = "api-line error-text";
+        document.getElementById("incident-title").textContent = "Incident unavailable";
+        document.getElementById("summary-grid").innerHTML = `<div class="field error-text"><span>Error</span><strong>${escapeHtml(err.message)}</strong></div>`;
+        document.getElementById("handling-grid").innerHTML = "";
+        document.getElementById("timeline").innerHTML = `<div class="event"><div class="time">Error</div><div class="desc">${escapeHtml(err.message)}</div></div>`;
+        document.getElementById("action-row").innerHTML = "";
+        console.error(err);
+      }
+    }
+
+    window.addEventListener("enyrax-role-changed", () => {
+      renderActions();
+      loadAuditTrail();
+    });
+
+    window.addEventListener("enyrax-auth-session-changed", () => {
+      renderActions();
+      loadAuditTrail();
+    });
+
+    loadIncidentDetail();
+  </script>
+</body>
+</html>

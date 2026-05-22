@@ -429,6 +429,14 @@
       background: linear-gradient(135deg, var(--gold), #fff0b8);
     }
 
+    .detail-btn {
+      display: inline-flex;
+      align-items: center;
+      color: #081018;
+      background: linear-gradient(135deg, var(--gold), #fff0b8);
+      text-decoration: none;
+    }
+
     .delete-btn {
       color: #26060c;
       background: var(--red);
@@ -872,6 +880,9 @@
                 Analysis Type: ${escapeHtml(item.analysis_type)} · MITRE: ${escapeHtml(item.mitre)}
               </div>
               ${renderIncidentDetails(item)}
+              <div class="incident-actions">
+                <a class="mini-btn detail-btn" href="/soc/incident.html?id=${encodeURIComponent(item.id)}">View Detail</a>
+              </div>
               ${renderIncidentActions(item)}
             </div>
           `;
