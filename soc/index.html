@@ -174,8 +174,40 @@
     }
 
     .title {
+      flex: 1 1 auto;
+      min-width: 0;
       font-weight: 950;
       font-size: 17px;
+      line-height: 1.35;
+    }
+
+    .incident-title-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .incident-title-row .title {
+      min-width: 0;
+    }
+
+    .new-badge {
+      display: inline-flex;
+      align-items: center;
+      white-space: nowrap;
+      flex: 0 0 auto;
+      transform: translateY(-1px);
+      border: 1px solid rgba(115, 244, 223, .34);
+      border-radius: 999px;
+      padding: 2px 7px;
+      color: #081018;
+      background: linear-gradient(135deg, rgba(115, 244, 223, .92), rgba(245, 211, 122, .78));
+      box-shadow: 0 0 12px rgba(115, 244, 223, .14), 0 0 16px rgba(245, 211, 122, .1);
+      font-size: 10px;
+      font-weight: 950;
+      letter-spacing: .04em;
+      vertical-align: middle;
     }
 
     .sev {
@@ -187,6 +219,7 @@
     }
 
     .badge-row {
+      flex: 0 0 auto;
       display: flex;
       align-items: center;
       gap: 8px;
@@ -306,24 +339,6 @@
       color: rgba(247, 242, 223, .48);
       font-size: 13px;
     }
-
-    .role-note {
-      display: inline-flex;
-      width: fit-content;
-      gap: 8px;
-      align-items: center;
-      border: 1px solid rgba(245, 211, 122, .22);
-      background: rgba(245, 211, 122, .06);
-      color: var(--muted);
-      border-radius: 999px;
-      padding: 8px 12px;
-      font-size: 13px;
-      font-weight: 800;
-      flex-wrap: wrap;
-      margin-top: 12px;
-    }
-
-    .role-note strong { color: var(--gold); }
 
     .management-note {
       margin-top: 12px;
@@ -484,14 +499,7 @@
           response recommendations.
         </p>
         <div class="api-line" id="api-time">Loading SOC summary from API...</div>
-        <div class="role-note">
-          Current role: <strong id="current-role-label">Admin</strong>
-          <span>· View-only demo mode · Login required for create, update and delete</span>
-        </div>
         <div class="management-note" id="management-note">Supervisor management controls are enabled for incident triage operations.</div>
-        <div class="top-actions">
-          <a class="back" href="/">Back to Portal</a>
-        </div>
       </div>
     </section>
 
@@ -612,7 +620,8 @@
   </main>
 
   <script src="/shared/auth-guard.js?v=0311"></script>
-  <script src="/shared/role-switcher.js?v=0264"></script>
+  <script src="/shared/command-header.js?v=0523dock"></script>
+  <script src="/shared/role-switcher.js?v=0523dock"></script>
 
   <script>
     const severityClass = {
@@ -739,7 +748,7 @@
     }
 
     function canCloseActions() {
-      return canWriteSession() && roleLevel(currentRole()) >= roleLevel("operator");
+      return canWriteSession() && currentRole() === "operator";
     }
 
     function canSupervisorActions() {
@@ -753,6 +762,32 @@
       if (Number.isNaN(date.getTime())) return String(value);
 
       return date.toLocaleString();
+    }
+
+    function incidentTimestampValue(value) {
+      if (!value) return 0;
+
+      const date = new Date(value);
+      const time = date.getTime();
+
+      return Number.isNaN(time) ? 0 : time;
+    }
+
+    function isNewIncident(item) {
+      const timestamp = incidentTimestampValue(item.created_at || item.updated_at);
+      if (!timestamp) return false;
+
+      return Math.abs(Date.now() - timestamp) < 24 * 60 * 60 * 1000;
+    }
+
+    function compareIncidentsLatestFirst(a, b) {
+      const updatedDiff = incidentTimestampValue(b.updated_at) - incidentTimestampValue(a.updated_at);
+      if (updatedDiff) return updatedDiff;
+
+      const createdDiff = incidentTimestampValue(b.created_at) - incidentTimestampValue(a.created_at);
+      if (createdDiff) return createdDiff;
+
+      return Number(b.id || 0) - Number(a.id || 0);
     }
 
     function renderDetailLine(label, value, formatter) {
@@ -860,7 +895,7 @@
 
         apiTime.textContent = `API Source: /api/soc/summary · ${data.time_utc || ""}`;
 
-        const incidents = Array.isArray(data.hot_incidents) ? data.hot_incidents : [];
+        const incidents = (Array.isArray(data.hot_incidents) ? data.hot_incidents : []).slice().sort(compareIncidentsLatestFirst);
         document.getElementById("hot-incidents").innerHTML = incidents.map((item) => {
           const sev = String(item.severity || "medium").toLowerCase();
           const cls = severityClass[sev] || "medium";
@@ -869,7 +904,10 @@
           return `
             <div class="incident">
               <div class="incident-top">
-                <div class="title">${escapeHtml(item.title)}</div>
+                <div class="incident-title-row">
+                  <div class="title">${escapeHtml(item.title)}</div>
+                  ${isNewIncident(item) ? '<span class="new-badge">NEW!</span>' : ""}
+                </div>
                 <div class="badge-row">
                   <div class="sev status-pill">${escapeHtml(status)}</div>
                   <div class="sev ${cls}">${escapeHtml(sev)}</div>

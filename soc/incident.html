@@ -695,7 +695,8 @@
   </main>
 
   <script src="/shared/auth-guard.js?v=0311"></script>
-  <script src="/shared/role-switcher.js?v=0264"></script>
+  <script src="/shared/command-header.js?v=0523dock"></script>
+  <script src="/shared/role-switcher.js?v=0523dock"></script>
 
   <script>
     const severityClass = {
@@ -738,6 +739,19 @@
 
     function canWriteSession() {
       return Boolean(window.ENYRAXRole && window.ENYRAXRole.canWriteSession && window.ENYRAXRole.canWriteSession());
+    }
+
+    function isLoggedIn() {
+      return Boolean(window.ENYRAXRole && window.ENYRAXRole.isLoggedIn && window.ENYRAXRole.isLoggedIn());
+    }
+
+    function canRecoveryAction(incident, health) {
+      return isLoggedIn()
+        && canWriteSession()
+        && ["operator", "supervisor", "admin"].includes(currentRole())
+        && incident
+        && incident.analysis_type === "local_sync_candidate"
+        && health === "healthy";
     }
 
     function canOperatorActions() {
@@ -1069,16 +1083,16 @@
       };
     }
 
-    function renderSuggestedRecoveryAction(action) {
+    function renderSuggestedRecoveryAction(action, incident, health) {
       const buttonClass = action.action === "recovery-close" ? "supervisor-btn" : "infra-btn";
-      const button = action.action && canWriteSession()
+      const button = action.action && canRecoveryAction(incident, health)
         ? `<button class="mini-btn ${buttonClass}" type="button" onclick="runIncidentAction(&quot;${escapeHtml(action.action)}&quot;)">${escapeHtml(action.buttonLabel)}</button>`
         : "";
 
       return `
-        <div class="suggested-action ${escapeHtml(action.tone || "warning")}">
-          <div class="suggested-action-title">Suggested Action</div>
-          <div class="suggested-action-message">Suggested action: ${escapeHtml(action.message)}</div>
+        <div class="suggested-action suggested-action-card ${escapeHtml(action.tone || "warning")}">
+          <div class="suggested-action-title suggested-title">Suggested Action</div>
+          <div class="suggested-action-message suggested-message">Suggested action: ${escapeHtml(action.message)}</div>
           ${button}
         </div>
       `;
@@ -1122,7 +1136,7 @@
           </div>
           <div class="recovery-message"><strong>Latest Message</strong><br>${escapeHtml((sourceRecord && sourceRecord.latest_message) || "-")}</div>
           <div class="recovery-guidance${recovered ? "" : " needs-attention"}">${escapeHtml(guidance)}</div>
-          ${renderSuggestedRecoveryAction(action)}
+          ${renderSuggestedRecoveryAction(action, currentIncident, health)}
         </div>
       `;
     }
@@ -1164,7 +1178,7 @@
         currentRecoveryLookupFailed = true;
         wrap.innerHTML = `
           <div class="sync-event-item error-text">Failed to load recovery evidence.</div>
-          ${renderSuggestedRecoveryAction(suggestedRecoveryAction("unknown", currentIncident, true))}
+          ${renderSuggestedRecoveryAction(suggestedRecoveryAction("unknown", currentIncident, true), currentIncident, "unknown")}
         `;
         console.error(err);
       }
@@ -1235,14 +1249,12 @@
       },
       "recovery-infra-confirm": {
         role: "operator",
-        operatorOnly: true,
         endpoint: "infra-confirm",
         fallback: "Infra confirm failed",
         body: { note: "Recovery evidence shows source healthy. Infra confirmed normal." }
       },
       "recovery-close": {
         role: "operator",
-        operatorOnly: true,
         endpoint: "close",
         fallback: "Close failed",
         body: { note: "Recovery evidence reviewed. Incident closed." }

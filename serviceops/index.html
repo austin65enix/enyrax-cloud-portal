@@ -38,48 +38,6 @@
       padding: 34px 0 48px;
     }
 
-    .nav {
-      display: flex;
-      justify-content: space-between;
-      gap: 16px;
-      align-items: center;
-      margin-bottom: 28px;
-      padding-right: 230px;
-    }
-
-    .brand {
-      display: grid;
-      gap: 4px;
-    }
-
-    .brand strong {
-      color: var(--gold);
-      letter-spacing: .14em;
-      font-size: 13px;
-    }
-
-    .brand span {
-      color: var(--muted);
-      font-size: 13px;
-    }
-
-    .links {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-    }
-
-    .links a {
-      color: var(--text);
-      text-decoration: none;
-      border: 1px solid var(--line);
-      background: rgba(255,255,255,.04);
-      padding: 9px 12px;
-      border-radius: 999px;
-      font-size: 13px;
-      font-weight: 800;
-    }
-
     .hero {
       display: grid;
       gap: 14px;
@@ -99,23 +57,6 @@
       font-size: 16px;
       line-height: 1.7;
     }
-
-    .role-note {
-      display: inline-flex;
-      width: fit-content;
-      gap: 8px;
-      align-items: center;
-      border: 1px solid rgba(245, 211, 122, .22);
-      background: rgba(245, 211, 122, .06);
-      color: var(--muted);
-      border-radius: 999px;
-      padding: 8px 12px;
-      font-size: 13px;
-      font-weight: 800;
-      flex-wrap: wrap;
-    }
-
-    .role-note strong { color: var(--gold); }
 
     .grid {
       display: grid;
@@ -214,6 +155,24 @@
       color: var(--text);
     }
 
+    .new-badge {
+      display: inline-flex;
+      align-items: center;
+      margin-left: 8px;
+      transform: translateY(-1px);
+      border: 1px solid rgba(115, 244, 223, .38);
+      border-radius: 999px;
+      padding: 2px 7px;
+      color: #081018;
+      background: linear-gradient(135deg, rgba(245, 211, 122, .95), rgba(115, 244, 223, .9));
+      box-shadow: 0 0 14px rgba(115, 244, 223, .16), 0 0 18px rgba(245, 211, 122, .12);
+      font-size: 10px;
+      font-weight: 950;
+      letter-spacing: .04em;
+      vertical-align: middle;
+      white-space: nowrap;
+    }
+
     .meta {
       color: var(--muted);
       line-height: 1.55;
@@ -235,9 +194,41 @@
     .in_progress { color: #081018; background: var(--cyan); }
     .pending_approval { color: #241203; background: var(--orange); }
     .done { color: #062014; background: var(--green); }
+    .not_started { color: #f7f2df; background: rgba(255,255,255,.14); }
+    .waiting { color: #241203; background: var(--gold); }
+    .blocked { color: #26060c; background: var(--red); }
     .risk { color: #26060c; background: var(--red); }
     .create { color: #081018; background: linear-gradient(135deg, var(--gold), #fff0b8); }
     .archive { color: #241203; background: var(--orange); }
+
+    .progress-info {
+      display: grid;
+      gap: 5px;
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid rgba(255,255,255,.08);
+    }
+
+    .progress-line {
+      overflow-wrap: anywhere;
+    }
+
+    .progress-note {
+      color: var(--text);
+      font-weight: 700;
+    }
+
+    .progress-note strong {
+      color: var(--gold);
+      font-weight: 950;
+    }
+
+    .progress-line .pill {
+      margin-left: 4px;
+      padding: 3px 8px;
+      font-size: 11px;
+      vertical-align: middle;
+    }
 
     .ticket-actions {
       display: flex;
@@ -283,6 +274,37 @@
 
     .mini-btn:hover {
       transform: translateY(-1px);
+    }
+
+    .progress-form {
+      display: grid;
+      grid-template-columns: minmax(132px, .42fr) minmax(0, 1fr) auto;
+      gap: 8px;
+      align-items: end;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(255,255,255,.08);
+    }
+
+    .progress-form label {
+      gap: 5px;
+      font-size: 12px;
+    }
+
+    .progress-form select,
+    .progress-form input {
+      min-height: 38px;
+      border-radius: 12px;
+      padding: 8px 10px;
+      font-size: 13px;
+    }
+
+    .progress-message {
+      grid-column: 1 / -1;
+      min-height: 16px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 850;
     }
 
     .form-grid {
@@ -378,12 +400,6 @@
     }
 
     @media (max-width: 760px) {
-      .nav {
-        align-items: flex-start;
-        flex-direction: column;
-        padding-right: 0;
-      }
-
       .grid,
       .form-grid {
         grid-template-columns: 1fr;
@@ -392,37 +408,22 @@
       .form-full {
         grid-column: span 1;
       }
+
+      .progress-form {
+        grid-template-columns: 1fr;
+      }
     }
   </style>
 </head>
 
 <body>
   <main class="wrap">
-    <nav class="nav">
-      <div class="brand">
-        <strong>ENYRAX</strong>
-        <span>ServiceOps / Infra Operation Workflow</span>
-      </div>
-
-      <div class="links">
-        <a href="/">Portal</a>
-        <a href="/soc/">SOC</a>
-        <a href="/projectops/">ProjectOps</a>
-        <a href="/audit/">Audit Logs</a>
-        <a href="/status/">Status</a>
-      </div>
-    </nav>
-
     <section class="hero">
       <h1>ServiceOps</h1>
       <div class="subtitle">
         Infra work orders, member worklogs, supervisor view and project-linked operation cost.
         This page reads from <strong>/api/serviceops/summary</strong> and writes to
         <strong>/api/serviceops/tickets</strong>.
-      </div>
-      <div class="role-note">
-        Current role: <strong id="current-role-label">Admin</strong>
-        <span>· Viewer read-only · Operator works / archives / restores tickets · Supervisor reviews</span>
       </div>
     </section>
 
@@ -573,7 +574,8 @@
   </main>
 
   <script src="/shared/auth-guard.js?v=0311"></script>
-  <script src="/shared/role-switcher.js?v=0264"></script>
+  <script src="/shared/command-header.js?v=0523dock"></script>
+  <script src="/shared/role-switcher.js?v=0523dock"></script>
 
   <script>
     function escapeHtml(value) {
@@ -666,9 +668,24 @@
     function statusLabel(status) {
       const labels = {
         in_progress: "In Progress",
+        not_started: "Not Started",
+        waiting: "Waiting",
+        blocked: "Blocked",
         pending_approval: "Pending",
         done: "Done",
         risk: "Risk"
+      };
+
+      return labels[status] || status;
+    }
+
+    function progressStatusLabel(status) {
+      const labels = {
+        not_started: "Not Started",
+        in_progress: "In Progress",
+        waiting: "Waiting",
+        blocked: "Blocked",
+        done: "Done"
       };
 
       return labels[status] || status;
@@ -679,17 +696,78 @@
 
       try {
         const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return value;
+
         return date.toLocaleString("zh-TW", {
           year: "numeric",
           month: "2-digit",
           day: "2-digit",
           hour: "2-digit",
-          minute: "2-digit",
-          second: "2-digit"
+          minute: "2-digit"
         });
       } catch {
         return value;
       }
+    }
+
+    function ticketCreatedAt(item) {
+      if (!item || !item.created_at) return null;
+
+      const date = new Date(item.created_at);
+      return Number.isNaN(date.getTime()) ? null : date;
+    }
+
+    function isNewTicket(item) {
+      const createdAt = ticketCreatedAt(item);
+      if (!createdAt) return false;
+
+      const ageMs = Date.now() - createdAt.getTime();
+      return ageMs >= 0 && ageMs < 24 * 60 * 60 * 1000;
+    }
+
+    function renderNewBadge(item) {
+      return isNewTicket(item) ? "<span class=\"new-badge\">NEW!</span>" : "";
+    }
+
+    function renderCreatedLine(item) {
+      if (!item || !item.created_at) return "";
+
+      return `Created: ${escapeHtml(formatTime(item.created_at))}<br>`;
+    }
+
+    function renderProgressInfo(item) {
+      if (!item) return "";
+
+      const lines = [];
+
+      if (item.assignee) {
+        lines.push(`<div class="progress-line">Assignee: ${escapeHtml(item.assignee)}</div>`);
+      }
+
+      if (item.progress_status) {
+        lines.push(`
+          <div class="progress-line">
+            Progress:
+            <span class="pill ${escapeHtml(item.progress_status)}">${escapeHtml(progressStatusLabel(item.progress_status))}</span>
+          </div>
+        `);
+      }
+
+      if (item.progress_updated_by) {
+        lines.push(`<div class="progress-line">Last Update By: ${escapeHtml(item.progress_updated_by)}</div>`);
+      }
+
+      if (item.progress_updated_at) {
+        lines.push(`<div class="progress-line">Last Update At: ${escapeHtml(formatTime(item.progress_updated_at))}</div>`);
+      }
+
+      if (item.progress_note) {
+        lines.push(`<div class="progress-line progress-note"><strong>Note:</strong> <strong>${escapeHtml(item.progress_note)}</strong></div>`);
+      }
+
+      if (!lines.length) return "";
+
+      return `<div class="progress-info">${lines.join("")}</div>`;
     }
 
     function resetMetrics() {
@@ -730,6 +808,12 @@
         `);
       }
 
+      actions.push(`
+        <button class="mini-btn" type="button" onclick="takeOwnership(${id})">
+          Take Ownership
+        </button>
+      `);
+
       if (canArchive()) {
         actions.push(`
           <button class="mini-btn archive-btn" type="button" onclick="archiveTicket(${id})">
@@ -742,6 +826,39 @@
         <div class="ticket-actions">
           ${actions.join("")}
         </div>
+      `;
+    }
+
+    function renderProgressForm(item) {
+      const id = Number(item.id);
+
+      if (!id || !canWrite()) {
+        return "";
+      }
+
+      const currentStatus = item.progress_status || "in_progress";
+      const note = item.progress_note || "";
+      const statuses = ["in_progress", "waiting", "blocked", "done"];
+
+      return `
+        <form class="progress-form" onsubmit="updateTicketProgress(event, ${id})">
+          <label>
+            Progress
+            <select name="progress_status">
+              ${statuses.map((status) => `
+                <option value="${escapeHtml(status)}"${status === currentStatus ? " selected" : ""}>
+                  ${escapeHtml(progressStatusLabel(status))}
+                </option>
+              `).join("")}
+            </select>
+          </label>
+          <label>
+            Note
+            <input name="progress_note" maxlength="500" value="${escapeHtml(note)}" placeholder="Brief update">
+          </label>
+          <button class="mini-btn done-btn" type="submit">Update Progress</button>
+          <span class="progress-message" data-progress-message="${id}"></span>
+        </form>
       `;
     }
 
@@ -805,15 +922,18 @@
             return `
               <div class="ticket">
                 <div class="ticket-top">
-                  <div class="title">${escapeHtml(item.title)}</div>
+                  <div class="title">${escapeHtml(item.title)}${renderNewBadge(item)}</div>
                   <div class="pill ${escapeHtml(item.status)}">${escapeHtml(statusLabel(item.status))}</div>
                 </div>
                 <div class="meta">
+                  ${renderCreatedLine(item)}
                   Owner: ${escapeHtml(item.owner)} · Project: ${escapeHtml(item.project)}<br>
                   Estimate: ${escapeHtml(item.estimate_hours)}h · Actual: ${escapeHtml(item.actual_hours)}h<br>
                   Task: ${escapeHtml(item.task)}
+                  ${renderProgressInfo(item)}
                 </div>
                 ${renderTicketActions(item)}
+                ${renderProgressForm(item)}
               </div>
             `;
           }).join("");
@@ -889,14 +1009,16 @@
           return `
             <div class="ticket archive-ticket">
               <div class="ticket-top">
-                <div class="title">${escapeHtml(item.title)}</div>
+                <div class="title">${escapeHtml(item.title)}${renderNewBadge(item)}</div>
                 <div class="pill trash">ARCHIVED</div>
               </div>
               <div class="meta">
+                ${renderCreatedLine(item)}
                 Owner: ${escapeHtml(item.owner)} · Project: ${escapeHtml(item.project)}<br>
                 Deleted By: ${escapeHtml(item.deleted_by || "-")} · Deleted At: ${escapeHtml(formatTime(item.deleted_at))}<br>
                 Reason: ${escapeHtml(item.delete_reason || "-")}<br>
                 Task: ${escapeHtml(item.task)}
+                ${renderProgressInfo(item)}
               </div>
               ${renderArchiveActions(item)}
             </div>
@@ -1000,6 +1122,87 @@
       } catch (err) {
         console.error("Mark done failed:", err);
         alert(err.message);
+      }
+    }
+
+    async function takeOwnership(ticketId) {
+      if (!ticketId) return;
+      if (!canWrite()) {
+        showWriteLoginRequired();
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/serviceops/tickets/${ticketId}/take-ownership`, {
+          method: "PUT",
+          headers: window.ENYRAXRole ? window.ENYRAXRole.header() : {}
+        });
+
+        if (!res.ok) {
+          throw await parseError(res, "Take ownership failed");
+        }
+
+        await reloadAll();
+      } catch (err) {
+        console.error("Take ownership failed:", err);
+        alert(err.message);
+      }
+    }
+
+    async function updateTicketProgress(event, ticketId) {
+      event.preventDefault();
+
+      if (!ticketId) return;
+      if (!canWrite()) {
+        showWriteLoginRequired();
+        return;
+      }
+
+      const form = event.currentTarget;
+      const message = form.querySelector("[data-progress-message]");
+      const payload = {
+        progress_status: form.elements.progress_status.value,
+        progress_note: form.elements.progress_note.value.trim()
+      };
+
+      if (payload.progress_status !== "done" && !payload.progress_note) {
+        const shouldContinue = confirm("Progress note is recommended before submitting. Continue without a note?");
+        if (!shouldContinue) {
+          if (message) {
+            message.textContent = "Add a short note before submitting.";
+            message.style.color = "#ffb86b";
+          }
+          return;
+        }
+      }
+
+      if (message) {
+        message.textContent = "Updating...";
+        message.style.color = "rgba(247,242,223,.68)";
+      }
+
+      try {
+        const res = await fetch(`/api/serviceops/tickets/${ticketId}/progress`, {
+          method: "PUT",
+          headers: window.ENYRAXRole
+            ? window.ENYRAXRole.jsonHeaders()
+            : { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) {
+          throw await parseError(res, "Progress update failed");
+        }
+
+        await reloadAll();
+      } catch (err) {
+        console.error("Progress update failed:", err);
+        if (message) {
+          message.textContent = err.message;
+          message.style.color = "#ff6b86";
+        } else {
+          alert(err.message);
+        }
       }
     }
 
