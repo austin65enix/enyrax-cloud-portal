@@ -116,6 +116,11 @@ class SocIncidentNoteUpdate(BaseModel):
     note: Optional[str] = None
 
 
+class SocIncidentCommentCreate(BaseModel):
+    comment: str = Field(..., min_length=1, max_length=2000)
+    comment_type: str = Field(default="note", max_length=50)
+
+
 class LocalSyncEventCreate(BaseModel):
     source: str = Field(..., min_length=1, max_length=120)
     system: str = Field(..., min_length=1, max_length=80)
@@ -487,6 +492,18 @@ def incident_row_to_dict(row):
         "display_order": row["display_order"],
         "created_at": row["created_at"].isoformat() if row["created_at"] else None,
         "updated_at": row["updated_at"].isoformat() if row["updated_at"] else None,
+    }
+
+
+def incident_comment_row_to_dict(row):
+    return {
+        "id": row["id"],
+        "incident_id": row["incident_id"],
+        "actor": row["actor"],
+        "role": row["role"],
+        "comment": row["comment"],
+        "comment_type": row["comment_type"],
+        "created_at": row["created_at"].isoformat() if row["created_at"] else None,
     }
 
 
@@ -1815,6 +1832,115 @@ def get_soc_incident(incident_id: int):
     return {
         "status": "ok",
         "incident": incident_row_to_dict(row),
+    }
+
+
+@app.get("/api/soc/incidents/{incident_id}/comments")
+def list_soc_incident_comments(incident_id: int):
+    db = require_db()
+
+    with db.connect() as conn:
+        incident = conn.execute(
+            text(
+                """
+                SELECT id
+                FROM soc_incidents
+                WHERE id = :incident_id
+                """
+            ),
+            {"incident_id": incident_id},
+        ).mappings().first()
+
+        if incident is None:
+            raise HTTPException(status_code=404, detail="Incident not found")
+
+        rows = conn.execute(
+            text(
+                """
+                SELECT
+                    id, incident_id, actor, role, comment,
+                    comment_type, created_at
+                FROM soc_incident_comments
+                WHERE incident_id = :incident_id
+                ORDER BY created_at ASC, id ASC
+                """
+            ),
+            {"incident_id": incident_id},
+        ).mappings().all()
+
+    return {
+        "status": "ok",
+        "source": "postgresql",
+        "count": len(rows),
+        "comments": [incident_comment_row_to_dict(row) for row in rows],
+    }
+
+
+@app.post("/api/soc/incidents/{incident_id}/comments")
+def create_soc_incident_comment(
+    incident_id: int,
+    payload: SocIncidentCommentCreate,
+    demo_role: str = Header(default="admin", alias="X-Demo-Role"),
+    demo_actor: str = Header(default=None, alias="X-Demo-Actor"),
+):
+    role = require_role(demo_role, "operator")
+    actor = demo_actor or role
+    comment = payload.comment.strip()
+    comment_type = (payload.comment_type or "note").strip() or "note"
+    db = require_db()
+
+    if not comment:
+        raise HTTPException(status_code=400, detail="Comment cannot be empty")
+
+    with db.begin() as conn:
+        incident = conn.execute(
+            text(
+                """
+                SELECT id, title
+                FROM soc_incidents
+                WHERE id = :incident_id
+                """
+            ),
+            {"incident_id": incident_id},
+        ).mappings().first()
+
+        if incident is None:
+            raise HTTPException(status_code=404, detail="Incident not found")
+
+        row = conn.execute(
+            text(
+                """
+                INSERT INTO soc_incident_comments
+                    (incident_id, actor, role, comment, comment_type)
+                VALUES
+                    (:incident_id, :actor, :role, :comment, :comment_type)
+                RETURNING
+                    id, incident_id, actor, role, comment,
+                    comment_type, created_at
+                """
+            ),
+            {
+                "incident_id": incident_id,
+                "actor": actor,
+                "role": role,
+                "comment": comment,
+                "comment_type": comment_type,
+            },
+        ).mappings().first()
+
+        write_audit_log(
+            conn,
+            module="soc",
+            entity_type="incident",
+            entity_id=incident_id,
+            action="comment",
+            summary=f"Added SOC incident comment: {incident['title']}",
+            actor=actor,
+        )
+
+    return {
+        "status": "created",
+        "comment": incident_comment_row_to_dict(row),
     }
 
 
