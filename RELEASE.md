@@ -1,5 +1,68 @@
 # ENYRAX Cloud Portal Release Notes
 
+## v0.6.4-soc-handling-notes
+
+Release date: 2026-05-23
+
+## Summary
+
+This release adds handling notes to SOC incident detail pages.
+
+Infra / Operator users can now record investigation notes, recovery notes and verification comments directly on a SOC incident. Notes are stored in PostgreSQL and tied to actor identity, role and timestamp.
+
+## Completed
+
+- Added SOC incident comments backend
+- Added `soc_incident_comments` table
+- Added `GET /api/soc/incidents/{incident_id}/comments`
+- Added `POST /api/soc/incidents/{incident_id}/comments`
+- Added comment audit log action
+- Added Handling Notes section to SOC incident detail page
+- Added Add Handling Note form
+- Added comment type support:
+  - note
+  - infra_note
+  - investigation
+  - recovery
+  - review
+- Added comment actor / role / timestamp display
+- Added preview-only protection for note creation
+- Added operator / supervisor / admin handling note workflow
+
+## Handling Notes Flow
+
+```text
+SOC Incident Detail
+  ↓
+Operator / Infra adds handling note
+  ↓
+Comment stored in soc_incident_comments
+  ↓
+Audit Logs record comment action
+  ↓
+Incident page shows full handling notes history
+```
+
+## Current Product Status
+
+```text
+SOC Detail        Incident summary + lifecycle + audit trail
+Handling Notes    Operator / Infra comment workflow enabled
+Audit Logs        Comment actions recorded with actor identity
+Infra Workflow    Verify / confirm / close + notes
+```
+
+## Next Phase
+
+- Add editable resolution / infra verification note form
+- Add comment filtering by type
+- Add per-incident related sync events
+- Add ServiceOps ticket creation from SOC incident
+- Add incident report export
+- Add SLA timer and overdue state
+
+---
+
 ## v0.6.3-soc-incident-detail
 
 Release date: 2026-05-23
