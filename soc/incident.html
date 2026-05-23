@@ -283,6 +283,7 @@
 
     .audit-list,
     .note-list,
+    .recovery-evidence,
     .sync-event-list {
       display: grid;
       gap: 10px;
@@ -330,6 +331,157 @@
       background: rgba(255, 255, 255, .04);
       border: 1px solid rgba(245, 211, 122, .12);
       min-width: 0;
+    }
+
+    .recovery-panel {
+      padding: 14px;
+      border-radius: 16px;
+      border: 1px solid rgba(245, 211, 122, .18);
+      background: rgba(245, 211, 122, .05);
+      min-width: 0;
+    }
+
+    .recovery-top,
+    .recovery-counts {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .recovery-source {
+      color: var(--text);
+      font-size: 15px;
+      font-weight: 950;
+      overflow-wrap: anywhere;
+    }
+
+    .health-pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 5px 9px;
+      border-radius: 999px;
+      color: #081018;
+      background: var(--gold);
+      font-size: 11px;
+      font-weight: 950;
+      text-transform: uppercase;
+      overflow-wrap: anywhere;
+    }
+
+    .health-healthy { background: var(--green); color: #062014; }
+    .health-warning { background: var(--orange); color: #241203; }
+    .health-stale,
+    .health-error { background: var(--red); color: #26060c; }
+    .health-unknown { background: rgba(247, 242, 223, .7); color: #081018; }
+
+    .recovery-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .recovery-row,
+    .recovery-count {
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, .04);
+      border: 1px solid rgba(255, 255, 255, .07);
+      min-width: 0;
+    }
+
+    .recovery-row span,
+    .recovery-count span {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 850;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+
+    .recovery-row strong,
+    .recovery-count strong {
+      display: block;
+      margin-top: 5px;
+      color: var(--text);
+      overflow-wrap: anywhere;
+    }
+
+    .recovery-counts {
+      margin-top: 10px;
+    }
+
+    .recovery-count {
+      flex: 1 1 90px;
+    }
+
+    .recovery-message,
+    .recovery-guidance,
+    .suggested-action {
+      margin-top: 10px;
+      padding: 11px 12px;
+      border-radius: 12px;
+      line-height: 1.5;
+      overflow-wrap: anywhere;
+    }
+
+    .recovery-message {
+      color: var(--text);
+      background: rgba(255, 255, 255, .04);
+      border: 1px solid rgba(255, 255, 255, .07);
+    }
+
+    .recovery-guidance {
+      color: var(--gold);
+      background: rgba(115, 244, 223, .06);
+      border: 1px solid rgba(115, 244, 223, .18);
+      font-weight: 850;
+    }
+
+    .recovery-guidance.needs-attention {
+      color: var(--orange);
+      background: rgba(255, 184, 107, .06);
+      border-color: rgba(255, 184, 107, .2);
+    }
+
+    .suggested-action {
+      display: grid;
+      gap: 8px;
+      color: var(--gold);
+      background: rgba(255, 184, 107, .08);
+      border: 1px solid rgba(255, 184, 107, .24);
+    }
+
+    .suggested-action.positive {
+      color: var(--cyan);
+      background: rgba(115, 244, 223, .08);
+      border-color: rgba(115, 244, 223, .28);
+    }
+
+    .suggested-action.unknown {
+      color: var(--muted);
+      background: rgba(247, 242, 223, .06);
+      border-color: rgba(247, 242, 223, .16);
+    }
+
+    .suggested-action-title {
+      color: var(--text);
+      font-size: 12px;
+      font-weight: 950;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+
+    .suggested-action-message {
+      color: inherit;
+      font-weight: 900;
+    }
+
+    .suggested-action .mini-btn {
+      justify-self: start;
     }
 
     .sync-event-head {
@@ -453,6 +605,7 @@
     @media (max-width: 900px) {
       .layout { grid-template-columns: 1fr; }
       .grid { grid-template-columns: 1fr; }
+      .recovery-grid { grid-template-columns: 1fr; }
     }
 
     @media (max-width: 560px) {
@@ -518,6 +671,13 @@
         </div>
 
         <div class="section">
+          <h2>Recovery Evidence</h2>
+          <div class="recovery-evidence" id="recovery-evidence">
+            <div class="sync-event-item muted">Loading recovery evidence...</div>
+          </div>
+        </div>
+
+        <div class="section">
           <h2>Related Sync Events</h2>
           <div class="sync-event-list" id="sync-event-list">
             <div class="sync-event-item muted">Loading related sync events...</div>
@@ -548,6 +708,9 @@
     const params = new URLSearchParams(window.location.search);
     const incidentId = Number(params.get("id"));
     let currentIncident = null;
+    let currentRecoverySource = null;
+    let currentRecoverySourceName = "";
+    let currentRecoveryLookupFailed = false;
 
     function escapeHtml(value) {
       return String(value ?? "")
@@ -648,6 +811,21 @@
           <div class="desc">${escapeHtml(desc)}</div>
         </div>
       `;
+    }
+
+    function normalizeArray(value) {
+      return Array.isArray(value) ? value.filter((item) => item !== undefined && item !== null && item !== "") : [];
+    }
+
+    function normalizeHealth(value) {
+      const normalized = String(value || "unknown").toLowerCase();
+      if (["healthy", "warning", "stale", "error", "unknown"].includes(normalized)) return normalized;
+      return "unknown";
+    }
+
+    function healthPill(health) {
+      const normalized = normalizeHealth(health);
+      return `<span class="health-pill health-${normalized}">${escapeHtml(normalized)}</span>`;
     }
 
     function renderSummary(incident) {
@@ -829,6 +1007,169 @@
       }
     }
 
+    function suggestedRecoveryAction(health, incident, unavailable) {
+      const status = String((incident && incident.status) || "").toLowerCase();
+
+      if (unavailable) {
+        return {
+          message: "Unable to determine recovery state.",
+          tone: "unknown"
+        };
+      }
+
+      if (health === "healthy" && status === "closed") {
+        return {
+          message: "No action required",
+          tone: "positive"
+        };
+      }
+
+      if (health === "healthy" && status === "infra_confirmed") {
+        return {
+          message: "Close Incident",
+          tone: "positive",
+          buttonLabel: "Close Incident",
+          action: "recovery-close"
+        };
+      }
+
+      if (health === "healthy") {
+        return {
+          message: "Infra Confirm Normal",
+          tone: "positive",
+          buttonLabel: "Infra Confirm Normal",
+          action: "recovery-infra-confirm"
+        };
+      }
+
+      if (health === "stale") {
+        return {
+          message: "Check local sync agent heartbeat, network path and service timer.",
+          tone: "warning"
+        };
+      }
+
+      if (health === "error") {
+        return {
+          message: "Check Wazuh manager, Docker services, local agent logs and sync key.",
+          tone: "warning"
+        };
+      }
+
+      if (health === "warning") {
+        return {
+          message: "Review latest warning event and confirm whether recovery is stable.",
+          tone: "warning"
+        };
+      }
+
+      return {
+        message: "Verify source registration and send a new heartbeat.",
+        tone: "unknown"
+      };
+    }
+
+    function renderSuggestedRecoveryAction(action) {
+      const buttonClass = action.action === "recovery-close" ? "supervisor-btn" : "infra-btn";
+      const button = action.action && canWriteSession()
+        ? `<button class="mini-btn ${buttonClass}" type="button" onclick="runIncidentAction(&quot;${escapeHtml(action.action)}&quot;)">${escapeHtml(action.buttonLabel)}</button>`
+        : "";
+
+      return `
+        <div class="suggested-action ${escapeHtml(action.tone || "warning")}">
+          <div class="suggested-action-title">Suggested Action</div>
+          <div class="suggested-action-message">Suggested action: ${escapeHtml(action.message)}</div>
+          ${button}
+        </div>
+      `;
+    }
+
+    function rerenderRecoveryEvidence() {
+      if (!currentIncident || !currentIncident.source_ip || currentIncident.analysis_type !== "local_sync_candidate") return;
+      renderRecoveryEvidence(currentRecoverySource, currentRecoverySourceName || currentIncident.source_ip, currentRecoveryLookupFailed);
+    }
+
+    function renderRecoveryEvidence(sourceRecord, sourceName, unavailable) {
+      const wrap = document.getElementById("recovery-evidence");
+      const lookupUnavailable = Boolean(unavailable || !sourceRecord);
+      const health = lookupUnavailable ? "unknown" : normalizeHealth(sourceRecord && sourceRecord.health);
+      const recovered = health === "healthy";
+      const systems = normalizeArray(sourceRecord && sourceRecord.systems);
+      const systemsText = systems.length ? systems.join(", ") : "-";
+      const guidance = lookupUnavailable
+        ? "Recovery source could not be matched or loaded."
+        : recovered
+          ? "Source recovered. Infra can confirm normal if service status is verified."
+          : "Source still needs attention before closing.";
+      const action = suggestedRecoveryAction(health, currentIncident, lookupUnavailable);
+
+      wrap.innerHTML = `
+        <div class="recovery-panel">
+          <div class="recovery-top">
+            <div class="recovery-source">${escapeHtml(sourceName || (sourceRecord && sourceRecord.source) || "-")}</div>
+            ${healthPill(health)}
+          </div>
+          <div class="recovery-grid">
+            <div class="recovery-row"><span>Source Health</span><strong>${escapeHtml(health)}</strong></div>
+            <div class="recovery-row"><span>Latest Event At</span><strong>${escapeHtml(formatDateTime(sourceRecord && sourceRecord.latest_event_at) || "-")}</strong></div>
+            <div class="recovery-row"><span>Latest Heartbeat At</span><strong>${escapeHtml(formatDateTime(sourceRecord && sourceRecord.latest_heartbeat_at) || "-")}</strong></div>
+            <div class="recovery-row"><span>Systems</span><strong>${escapeHtml(systemsText)}</strong></div>
+          </div>
+          <div class="recovery-counts">
+            <div class="recovery-count"><span>OK</span><strong>${escapeHtml(sourceRecord && sourceRecord.ok_count !== undefined ? sourceRecord.ok_count : 0)}</strong></div>
+            <div class="recovery-count"><span>Warning</span><strong>${escapeHtml(sourceRecord && sourceRecord.warning_count !== undefined ? sourceRecord.warning_count : 0)}</strong></div>
+            <div class="recovery-count"><span>Error</span><strong>${escapeHtml(sourceRecord && sourceRecord.error_count !== undefined ? sourceRecord.error_count : 0)}</strong></div>
+          </div>
+          <div class="recovery-message"><strong>Latest Message</strong><br>${escapeHtml((sourceRecord && sourceRecord.latest_message) || "-")}</div>
+          <div class="recovery-guidance${recovered ? "" : " needs-attention"}">${escapeHtml(guidance)}</div>
+          ${renderSuggestedRecoveryAction(action)}
+        </div>
+      `;
+    }
+
+    async function loadRecoveryEvidence(incident) {
+      const wrap = document.getElementById("recovery-evidence");
+
+      if (!incident || incident.analysis_type !== "local_sync_candidate" || !incident.source_ip) {
+        currentRecoverySource = null;
+        currentRecoverySourceName = "";
+        currentRecoveryLookupFailed = false;
+        wrap.closest(".section").style.display = "none";
+        wrap.innerHTML = "";
+        return;
+      }
+
+      wrap.closest(".section").style.display = "";
+      wrap.innerHTML = `<div class="sync-event-item muted">Loading recovery evidence...</div>`;
+
+      try {
+        const res = await fetch("/api/sync/sources", {
+          cache: "no-store",
+          headers: jsonHeaders()
+        });
+
+        if (!res.ok) throw await parseError(res, "Failed to load recovery evidence");
+
+        const data = await res.json();
+        const sources = Array.isArray(data.sources) ? data.sources : [];
+        const sourceRecord = sources.find((item) => item && item.source === incident.source_ip) || null;
+
+        currentRecoverySource = sourceRecord;
+        currentRecoverySourceName = incident.source_ip;
+        currentRecoveryLookupFailed = !sourceRecord;
+        renderRecoveryEvidence(sourceRecord, incident.source_ip, !sourceRecord);
+      } catch (err) {
+        currentRecoverySource = null;
+        currentRecoverySourceName = incident.source_ip;
+        currentRecoveryLookupFailed = true;
+        wrap.innerHTML = `
+          <div class="sync-event-item error-text">Failed to load recovery evidence.</div>
+          ${renderSuggestedRecoveryAction(suggestedRecoveryAction("unknown", currentIncident, true))}
+        `;
+        console.error(err);
+      }
+    }
+
     function renderActions() {
       const row = document.getElementById("action-row");
 
@@ -892,6 +1233,20 @@
         fallback: "Close failed",
         body: { note: "Reviewed SOC and Infra verification evidence. Incident closed." }
       },
+      "recovery-infra-confirm": {
+        role: "operator",
+        operatorOnly: true,
+        endpoint: "infra-confirm",
+        fallback: "Infra confirm failed",
+        body: { note: "Recovery evidence shows source healthy. Infra confirmed normal." }
+      },
+      "recovery-close": {
+        role: "operator",
+        operatorOnly: true,
+        endpoint: "close",
+        fallback: "Close failed",
+        body: { note: "Recovery evidence reviewed. Incident closed." }
+      },
       "false-positive": { role: "supervisor", fallback: "False positive failed" },
       reopen: { role: "supervisor", fallback: "Reopen failed" }
     };
@@ -922,7 +1277,8 @@
       }
 
       try {
-        const res = await fetch(`/api/soc/incidents/${incidentId}/${action}`, options);
+        const endpoint = config.endpoint || action;
+        const res = await fetch(`/api/soc/incidents/${incidentId}/${endpoint}`, options);
         if (!res.ok) throw await parseError(res, config.fallback);
         await loadIncidentDetail();
       } catch (err) {
@@ -1132,6 +1488,7 @@
         renderCommentForm();
         await loadComments();
         renderTimeline(currentIncident);
+        await loadRecoveryEvidence(currentIncident);
         await loadRelatedSyncEvents(currentIncident);
         renderActions();
         await loadAuditTrail();
@@ -1144,6 +1501,7 @@
         document.getElementById("notes-list").innerHTML = `<div class="note-item error-text">Failed to load handling notes.</div>`;
         document.getElementById("note-form-wrap").innerHTML = "";
         document.getElementById("timeline").innerHTML = `<div class="event"><div class="time">Error</div><div class="desc">${escapeHtml(err.message)}</div></div>`;
+        document.getElementById("recovery-evidence").innerHTML = `<div class="sync-event-item error-text">Failed to load recovery evidence.</div>`;
         document.getElementById("sync-event-list").innerHTML = `<div class="sync-event-item error-text">Failed to load related sync events.</div>`;
         document.getElementById("action-row").innerHTML = "";
         console.error(err);
@@ -1153,12 +1511,14 @@
     window.addEventListener("enyrax-role-changed", () => {
       renderActions();
       renderCommentForm();
+      rerenderRecoveryEvidence();
       loadAuditTrail();
     });
 
     window.addEventListener("enyrax-auth-session-changed", () => {
       renderActions();
       renderCommentForm();
+      rerenderRecoveryEvidence();
       loadAuditTrail();
     });
 
