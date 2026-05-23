@@ -39,48 +39,6 @@
       padding: 34px 0 48px;
     }
 
-    .nav {
-      display: flex;
-      justify-content: space-between;
-      gap: 16px;
-      align-items: center;
-      margin-bottom: 28px;
-      padding-right: 230px;
-    }
-
-    .brand {
-      display: grid;
-      gap: 4px;
-    }
-
-    .brand strong {
-      color: var(--gold);
-      letter-spacing: .14em;
-      font-size: 13px;
-    }
-
-    .brand span {
-      color: var(--muted);
-      font-size: 13px;
-    }
-
-    .links {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-    }
-
-    .links a {
-      color: var(--text);
-      text-decoration: none;
-      border: 1px solid var(--line);
-      background: rgba(255,255,255,.04);
-      padding: 9px 12px;
-      border-radius: 999px;
-      font-size: 13px;
-      font-weight: 800;
-    }
-
     .hero {
       display: grid;
       gap: 14px;
@@ -301,12 +259,6 @@
     }
 
     @media (max-width: 880px) {
-      .nav {
-        align-items: flex-start;
-        flex-direction: column;
-        padding-right: 0;
-      }
-
       .grid { grid-template-columns: repeat(2, 1fr); }
     }
 
@@ -318,21 +270,6 @@
 
 <body>
   <main class="wrap">
-    <nav class="nav">
-      <div class="brand">
-        <strong>ENYRAX</strong>
-        <span>Audit Trail / Operation History</span>
-      </div>
-
-      <div class="links">
-        <a href="/">Portal</a>
-        <a href="/soc/">SOC</a>
-        <a href="/serviceops/">ServiceOps</a>
-        <a href="/projectops/">ProjectOps</a>
-        <a href="/status/">Status</a>
-      </div>
-    </nav>
-
     <section class="hero">
       <h1>Audit Logs</h1>
       <div class="subtitle">
@@ -409,6 +346,7 @@
 
   <script src="/shared/auth-guard.js?v=0311"></script>
   <script src="/shared/role-switcher.js?v=0280"></script>
+  <script src="/shared/command-header.js?v=0522"></script>
 
   <script>
     function escapeHtml(value) {
