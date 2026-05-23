@@ -1,5 +1,95 @@
 # ENYRAX Cloud Portal Release Notes
 
+## v0.6.3-soc-incident-detail
+
+Release date: 2026-05-23
+
+## Summary
+
+This release adds a dedicated SOC incident detail and timeline page.
+
+SOC incidents can now be opened from the SOC dashboard into a single incident view that shows the full handling context, lifecycle state, Infra verification trail and incident-specific audit history.
+
+## Completed
+
+- Added SOC incident detail page
+- Added `/soc/incident.html?id=<incident_id>`
+- Added View Detail link from SOC incident cards
+- Added Incident Summary section
+- Added Handling Trail section
+- Added Lifecycle Timeline section
+- Added incident-level action buttons
+- Added incident-specific Audit Trail display
+- Added operator action support from detail page
+- Added supervisor/admin review actions from detail page
+- Added admin delete action from detail page
+- Preserved preview-only mode behavior
+
+## Incident Detail Flow
+
+```text
+/sync/
+  ↓ SOC Incident Candidate
+
+/soc/
+  ↓ View Detail
+
+/soc/incident.html?id=<incident_id>
+  ├── Incident Summary
+  ├── Handling Trail
+  ├── Lifecycle Timeline
+  ├── Action Buttons
+  └── Audit Trail
+```
+
+## Role Behavior
+
+```text
+Preview only
+  - Can view incident detail
+  - Cannot perform write actions
+
+Operator / Infra
+  - Investigate
+  - Contain
+  - Resolve
+  - Infra Verify
+  - Infra Confirm Normal
+  - Close Incident
+
+Supervisor
+  - View Audit Trail
+  - False Positive
+  - Reopen
+  - Close Incident
+
+Admin
+  - Full access
+  - Delete incident
+```
+
+## Current Product Status
+
+```text
+Sync Gateway     Local source health and incident candidates
+SOC Dashboard    Incident overview and action entry
+SOC Detail       Single incident timeline and handling page
+Infra Workflow   Verify / confirm / close flow
+Audit Logs       Incident-specific actor trail
+```
+
+## Next Phase
+
+- Add editable resolution / infra verification notes
+- Add incident comments
+- Add ServiceOps ticket creation from SOC incident
+- Add per-incident related sync events
+- Add per-incident source health snapshot
+- Add incident SLA timer
+- Add incident export / report view
+
+---
+
 ## v0.6.2-sync-to-soc-workflow
 
 Release date: 2026-05-22
