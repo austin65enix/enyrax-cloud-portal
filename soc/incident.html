@@ -263,7 +263,23 @@
     .operator-btn { color: #062014; background: var(--green); }
     .infra-btn { color: #061c1a; background: var(--cyan); }
     .supervisor-btn { color: #081018; background: linear-gradient(135deg, var(--gold), #fff0b8); }
+    .serviceops-btn { color: #061c1a; background: var(--cyan); }
     .delete-btn { color: #26060c; background: var(--red); }
+
+    .serviceops-ticket-status {
+      min-height: 20px;
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 800;
+      line-height: 1.45;
+    }
+
+    .serviceops-ticket-status a {
+      color: var(--cyan);
+      font-weight: 950;
+      text-decoration: none;
+    }
 
     .audit-list,
     .note-list,
@@ -491,6 +507,7 @@
           <div class="action-row" id="action-row">
             <span class="muted">Loading actions...</span>
           </div>
+          <div class="serviceops-ticket-status" id="serviceops-ticket-status" aria-live="polite"></div>
         </div>
       </div>
 
@@ -577,6 +594,10 @@
     }
 
     function canAddComment() {
+      return canWriteSession() && roleLevel(currentRole()) >= roleLevel("operator");
+    }
+
+    function canCreateServiceOpsTicket() {
       return canWriteSession() && roleLevel(currentRole()) >= roleLevel("operator");
     }
 
@@ -811,8 +832,11 @@
     function renderActions() {
       const row = document.getElementById("action-row");
 
+      const serviceOpsStatus = document.getElementById("serviceops-ticket-status");
+
       if (!incidentId || !canWriteSession()) {
         row.innerHTML = `<span class="muted">Preview only. Login required for incident actions.</span>`;
+        serviceOpsStatus.innerHTML = "";
         return;
       }
 
@@ -833,6 +857,10 @@
       if (canSupervisorActions()) {
         actions.push(`<button class="mini-btn supervisor-btn" type="button" onclick="runIncidentAction('false-positive')">False Positive</button>`);
         actions.push(`<button class="mini-btn supervisor-btn" type="button" onclick="runIncidentAction('reopen')">Reopen</button>`);
+      }
+
+      if (canCreateServiceOpsTicket()) {
+        actions.push(`<button class="mini-btn serviceops-btn" type="button" onclick="createServiceOpsTicket()">Create ServiceOps Ticket</button>`);
       }
 
       if (canDelete()) {
@@ -900,6 +928,41 @@
       } catch (err) {
         alert(err.message);
         console.error(err);
+      }
+    }
+
+    async function createServiceOpsTicket() {
+      if (!incidentId || !canCreateServiceOpsTicket()) return;
+
+      const status = document.getElementById("serviceops-ticket-status");
+      const button = document.querySelector(".serviceops-btn");
+
+      status.textContent = "Creating ServiceOps ticket...";
+      status.className = "serviceops-ticket-status";
+
+      if (button) button.disabled = true;
+
+      try {
+        const res = await fetch(`/api/soc/incidents/${incidentId}/create-serviceops-ticket`, {
+          method: "POST",
+          headers: jsonHeaders()
+        });
+
+        if (!res.ok) throw await parseError(res, "Create ServiceOps ticket failed");
+
+        const data = await res.json();
+        const ticket = data.ticket || {};
+        const label = data.status === "existing" ? "Existing" : "Created";
+        const ticketId = ticket.id ? ` #${ticket.id}` : "";
+
+        status.innerHTML = `${label} ServiceOps ticket${escapeHtml(ticketId)} · <a href="/serviceops/">Open ServiceOps</a>`;
+        await loadAuditTrail();
+      } catch (err) {
+        status.textContent = err.message;
+        status.className = "serviceops-ticket-status error-text";
+        console.error(err);
+      } finally {
+        if (button) button.disabled = false;
       }
     }
 

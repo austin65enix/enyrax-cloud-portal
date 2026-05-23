@@ -507,6 +507,33 @@ def incident_comment_row_to_dict(row):
     }
 
 
+def soc_incident_serviceops_priority(severity: Optional[str]) -> str:
+    normalized = (severity or "medium").strip().lower()
+
+    if normalized in {"critical", "high"}:
+        return "high"
+    if normalized == "low":
+        return "low"
+
+    return "medium"
+
+
+def soc_incident_serviceops_task(incident) -> str:
+    priority = soc_incident_serviceops_priority(incident["severity"])
+    lines = [
+        f"SOC incident id: {incident['id']}",
+        f"Severity: {incident['severity']}",
+        f"ServiceOps priority: {priority}",
+        f"Source IP: {incident['source_ip']}",
+        f"Target: {incident['target']}",
+        f"Analysis type: {incident['analysis_type']}",
+        f"MITRE: {incident['mitre']}",
+        f"Resolution note: {incident['resolution_note'] or 'Not recorded'}",
+    ]
+
+    return "\n".join(lines)
+
+
 def write_audit_log(
     conn,
     module: str,
@@ -1832,6 +1859,98 @@ def get_soc_incident(incident_id: int):
     return {
         "status": "ok",
         "incident": incident_row_to_dict(row),
+    }
+
+
+@app.post("/api/soc/incidents/{incident_id}/create-serviceops-ticket")
+def create_serviceops_ticket_from_soc_incident(
+    incident_id: int,
+    demo_role: str = Header(default="admin", alias="X-Demo-Role"),
+    demo_actor: str = Header(default=None, alias="X-Demo-Actor"),
+):
+    role = require_role(demo_role, "operator")
+    actor = demo_actor or role
+    db = require_db()
+
+    with db.begin() as conn:
+        incident = conn.execute(
+            text(
+                f"""
+                SELECT
+                    {SOC_INCIDENT_COLUMNS}
+                FROM soc_incidents
+                WHERE id = :incident_id
+                """
+            ),
+            {"incident_id": incident_id},
+        ).mappings().first()
+
+        if incident is None:
+            raise HTTPException(status_code=404, detail="Incident not found")
+
+        title = f"SOC Follow-up: {incident['title']}"
+
+        existing = conn.execute(
+            text(
+                f"""
+                SELECT
+                    {SERVICEOPS_TICKET_COLUMNS}
+                FROM serviceops_tickets
+                WHERE title = :title
+                  AND deleted_at IS NULL
+                ORDER BY id ASC
+                LIMIT 1
+                """
+            ),
+            {"title": title},
+        ).mappings().first()
+
+        if existing is not None:
+            return {
+                "status": "existing",
+                "ticket": ticket_row_to_dict(existing),
+            }
+
+        max_order = conn.execute(
+            text("SELECT COALESCE(MAX(display_order), 0) FROM serviceops_tickets")
+        ).scalar_one()
+
+        row = conn.execute(
+            text(
+                f"""
+                INSERT INTO serviceops_tickets
+                    (title, status, owner, project, estimate_hours, actual_hours, task, display_order)
+                VALUES
+                    (:title, :status, :owner, :project, :estimate_hours, :actual_hours, :task, :display_order)
+                RETURNING
+                    {SERVICEOPS_TICKET_COLUMNS}
+                """
+            ),
+            {
+                "title": title,
+                "status": "pending",
+                "owner": actor,
+                "project": "SOC Incident Response",
+                "estimate_hours": 0,
+                "actual_hours": 0,
+                "task": soc_incident_serviceops_task(incident),
+                "display_order": int(max_order) + 1,
+            },
+        ).mappings().first()
+
+        write_audit_log(
+            conn,
+            module="serviceops",
+            entity_type="ticket",
+            entity_id=row["id"],
+            action="create",
+            summary=f"Created ServiceOps ticket from SOC incident: {incident['title']}",
+            actor=actor,
+        )
+
+    return {
+        "status": "created",
+        "ticket": ticket_row_to_dict(row),
     }
 
 
