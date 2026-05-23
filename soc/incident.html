@@ -266,13 +266,15 @@
     .delete-btn { color: #26060c; background: var(--red); }
 
     .audit-list,
-    .note-list {
+    .note-list,
+    .sync-event-list {
       display: grid;
       gap: 10px;
     }
 
     .audit-item strong,
-    .note-item strong {
+    .note-item strong,
+    .sync-event-item strong {
       display: block;
       margin: 6px 0;
       overflow-wrap: anywhere;
@@ -303,6 +305,58 @@
       font-size: 11px;
       font-weight: 950;
       text-transform: uppercase;
+      overflow-wrap: anywhere;
+    }
+
+    .sync-event-item {
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, .04);
+      border: 1px solid rgba(245, 211, 122, .12);
+      min-width: 0;
+    }
+
+    .sync-event-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .sync-event-meta {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      overflow-wrap: anywhere;
+    }
+
+    .sync-status {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 8px;
+      border-radius: 999px;
+      color: #081018;
+      background: var(--gold);
+      font-size: 11px;
+      font-weight: 950;
+      text-transform: uppercase;
+      overflow-wrap: anywhere;
+    }
+
+    .sync-message {
+      margin: 8px 0 0;
+      color: var(--text);
+      line-height: 1.5;
+      overflow-wrap: anywhere;
+    }
+
+    .sync-payload {
+      margin: 8px 0 0;
+      color: var(--cyan);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size: 12px;
+      line-height: 1.45;
       overflow-wrap: anywhere;
     }
 
@@ -444,6 +498,13 @@
         <h2>Lifecycle Timeline</h2>
         <div class="timeline" id="timeline">
           <div class="event"><div class="time">Loading</div><div class="desc">Building lifecycle timeline...</div></div>
+        </div>
+
+        <div class="section">
+          <h2>Related Sync Events</h2>
+          <div class="sync-event-list" id="sync-event-list">
+            <div class="sync-event-item muted">Loading related sync events...</div>
+          </div>
         </div>
 
         <div class="section">
@@ -685,6 +746,66 @@
       }
 
       document.getElementById("timeline").innerHTML = rows.join("");
+    }
+
+    function payloadSummary(payload) {
+      if (payload && typeof payload === "object") {
+        return JSON.stringify(payload).slice(0, 180);
+      }
+
+      if (payload === undefined || payload === null || payload === "") {
+        return "-";
+      }
+
+      return String(payload).slice(0, 180);
+    }
+
+    function renderRelatedSyncEvents(events) {
+      const list = document.getElementById("sync-event-list");
+
+      if (!Array.isArray(events) || events.length === 0) {
+        list.innerHTML = `<div class="sync-event-item muted">No related sync events found.</div>`;
+        return;
+      }
+
+      list.innerHTML = events.map((event) => `
+        <div class="sync-event-item">
+          <div class="sync-event-head">
+            <span class="sync-event-meta">${escapeHtml(formatDateTime(event.created_at))} · ${escapeHtml(event.source || "-")} · ${escapeHtml(event.system || "-")}</span>
+            <span class="sync-status">${escapeHtml(event.status || "unknown")}</span>
+          </div>
+          <strong>${escapeHtml(event.event_type || "sync_event")}</strong>
+          <div class="sync-message">${escapeHtml(event.message || "-")}</div>
+          <div class="sync-payload">${escapeHtml(payloadSummary(event.payload))}</div>
+        </div>
+      `).join("");
+    }
+
+    async function loadRelatedSyncEvents(incident) {
+      const list = document.getElementById("sync-event-list");
+
+      if (!incident || incident.analysis_type !== "local_sync_candidate" || !incident.source_ip) {
+        list.innerHTML = `<div class="sync-event-item muted">No related sync source for this incident.</div>`;
+        return;
+      }
+
+      list.innerHTML = `<div class="sync-event-item muted">Loading related sync events...</div>`;
+
+      try {
+        const source = encodeURIComponent(incident.source_ip);
+        const res = await fetch(`/api/sync/events?source=${source}&limit=10`, {
+          cache: "no-store",
+          headers: jsonHeaders()
+        });
+
+        if (!res.ok) throw await parseError(res, "Failed to load related sync events");
+
+        const data = await res.json();
+        renderRelatedSyncEvents(data.events || []);
+      } catch (err) {
+        list.innerHTML = `<div class="sync-event-item error-text">Failed to load related sync events.</div>`;
+        console.error(err);
+      }
     }
 
     function renderActions() {
@@ -948,6 +1069,7 @@
         renderCommentForm();
         await loadComments();
         renderTimeline(currentIncident);
+        await loadRelatedSyncEvents(currentIncident);
         renderActions();
         await loadAuditTrail();
       } catch (err) {
@@ -959,6 +1081,7 @@
         document.getElementById("notes-list").innerHTML = `<div class="note-item error-text">Failed to load handling notes.</div>`;
         document.getElementById("note-form-wrap").innerHTML = "";
         document.getElementById("timeline").innerHTML = `<div class="event"><div class="time">Error</div><div class="desc">${escapeHtml(err.message)}</div></div>`;
+        document.getElementById("sync-event-list").innerHTML = `<div class="sync-event-item error-text">Failed to load related sync events.</div>`;
         document.getElementById("action-row").innerHTML = "";
         console.error(err);
       }
