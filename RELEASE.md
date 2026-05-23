@@ -1,5 +1,106 @@
 # ENYRAX Cloud Portal Release Notes
 
+## v0.6.6-command-center-header
+
+Release date: 2026-05-24
+
+## Summary
+
+This release upgrades ENYRAX Cloud Portal into a more unified command-center style interface.
+
+Core modules now share a fixed ENYRAX Command Header with module navigation, active module highlighting, and docked login identity. The previous floating role identity card has been visually integrated into the command header, making SOC, ServiceOps, ProjectOps, Sync Gateway, Audit Logs and Status feel like one connected operation console.
+
+## Completed
+
+- Added shared ENYRAX Command Header
+- Added `shared/command-header.js`
+- Added fixed top navigation across core modules
+- Added active module highlighting
+- Added Sync Gateway entry to command navigation
+- Added command header identity slot
+- Integrated Role Switcher into command header
+- Replaced floating login card with compact docked identity
+- Added compact logged-in display:
+  - display name
+  - role badge
+  - session active
+  - logout
+- Added compact preview mode display:
+  - PREVIEW ONLY
+  - Login
+- Updated SOC page script order for command header docking
+- Updated SOC Incident Detail page script order
+- Updated ServiceOps page script order
+- Updated ProjectOps page script order
+- Kept fallback floating role switcher for legacy pages without command header
+
+## Command Center Layout
+
+```text
+ENYRAX Command Header
+  ├── Brand / Module Label
+  ├── Portal
+  ├── SOC
+  ├── ServiceOps
+  ├── ProjectOps
+  ├── Sync Gateway
+  ├── Audit Logs
+  ├── Status
+  └── Docked Identity / Login State
+```
+
+## Role Identity Behavior
+
+```text
+Logged in
+  - Operator Demo User
+  - OPERATOR badge
+  - Session active
+  - Logout
+
+Preview only
+  - PREVIEW ONLY
+  - Login
+```
+
+## Applied Pages
+
+```text
+/soc/
+/soc/incident.html
+/serviceops/
+/projectops/
+/sync/
+/status/
+/audit/
+```
+
+## Current Product Status
+
+```text
+Command Header   Shared fixed navigation enabled
+Role Identity    Docked into command header
+SOC              Command-center navigation integrated
+ServiceOps       Command-center navigation integrated
+ProjectOps       Command-center navigation integrated
+Sync Gateway     Command-center navigation integrated
+Audit Logs       Command-center navigation integrated
+Status Center    Command-center navigation integrated
+```
+
+## Next Phase
+
+- Add command header status indicators
+- Add global source health mini badge
+- Add SOC open incident count in command header
+- Add ServiceOps pending ticket count in command header
+- Add global command search
+- Add notification center
+- Add user/session menu
+- Add command-center mobile layout refinement
+
+---
+
 ## v0.6.4-soc-handling-notes
 
 Release date: 2026-05-23
