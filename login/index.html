@@ -241,6 +241,43 @@
       transition: transform .16s ease, border-color .16s ease, background .16s ease;
     }
 
+    .quick button {
+      position: relative;
+      border-color: rgba(245,211,122,.22);
+      animation: quickGlow 5.4s ease-in-out infinite;
+    }
+
+    .quick button:nth-of-type(2) { animation-delay: 1.8s; }
+    .quick button:nth-of-type(3) { animation-delay: 3.6s; }
+
+    .quick button.is-selected {
+      color: #081018;
+      border-color: rgba(255,240,184,.88);
+      background: linear-gradient(135deg, var(--gold), var(--gold-strong));
+      box-shadow: 0 0 0 1px rgba(245,211,122,.18), 0 0 24px rgba(245,211,122,.22);
+      animation: selectedQuickGlow 3.6s ease-in-out infinite;
+    }
+
+    @keyframes quickGlow {
+      0%, 100% {
+        border-color: rgba(255,255,255,.13);
+        box-shadow: none;
+      }
+      42%, 58% {
+        border-color: rgba(245,211,122,.48);
+        box-shadow: 0 0 20px rgba(245,211,122,.16);
+      }
+    }
+
+    @keyframes selectedQuickGlow {
+      0%, 100% {
+        box-shadow: 0 0 0 1px rgba(245,211,122,.18), 0 0 24px rgba(245,211,122,.22);
+      }
+      50% {
+        box-shadow: 0 0 0 1px rgba(255,240,184,.32), 0 0 32px rgba(245,211,122,.3);
+      }
+    }
+
     button:hover,
     .nav-button:hover {
       transform: translateY(-1px);
@@ -251,6 +288,14 @@
     .form {
       display: grid;
       gap: 14px;
+    }
+
+    .demo-account-hint {
+      margin: -4px 0 0;
+      color: var(--gold);
+      font-size: 12px;
+      font-weight: 900;
+      line-height: 1.45;
     }
 
     label {
@@ -397,12 +442,13 @@
 
         <div class="quick" aria-label="Demo account shortcuts">
           <p class="quick-note">Preview mode covers read-only access before login.</p>
-          <button type="button" data-email="operator@enyrax.local">Operator</button>
-          <button type="button" data-email="supervisor@enyrax.local">Supervisor</button>
-          <button type="button" data-email="admin@enyrax.local">Admin</button>
+          <button type="button" data-email="operator@enyrax.local" data-label="Operator">Operator</button>
+          <button type="button" data-email="supervisor@enyrax.local" data-label="Supervisor">Supervisor</button>
+          <button type="button" data-email="admin@enyrax.local" data-label="Admin">Admin</button>
         </div>
 
         <form id="loginForm" class="form">
+          <p id="demoAccountHint" class="demo-account-hint">Default demo account: Operator</p>
           <label>
             Email
             <input id="email" name="email" type="email" autocomplete="username" required placeholder="admin@enyrax.local" />
@@ -438,8 +484,11 @@
 
   <script>
     const DEMO_PASSWORD = 'demo1234';
+    const DEFAULT_DEMO_EMAIL = 'operator@enyrax.local';
     const TOKEN_KEY = 'enyrax_auth_token';
     const USER_KEY = 'enyrax_auth_user';
+    const LOGIN_AT_KEY = 'enyrax_auth_login_at';
+    const SESSION_TIMEOUT_MINUTES = 120;
 
     const form = document.getElementById('loginForm');
     const emailInput = document.getElementById('email');
@@ -452,6 +501,8 @@
     const userEmail = document.getElementById('userEmail');
     const userRole = document.getElementById('userRole');
     const logoutButton = document.getElementById('logoutButton');
+    const demoAccountHint = document.getElementById('demoAccountHint');
+    const quickButtons = Array.from(document.querySelectorAll('[data-email]'));
 
     function setMessage(text, isOk = false) {
       message.textContent = text;
@@ -475,25 +526,62 @@
       userCard.classList.add('active');
     }
 
+    function clearAuthSession() {
+      localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem(USER_KEY);
+      localStorage.removeItem(LOGIN_AT_KEY);
+    }
+
+    function isSessionTimedOut() {
+      const token = localStorage.getItem(TOKEN_KEY);
+      const loginAt = Number(localStorage.getItem(LOGIN_AT_KEY));
+
+      if (!token) return false;
+      if (!Number.isFinite(loginAt) || loginAt <= 0) return true;
+
+      return Date.now() - loginAt > SESSION_TIMEOUT_MINUTES * 60 * 1000;
+    }
+
     function loadStoredUser() {
+      if (isSessionTimedOut()) {
+        clearAuthSession();
+        setUser(null);
+        setMessage('Session expired or timed out. Please sign in again.');
+        return;
+      }
+
       const storedUser = localStorage.getItem(USER_KEY);
       if (!storedUser) return;
 
       try {
         setUser(JSON.parse(storedUser));
       } catch (_error) {
-        localStorage.removeItem(USER_KEY);
-        localStorage.removeItem(TOKEN_KEY);
+        clearAuthSession();
       }
     }
 
-    document.querySelectorAll('[data-email]').forEach((button) => {
-      button.addEventListener('click', () => {
-        emailInput.value = button.dataset.email;
-        passwordInput.value = DEMO_PASSWORD;
-        setMessage('Demo credentials filled.', true);
+    function selectDemoAccount(button, isDefault = false) {
+      if (!button) return;
+
+      emailInput.value = button.dataset.email;
+      passwordInput.value = DEMO_PASSWORD;
+      quickButtons.forEach((item) => {
+        item.classList.toggle("is-selected", item === button);
+        item.setAttribute("aria-pressed", item === button ? "true" : "false");
+      });
+
+      demoAccountHint.textContent = (isDefault ? "Default" : "Selected") + " demo account: " + button.dataset.label;
+    }
+
+    quickButtons.forEach((button) => {
+      button.setAttribute("aria-pressed", "false");
+      button.addEventListener("click", () => {
+        selectDemoAccount(button);
+        setMessage("Demo credentials filled.", true);
       });
     });
+
+    selectDemoAccount(quickButtons.find((button) => button.dataset.email === DEFAULT_DEMO_EMAIL), true);
 
     form.addEventListener('submit', async (event) => {
       event.preventDefault();
@@ -518,11 +606,11 @@
 
         localStorage.setItem(TOKEN_KEY, data.token);
         localStorage.setItem(USER_KEY, JSON.stringify(data.user));
+        localStorage.setItem(LOGIN_AT_KEY, String(Date.now()));
         setUser(data.user);
         setMessage('Login successful.', true);
       } catch (error) {
-        localStorage.removeItem(TOKEN_KEY);
-        localStorage.removeItem(USER_KEY);
+        clearAuthSession();
         setUser(null);
         setMessage(error.message || 'Login failed');
       } finally {
@@ -532,8 +620,7 @@
     });
 
     logoutButton.addEventListener('click', () => {
-      localStorage.removeItem(TOKEN_KEY);
-      localStorage.removeItem(USER_KEY);
+      clearAuthSession();
       setUser(null);
       setMessage('Logged out.', true);
     });
