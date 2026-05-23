@@ -144,7 +144,8 @@
 
     .field,
     .trail-line,
-    .audit-item {
+    .audit-item,
+    .note-item {
       padding: 12px 14px;
       border-radius: 14px;
       background: rgba(255, 255, 255, .04);
@@ -264,21 +265,114 @@
     .supervisor-btn { color: #081018; background: linear-gradient(135deg, var(--gold), #fff0b8); }
     .delete-btn { color: #26060c; background: var(--red); }
 
-    .audit-list {
+    .audit-list,
+    .note-list {
       display: grid;
       gap: 10px;
     }
 
-    .audit-item strong {
+    .audit-item strong,
+    .note-item strong {
       display: block;
       margin: 6px 0;
       overflow-wrap: anywhere;
     }
 
-    .audit-meta {
+    .audit-meta,
+    .note-meta {
       text-transform: none;
       letter-spacing: 0;
       font-weight: 750;
+    }
+
+    .note-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .note-type {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 8px;
+      border-radius: 999px;
+      color: #081018;
+      background: var(--gold);
+      font-size: 11px;
+      font-weight: 950;
+      text-transform: uppercase;
+      overflow-wrap: anywhere;
+    }
+
+    .note-text {
+      margin: 8px 0 0;
+      color: var(--text);
+      line-height: 1.5;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
+    .note-form {
+      display: grid;
+      gap: 10px;
+      margin-top: 12px;
+      padding: 14px;
+      border-radius: 16px;
+      border: 1px solid rgba(245, 211, 122, .18);
+      background: rgba(245, 211, 122, .05);
+    }
+
+    .note-form label {
+      display: grid;
+      gap: 6px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 850;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+
+    .note-form select,
+    .note-form textarea {
+      width: 100%;
+      border: 1px solid rgba(255, 255, 255, .14);
+      border-radius: 12px;
+      color: var(--text);
+      background: rgba(7, 9, 20, .82);
+      font: inherit;
+      font-size: 14px;
+      outline: none;
+    }
+
+    .note-form select {
+      min-height: 42px;
+      padding: 0 10px;
+    }
+
+    .note-form textarea {
+      min-height: 94px;
+      resize: vertical;
+      padding: 10px;
+      line-height: 1.45;
+    }
+
+    .note-form select:focus,
+    .note-form textarea:focus {
+      border-color: rgba(115, 244, 223, .62);
+      box-shadow: 0 0 0 3px rgba(115, 244, 223, .12);
+    }
+
+    .note-status {
+      min-height: 18px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 750;
+    }
+
+    .note-submit {
+      justify-self: start;
     }
 
     .error-text {
@@ -328,6 +422,14 @@
           <div class="grid" id="handling-grid">
             <div class="field"><span>Trail</span><strong>Loading...</strong></div>
           </div>
+        </div>
+
+        <div class="section">
+          <h2>Handling Notes</h2>
+          <div class="note-list" id="notes-list">
+            <div class="note-item muted">Loading handling notes...</div>
+          </div>
+          <div id="note-form-wrap"></div>
         </div>
 
         <div class="section">
@@ -402,7 +504,7 @@
     }
 
     function canCloseActions() {
-      return canWriteSession() && roleLevel(currentRole()) >= roleLevel("operator");
+      return canWriteSession() && currentRole() === "operator";
     }
 
     function canSupervisorActions() {
@@ -411,6 +513,10 @@
 
     function canDelete() {
       return canWriteSession() && roleLevel(currentRole()) >= roleLevel("admin");
+    }
+
+    function canAddComment() {
+      return canWriteSession() && roleLevel(currentRole()) >= roleLevel("operator");
     }
 
     function canViewAudit() {
@@ -500,6 +606,57 @@
       ].filter(Boolean).join("") || `<div class="field"><span>Handling Trail</span><strong>No handling activity recorded yet.</strong></div>`;
     }
 
+    function renderCommentForm() {
+      const wrap = document.getElementById("note-form-wrap");
+
+      if (!canAddComment()) {
+        wrap.innerHTML = "";
+        return;
+      }
+
+      wrap.innerHTML = `
+        <form class="note-form" id="note-form">
+          <label>
+            Type
+            <select id="note-type" name="comment_type">
+              <option value="note">note</option>
+              <option value="infra_note">infra_note</option>
+              <option value="investigation">investigation</option>
+              <option value="recovery">recovery</option>
+              <option value="review">review</option>
+            </select>
+          </label>
+          <label>
+            Comment
+            <textarea id="note-comment" name="comment" placeholder="Add handling context..."></textarea>
+          </label>
+          <button class="mini-btn supervisor-btn note-submit" type="submit">Add Handling Note</button>
+          <div class="note-status" id="note-status" aria-live="polite"></div>
+        </form>
+      `;
+
+      document.getElementById("note-form").addEventListener("submit", submitComment);
+    }
+
+    function renderComments(comments) {
+      const notesList = document.getElementById("notes-list");
+
+      if (!Array.isArray(comments) || comments.length === 0) {
+        notesList.innerHTML = `<div class="note-item muted">No handling notes yet.</div>`;
+        return;
+      }
+
+      notesList.innerHTML = comments.map((comment) => `
+        <div class="note-item">
+          <div class="note-head">
+            <span class="note-meta">${escapeHtml(formatDateTime(comment.created_at))} · ${escapeHtml(comment.actor || "system")} · ${escapeHtml(comment.role || "role")}</span>
+            <span class="note-type">${escapeHtml(comment.comment_type || "note")}</span>
+          </div>
+          <div class="note-text">${escapeHtml(comment.comment || "")}</div>
+        </div>
+      `).join("");
+    }
+
     function renderTimeline(incident) {
       const rows = [
         eventLine(formatDateTime(incident.created_at), "Created"),
@@ -565,23 +722,29 @@
     }
 
     const incidentActionConfig = {
-      investigate: { fallback: "Investigate failed" },
-      contain: { fallback: "Contain failed" },
-      resolve: { fallback: "Resolve failed" },
+      investigate: { role: "operator", operatorOnly: true, fallback: "Investigate failed" },
+      contain: { role: "operator", operatorOnly: true, fallback: "Contain failed" },
+      resolve: { role: "operator", operatorOnly: true, fallback: "Resolve failed" },
       "infra-verify": {
+        role: "operator",
+        operatorOnly: true,
         fallback: "Infra verify failed",
         body: { note: "Checking host heartbeat, Wazuh agent and Docker service status." }
       },
       "infra-confirm": {
+        role: "operator",
+        operatorOnly: true,
         fallback: "Infra confirm failed",
         body: { note: "Host heartbeat recovered. Wazuh agent connected. No new sync error events." }
       },
       close: {
+        role: "operator",
+        operatorOnly: true,
         fallback: "Close failed",
         body: { note: "Reviewed SOC and Infra verification evidence. Incident closed." }
       },
-      "false-positive": { fallback: "False positive failed" },
-      reopen: { fallback: "Reopen failed" }
+      "false-positive": { role: "supervisor", fallback: "False positive failed" },
+      reopen: { role: "supervisor", fallback: "Reopen failed" }
     };
 
     async function runIncidentAction(action) {
@@ -589,6 +752,16 @@
 
       const config = incidentActionConfig[action];
       if (!config) return;
+
+      if (!canWriteSession() || roleLevel(currentRole()) < roleLevel(config.role || "operator")) {
+        alert("Preview only. Please log in with a write role to continue.");
+        return;
+      }
+
+      if (config.operatorOnly && currentRole() !== "operator") {
+        alert("This action is available to Operator.");
+        return;
+      }
 
       const options = {
         method: "PUT",
@@ -626,6 +799,79 @@
       } catch (err) {
         alert(err.message);
         console.error(err);
+      }
+    }
+
+    async function loadComments() {
+      const notesList = document.getElementById("notes-list");
+
+      if (!incidentId) {
+        notesList.innerHTML = `<div class="note-item error-text">Missing incident id.</div>`;
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/soc/incidents/${incidentId}/comments`, {
+          cache: "no-store",
+          headers: jsonHeaders()
+        });
+
+        if (!res.ok) throw await parseError(res, "Failed to load handling notes");
+
+        const data = await res.json();
+        renderComments(data.comments || []);
+      } catch (err) {
+        notesList.innerHTML = `<div class="note-item error-text">Failed to load handling notes.</div>`;
+        console.error(err);
+      }
+    }
+
+    async function submitComment(event) {
+      event.preventDefault();
+
+      if (!incidentId || !canAddComment()) return;
+
+      const form = event.currentTarget;
+      const status = document.getElementById("note-status");
+      const textarea = document.getElementById("note-comment");
+      const comment = textarea.value.trim();
+
+      status.textContent = "";
+      status.className = "note-status";
+
+      if (!comment) {
+        status.textContent = "Comment cannot be empty.";
+        status.className = "note-status error-text";
+        textarea.focus();
+        return;
+      }
+
+      const submitButton = form.querySelector("button[type='submit']");
+      submitButton.disabled = true;
+      status.textContent = "Adding handling note...";
+
+      try {
+        const res = await fetch(`/api/soc/incidents/${incidentId}/comments`, {
+          method: "POST",
+          headers: jsonHeaders(),
+          body: JSON.stringify({
+            comment_type: document.getElementById("note-type").value,
+            comment
+          })
+        });
+
+        if (!res.ok) throw await parseError(res, "Comment failed");
+
+        textarea.value = "";
+        status.textContent = "Comment added.";
+        await loadComments();
+        await loadAuditTrail();
+      } catch (err) {
+        status.textContent = err.message;
+        status.className = "note-status error-text";
+        console.error(err);
+      } finally {
+        submitButton.disabled = false;
       }
     }
 
@@ -699,6 +945,8 @@
         apiTime.className = "api-line";
         renderSummary(currentIncident);
         renderHandlingTrail(currentIncident);
+        renderCommentForm();
+        await loadComments();
         renderTimeline(currentIncident);
         renderActions();
         await loadAuditTrail();
@@ -708,6 +956,8 @@
         document.getElementById("incident-title").textContent = "Incident unavailable";
         document.getElementById("summary-grid").innerHTML = `<div class="field error-text"><span>Error</span><strong>${escapeHtml(err.message)}</strong></div>`;
         document.getElementById("handling-grid").innerHTML = "";
+        document.getElementById("notes-list").innerHTML = `<div class="note-item error-text">Failed to load handling notes.</div>`;
+        document.getElementById("note-form-wrap").innerHTML = "";
         document.getElementById("timeline").innerHTML = `<div class="event"><div class="time">Error</div><div class="desc">${escapeHtml(err.message)}</div></div>`;
         document.getElementById("action-row").innerHTML = "";
         console.error(err);
@@ -716,11 +966,13 @@
 
     window.addEventListener("enyrax-role-changed", () => {
       renderActions();
+      renderCommentForm();
       loadAuditTrail();
     });
 
     window.addEventListener("enyrax-auth-session-changed", () => {
       renderActions();
+      renderCommentForm();
       loadAuditTrail();
     });
 
