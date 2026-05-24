@@ -1,6 +1,7 @@
 (function () {
   const HEADER_ID = "enyrax-command-header";
   const IDENTITY_SLOT_ID = "enyrax-command-identity-slot";
+  const STATUS_STRIP_ID = "enyrax-command-status-strip";
   const STYLE_ID = "enyrax-command-header-style";
 
   const modules = [
@@ -37,7 +38,7 @@
     style.id = STYLE_ID;
     style.textContent = `
       :root {
-        --enyrax-command-header-height: 82px;
+        --enyrax-command-header-height: 104px;
       }
 
       body.enyrax-command-header-ready {
@@ -61,19 +62,24 @@
 
       #${HEADER_ID} .command-header-inner {
         display: grid;
-        grid-template-columns: minmax(190px, auto) minmax(0, 1fr) minmax(190px, auto);
-        gap: 16px;
+        grid-template-columns: minmax(130px, 220px) minmax(0, 1fr) minmax(0, 260px);
+        grid-template-areas:
+          "brand nav identity"
+          "status status status";
+        column-gap: 12px;
+        row-gap: 8px;
         align-items: center;
-        min-height: 74px;
         width: min(1240px, calc(100% - 32px));
         margin: 0 auto;
-        padding: 12px 0;
+        padding: 10px 0 9px;
       }
 
       #${HEADER_ID} .command-brand {
+        grid-area: brand;
         display: grid;
         gap: 4px;
         min-width: 0;
+        max-width: 220px;
       }
 
       #${HEADER_ID} .command-brand strong {
@@ -89,35 +95,34 @@
         font-size: 13px;
         font-weight: 800;
         line-height: 1.35;
-        overflow-wrap: anywhere;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
 
       #${HEADER_ID} .command-nav {
+        grid-area: nav;
         display: flex;
+        flex-wrap: wrap;
         justify-content: center;
-        gap: 8px;
+        gap: 6px;
         min-width: 0;
-        overflow-x: auto;
-        scrollbar-width: none;
-      }
-
-      #${HEADER_ID} .command-nav::-webkit-scrollbar {
-        display: none;
+        overflow: visible;
       }
 
       #${HEADER_ID} .command-nav a {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        min-height: 36px;
+        min-height: 32px;
         border: 1px solid rgba(255, 255, 255, .12);
         border-radius: 999px;
-        padding: 8px 11px;
+        padding: 7px 10px;
         color: #f7f2df;
         background: rgba(255, 255, 255, .045);
         text-decoration: none;
         white-space: nowrap;
-        font-size: 12px;
+        font-size: 11px;
         font-weight: 900;
         line-height: 1;
       }
@@ -129,18 +134,108 @@
         box-shadow: 0 0 24px rgba(245, 211, 122, .16);
       }
 
+      #${STATUS_STRIP_ID} {
+        grid-area: status;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 7px;
+        min-width: 0;
+        border-top: 1px solid rgba(245, 211, 122, .14);
+        padding-top: 8px;
+        overflow: visible;
+      }
+
+      #${STATUS_STRIP_ID} .command-status-pill {
+        display: inline-flex;
+        align-items: center;
+        min-height: 24px;
+        max-width: 100%;
+        border: 1px solid rgba(245, 211, 122, .2);
+        border-radius: 999px;
+        padding: 5px 9px;
+        color: rgba(247, 242, 223, .88);
+        background:
+          linear-gradient(180deg, rgba(245, 211, 122, .1), rgba(245, 211, 122, .035)),
+          rgba(255, 255, 255, .035);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, .06), 0 0 18px rgba(245, 211, 122, .06);
+        font-size: 11px;
+        font-weight: 900;
+        line-height: 1;
+        white-space: nowrap;
+      }
+
+      #${STATUS_STRIP_ID} .command-status-pill::before {
+        content: "";
+        width: 6px;
+        height: 6px;
+        margin-right: 6px;
+        border-radius: 50%;
+        background: #f5d37a;
+        box-shadow: 0 0 12px rgba(245, 211, 122, .64);
+        flex: 0 0 auto;
+      }
+
+      #${STATUS_STRIP_ID} .command-status-pill.warning::before,
+      #${STATUS_STRIP_ID} .command-status-pill.stale::before {
+        background: #ffd166;
+        box-shadow: 0 0 12px rgba(255, 209, 102, .64);
+      }
+
+      #${STATUS_STRIP_ID} .command-status-pill.error {
+        border-color: rgba(255, 107, 134, .3);
+        color: #ffd5dc;
+      }
+
+      #${STATUS_STRIP_ID} .command-status-pill.error::before {
+        background: #ff6b86;
+        box-shadow: 0 0 12px rgba(255, 107, 134, .68);
+      }
+
+      #${STATUS_STRIP_ID} .command-status-pill.healthy::before {
+        background: #8ff7b2;
+        box-shadow: 0 0 12px rgba(143, 247, 178, .58);
+      }
+
+      #${STATUS_STRIP_ID} .command-status-pill.unavailable {
+        border-color: rgba(255, 255, 255, .14);
+        color: rgba(247, 242, 223, .68);
+      }
+
+      #${STATUS_STRIP_ID} .command-status-pill.unavailable::before,
+      #${STATUS_STRIP_ID} .command-status-pill.unknown::before {
+        background: rgba(247, 242, 223, .52);
+        box-shadow: none;
+      }
+
       #${IDENTITY_SLOT_ID} {
+        grid-area: identity;
         display: flex;
         justify-content: flex-end;
         align-items: center;
         min-width: 0;
+        max-width: 260px;
         min-height: 1px;
+        overflow: hidden;
+      }
+
+      #${IDENTITY_SLOT_ID} > * {
+        max-width: 100%;
+        min-width: 0;
       }
 
       @media (max-width: 1120px) {
         #${HEADER_ID} .command-header-inner {
-          grid-template-columns: minmax(160px, auto) minmax(0, 1fr) minmax(170px, auto);
+          grid-template-columns: minmax(120px, 190px) minmax(0, 1fr) minmax(0, 220px);
           gap: 12px;
+        }
+
+        #${HEADER_ID} .command-brand {
+          max-width: 190px;
+        }
+
+        #${IDENTITY_SLOT_ID} {
+          max-width: 220px;
         }
       }
 
@@ -149,23 +244,28 @@
           grid-template-columns: minmax(0, 1fr) auto;
           grid-template-areas:
             "brand identity"
-            "nav nav";
+            "nav nav"
+            "status status";
           gap: 10px;
           align-items: start;
         }
 
         #${HEADER_ID} .command-brand {
-          grid-area: brand;
+          max-width: min(100%, 360px);
         }
 
         #${HEADER_ID} .command-nav {
-          grid-area: nav;
           justify-content: flex-start;
         }
 
+        #${STATUS_STRIP_ID} {
+          justify-content: flex-start;
+          flex-wrap: wrap;
+        }
+
         #${IDENTITY_SLOT_ID} {
-          grid-area: identity;
           align-self: center;
+          max-width: 220px;
         }
       }
 
@@ -182,7 +282,8 @@
           grid-template-areas:
             "brand"
             "identity"
-            "nav";
+            "nav"
+            "status";
           width: min(100% - 24px, 1240px);
           padding: 10px 0;
         }
@@ -190,6 +291,7 @@
         #${IDENTITY_SLOT_ID} {
           justify-content: flex-start;
           width: 100%;
+          max-width: 100%;
         }
 
         #${HEADER_ID} .command-nav {
@@ -200,6 +302,17 @@
           min-height: 32px;
           padding: 7px 9px;
           font-size: 11px;
+        }
+
+        #${STATUS_STRIP_ID} {
+          gap: 5px;
+          padding-top: 7px;
+        }
+
+        #${STATUS_STRIP_ID} .command-status-pill {
+          min-height: 24px;
+          padding: 5px 8px;
+          font-size: 10px;
         }
       }
     `;
@@ -233,6 +346,9 @@
           ${navLinks}
         </nav>
         <div id="${IDENTITY_SLOT_ID}" aria-label="Session identity"></div>
+        <div id="${STATUS_STRIP_ID}" class="command-status-strip" aria-label="Command status" aria-live="polite">
+          <span class="command-status-pill unavailable">Status loading</span>
+        </div>
       </div>
     `;
 
@@ -243,6 +359,94 @@
       }
     }));
     return header;
+  }
+
+  async function fetchJson(path) {
+    const res = await fetch(path, { cache: "no-store" });
+
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}`);
+    }
+
+    return res.json();
+  }
+
+  function countSocOpen(data) {
+    const incidents = Array.isArray(data && data.incidents) ? data.incidents : [];
+    return incidents.filter((incident) => {
+      const status = String((incident && incident.status) || "").toLowerCase();
+      return status !== "closed" && status !== "false_positive";
+    }).length;
+  }
+
+  function countServiceOpsPending(data) {
+    const directPending = Number(data && data.pending);
+
+    if (Number.isFinite(directPending)) {
+      return directPending;
+    }
+
+    const metrics = data && data.metrics && typeof data.metrics === "object" ? data.metrics : {};
+    const pending = Number(metrics.pending);
+
+    if (Number.isFinite(pending)) {
+      return pending;
+    }
+
+    const queue = Array.isArray(data && data.work_queue) ? data.work_queue : [];
+    return queue.filter((item) => item && item.status === "pending_approval").length;
+  }
+
+  function summarizeSyncHealth(data) {
+    const summary = data && data.source_health_summary && typeof data.source_health_summary === "object"
+      ? data.source_health_summary
+      : {};
+
+    const error = Number(summary.error) || 0;
+    const stale = Number(summary.stale) || 0;
+    const warning = Number(summary.warning) || 0;
+    const healthy = Number(summary.healthy) || 0;
+
+    if (error > 0) return { text: "Sync error", className: "error" };
+    if (stale > 0) return { text: "Sync stale", className: "stale" };
+    if (warning > 0) return { text: "Sync warning", className: "warning" };
+    if (healthy > 0) return { text: "Sync healthy", className: "healthy" };
+
+    return { text: "Sync unknown", className: "unknown" };
+  }
+
+  function renderStatusStrip(items) {
+    const strip = document.getElementById(STATUS_STRIP_ID);
+    if (!strip) return;
+
+    strip.replaceChildren();
+    items.forEach((item) => {
+      const pill = document.createElement("span");
+      pill.className = `command-status-pill ${item.className || ""}`.trim();
+      pill.textContent = item.text;
+      strip.appendChild(pill);
+    });
+  }
+
+  async function loadStatusStrip() {
+    try {
+      const [socData, serviceOpsData, syncData] = await Promise.all([
+        fetchJson("/api/soc/incidents"),
+        fetchJson("/api/serviceops/summary"),
+        fetchJson("/api/sync/status")
+      ]);
+      const syncHealth = summarizeSyncHealth(syncData);
+
+      renderStatusStrip([
+        { text: `SOC Open: ${countSocOpen(socData)}` },
+        { text: `ServiceOps Pending: ${countServiceOpsPending(serviceOpsData)}` },
+        syncHealth
+      ]);
+    } catch (err) {
+      renderStatusStrip([
+        { text: "Status unavailable", className: "unavailable" }
+      ]);
+    }
   }
 
   function syncOffset(header) {
@@ -267,6 +471,8 @@
     injectStyle();
     const header = buildHeader();
     syncOffset(header);
+    loadStatusStrip();
+    window.setInterval(loadStatusStrip, 30000);
   }
 
   if (document.readyState === "loading") {
