@@ -1,5 +1,64 @@
 # ENYRAX Cloud Portal Release Notes
 
+## v0.6.8-command-status-shortcuts
+
+Release date: 2026-05-24
+
+## Summary
+
+This release turns the ENYRAX Command Header status badges into clickable operation shortcuts.
+
+The command-center status strip now allows users to jump directly from global status indicators into the corresponding module for investigation or action.
+
+## Completed
+
+- Made SOC Open badge clickable
+- Made ServiceOps Pending badge clickable
+- Made Sync health badge clickable
+- Added fallback Status unavailable shortcut to Status Center
+- Preserved command-center pill badge styling
+- Added hover / focus visual feedback
+- Added accessible aria-labels
+- Preserved 30-second status refresh
+- Preserved responsive command header layout
+
+## Status Shortcut Map
+
+```text
+SOC Open
+  → /soc/
+
+ServiceOps Pending
+  → /serviceops/
+
+Sync health / warning / stale / error
+  → /sync/
+
+Status unavailable
+  → /status/
+```
+
+## Current Product Status
+
+```text
+Command Header     Shared fixed navigation enabled
+Status Strip       Live SOC / ServiceOps / Sync indicators enabled
+Status Shortcuts   Clickable quick entry enabled
+Identity           Docked session identity enabled
+```
+
+## Next Phase
+
+- Add status badge detail tooltips
+- Add global notification drawer
+- Add command-center search
+- Add Sync source drill-down from header
+- Add ServiceOps overdue / blocked count
+- Add SOC critical count
+- Add mobile compact command mode
+
+---
+
 ## v0.6.6-command-center-header
 
 Release date: 2026-05-24
