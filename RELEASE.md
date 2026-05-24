@@ -1,5 +1,58 @@
 # ENYRAX Cloud Portal Release Notes
 
+## v0.6.9-command-critical-count
+
+Release date: 2026-05-24
+
+## Summary
+
+This release adds SOC Critical visibility to the ENYRAX Command Header.
+
+The command-center status strip now separates all open SOC incidents from critical SOC incidents, allowing operators to immediately see whether the platform has high-priority security events requiring attention.
+
+## Completed
+
+- Added SOC Critical count badge
+- Count reads from `GET /api/soc/incidents`
+- Critical count includes:
+  - severity = critical
+  - status not closed
+  - status not false_positive
+- Critical badge remains visible even when count is 0
+- Critical badge uses low-profile styling when count is 0
+- Critical badge uses stronger red / rose highlight when count is greater than 0
+- Critical badge is clickable and links to `/soc/`
+- Existing SOC Open, ServiceOps Pending and Sync health badges remain unchanged
+
+## Command Header Status Strip
+
+```text
+SOC Open: <count>
+SOC Critical: <count>
+ServiceOps Pending: <count>
+Sync healthy / warning / stale / error
+```
+
+## Current Product Status
+
+```text
+Command Header   Shared fixed navigation enabled
+Status Strip     Live SOC / ServiceOps / Sync indicators enabled
+Critical Count   Open critical SOC incident visibility enabled
+Shortcuts        Status badges are clickable
+```
+
+## Next Phase
+
+- Add SOC critical filter view
+- Add query parameters from command status badges
+- Add ServiceOps blocked / overdue count
+- Add Sync source drill-down from header
+- Add notification drawer
+- Add global command search
+
+---
+
 ## v0.6.8-command-status-shortcuts
 
 Release date: 2026-05-24
