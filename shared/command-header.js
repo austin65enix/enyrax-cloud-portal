@@ -162,7 +162,28 @@
         font-size: 11px;
         font-weight: 900;
         line-height: 1;
+        text-decoration: none;
         white-space: nowrap;
+      }
+
+      #${STATUS_STRIP_ID} a.command-status-pill {
+        cursor: pointer;
+        transition: border-color .16s ease, box-shadow .16s ease, background .16s ease, color .16s ease;
+      }
+
+      #${STATUS_STRIP_ID} a.command-status-pill:hover,
+      #${STATUS_STRIP_ID} a.command-status-pill:focus-visible {
+        border-color: rgba(245, 211, 122, .46);
+        color: #fff7d8;
+        background:
+          linear-gradient(180deg, rgba(245, 211, 122, .16), rgba(245, 211, 122, .055)),
+          rgba(255, 255, 255, .045);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08), 0 0 22px rgba(245, 211, 122, .16);
+      }
+
+      #${STATUS_STRIP_ID} a.command-status-pill:focus-visible {
+        outline: 2px solid rgba(245, 211, 122, .56);
+        outline-offset: 2px;
       }
 
       #${STATUS_STRIP_ID} .command-status-pill::before {
@@ -421,9 +442,18 @@
 
     strip.replaceChildren();
     items.forEach((item) => {
-      const pill = document.createElement("span");
+      const pill = document.createElement(item.href ? "a" : "span");
       pill.className = `command-status-pill ${item.className || ""}`.trim();
       pill.textContent = item.text;
+
+      if (item.href) {
+        pill.href = item.href;
+      }
+
+      if (item.ariaLabel) {
+        pill.setAttribute("aria-label", item.ariaLabel);
+      }
+
       strip.appendChild(pill);
     });
   }
@@ -438,13 +468,30 @@
       const syncHealth = summarizeSyncHealth(syncData);
 
       renderStatusStrip([
-        { text: `SOC Open: ${countSocOpen(socData)}` },
-        { text: `ServiceOps Pending: ${countServiceOpsPending(serviceOpsData)}` },
-        syncHealth
+        {
+          text: `SOC Open: ${countSocOpen(socData)}`,
+          href: "/soc/",
+          ariaLabel: "View SOC open incidents"
+        },
+        {
+          text: `ServiceOps Pending: ${countServiceOpsPending(serviceOpsData)}`,
+          href: "/serviceops/",
+          ariaLabel: "View ServiceOps pending tickets"
+        },
+        {
+          ...syncHealth,
+          href: "/sync/",
+          ariaLabel: "View Sync Gateway health"
+        }
       ]);
     } catch (err) {
       renderStatusStrip([
-        { text: "Status unavailable", className: "unavailable" }
+        {
+          text: "Status unavailable",
+          className: "unavailable",
+          href: "/status/",
+          ariaLabel: "View Status Center"
+        }
       ]);
     }
   }
