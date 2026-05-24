@@ -213,6 +213,44 @@
         box-shadow: 0 0 12px rgba(255, 107, 134, .68);
       }
 
+      #${STATUS_STRIP_ID} .command-status-pill.critical {
+        border-color: rgba(255, 107, 134, .5);
+        color: #ffe0e5;
+        background:
+          linear-gradient(180deg, rgba(255, 107, 134, .16), rgba(255, 107, 134, .055)),
+          rgba(255, 255, 255, .04);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08), 0 0 22px rgba(255, 107, 134, .18);
+      }
+
+      #${STATUS_STRIP_ID} .command-status-pill.critical::before {
+        background: #ff6b86;
+        box-shadow: 0 0 14px rgba(255, 107, 134, .74);
+      }
+
+      #${STATUS_STRIP_ID} a.command-status-pill.critical:hover,
+      #${STATUS_STRIP_ID} a.command-status-pill.critical:focus-visible {
+        border-color: rgba(255, 135, 156, .72);
+        color: #fff2f5;
+        background:
+          linear-gradient(180deg, rgba(255, 107, 134, .22), rgba(255, 107, 134, .075)),
+          rgba(255, 255, 255, .05);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, .1), 0 0 28px rgba(255, 107, 134, .26);
+      }
+
+      #${STATUS_STRIP_ID} .command-status-pill.critical.zero {
+        border-color: rgba(245, 211, 122, .16);
+        color: rgba(247, 242, 223, .72);
+        background:
+          linear-gradient(180deg, rgba(245, 211, 122, .07), rgba(245, 211, 122, .025)),
+          rgba(255, 255, 255, .03);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, .05), 0 0 14px rgba(245, 211, 122, .04);
+      }
+
+      #${STATUS_STRIP_ID} .command-status-pill.critical.zero::before {
+        background: rgba(247, 242, 223, .52);
+        box-shadow: none;
+      }
+
       #${STATUS_STRIP_ID} .command-status-pill.healthy::before {
         background: #8ff7b2;
         box-shadow: 0 0 12px rgba(143, 247, 178, .58);
@@ -392,12 +430,24 @@
     return res.json();
   }
 
-  function countSocOpen(data) {
+  function isOpenSocIncident(incident) {
+    const status = String((incident && incident.status) || "").toLowerCase();
+    return status !== "closed" && status !== "false_positive";
+  }
+
+  function getSocIncidents(data) {
     const incidents = Array.isArray(data && data.incidents) ? data.incidents : [];
-    return incidents.filter((incident) => {
-      const status = String((incident && incident.status) || "").toLowerCase();
-      return status !== "closed" && status !== "false_positive";
-    }).length;
+    return incidents;
+  }
+
+  function countSocOpen(data) {
+    return getSocIncidents(data).filter(isOpenSocIncident).length;
+  }
+
+  function countSocCritical(data) {
+    return getSocIncidents(data).filter((incident) => (
+      isOpenSocIncident(incident) && incident && incident.severity === "critical"
+    )).length;
   }
 
   function countServiceOpsPending(data) {
@@ -466,12 +516,19 @@
         fetchJson("/api/sync/status")
       ]);
       const syncHealth = summarizeSyncHealth(syncData);
+      const socCritical = countSocCritical(socData);
 
       renderStatusStrip([
         {
           text: `SOC Open: ${countSocOpen(socData)}`,
           href: "/soc/",
           ariaLabel: "View SOC open incidents"
+        },
+        {
+          text: `SOC Critical: ${socCritical}`,
+          className: socCritical > 0 ? "critical" : "critical zero",
+          href: "/soc/",
+          ariaLabel: "View critical SOC incidents"
         },
         {
           text: `ServiceOps Pending: ${countServiceOpsPending(serviceOpsData)}`,
