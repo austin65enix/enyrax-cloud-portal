@@ -155,6 +155,68 @@
       font-size: 22px;
     }
 
+    .incident-heading {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+
+    .incident-heading h2 {
+      margin: 0;
+    }
+
+    .incident-heading-main {
+      display: grid;
+      gap: 4px;
+    }
+
+    .filter-label {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 850;
+    }
+
+    .filter-chips {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .filter-chip {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 30px;
+      padding: 6px 10px;
+      border: 1px solid rgba(115, 244, 223, .22);
+      border-radius: 999px;
+      color: var(--muted);
+      background: rgba(255,255,255,.04);
+      font-size: 12px;
+      font-weight: 900;
+      text-decoration: none;
+    }
+
+    .filter-chip.active {
+      color: #081018;
+      background: linear-gradient(135deg, var(--cyan), var(--gold));
+      border-color: transparent;
+    }
+
+    .empty-state {
+      padding: 16px;
+      border-radius: 18px;
+      border: 1px solid rgba(255, 255, 255, .08);
+      color: var(--muted);
+      background: var(--panel2);
+      font-size: 14px;
+      font-weight: 850;
+    }
+
     .incident {
       padding: 16px;
       border-radius: 18px;
@@ -528,7 +590,17 @@
 
     <section class="layout">
       <div class="card">
-        <h2>Hot Incidents</h2>
+        <div class="incident-heading">
+          <div class="incident-heading-main">
+            <h2>Hot Incidents</h2>
+            <div class="filter-label" id="incident-filter-label">All incidents</div>
+          </div>
+          <div class="filter-chips" aria-label="SOC incident filters">
+            <a class="filter-chip" data-filter-chip="all" href="/soc/">All</a>
+            <a class="filter-chip" data-filter-chip="open" href="/soc/?filter=open">Open</a>
+            <a class="filter-chip" data-filter-chip="critical" href="/soc/?filter=critical">Critical</a>
+          </div>
+        </div>
         <div id="hot-incidents">
           <div class="incident">
             <div class="meta">Loading incidents...</div>
@@ -629,6 +701,62 @@
       high: "high",
       medium: "medium"
     };
+
+    const filter = new URLSearchParams(location.search).get("filter");
+
+    function activeIncidentFilter() {
+      return filter === "open" || filter === "critical" ? filter : "all";
+    }
+
+    function isOpenIncident(item) {
+      const status = String((item && item.status) || "open").toLowerCase();
+      return status !== "closed" && status !== "false_positive";
+    }
+
+    function filterIncidents(incidents) {
+      const active = activeIncidentFilter();
+
+      if (active === "open") {
+        return incidents.filter(isOpenIncident);
+      }
+
+      if (active === "critical") {
+        return incidents.filter((item) =>
+          String((item && item.severity) || "").toLowerCase() === "critical" && isOpenIncident(item)
+        );
+      }
+
+      return incidents;
+    }
+
+    function incidentFilterLabel() {
+      const active = activeIncidentFilter();
+
+      if (active === "open") return "Open incidents";
+      if (active === "critical") return "Critical incidents";
+      return "All incidents";
+    }
+
+    function incidentEmptyMessage() {
+      const active = activeIncidentFilter();
+
+      if (active === "open") return "No open SOC incidents.";
+      if (active === "critical") return "No critical SOC incidents.";
+      return "No SOC incidents.";
+    }
+
+    function updateIncidentFilterUi() {
+      const active = activeIncidentFilter();
+      const label = document.getElementById("incident-filter-label");
+
+      if (label) {
+        label.textContent = incidentFilterLabel();
+      }
+
+      document.querySelectorAll("[data-filter-chip]").forEach((chip) => {
+        chip.classList.toggle("active", chip.dataset.filterChip === active);
+      });
+    }
 
     function escapeHtml(value) {
       return String(value ?? "")
@@ -868,6 +996,7 @@
     async function loadSocSummary() {
       updateRoleLabel();
       applyRoleVisibility();
+      updateIncidentFilterUi();
 
       const apiTime = document.getElementById("api-time");
 
@@ -895,8 +1024,14 @@
 
         apiTime.textContent = `API Source: /api/soc/summary · ${data.time_utc || ""}`;
 
-        const incidents = (Array.isArray(data.hot_incidents) ? data.hot_incidents : []).slice().sort(compareIncidentsLatestFirst);
-        document.getElementById("hot-incidents").innerHTML = incidents.map((item) => {
+        const allIncidents = (Array.isArray(data.hot_incidents) ? data.hot_incidents : []).slice().sort(compareIncidentsLatestFirst);
+        const incidents = filterIncidents(allIncidents);
+        const hotIncidents = document.getElementById("hot-incidents");
+
+        if (!incidents.length) {
+          hotIncidents.innerHTML = "<div class=\"empty-state\">" + escapeHtml(incidentEmptyMessage()) + "</div>";
+        } else {
+          hotIncidents.innerHTML = incidents.map((item) => {
           const sev = String(item.severity || "medium").toLowerCase();
           const cls = severityClass[sev] || "medium";
           const status = String(item.status || "open");
@@ -925,6 +1060,7 @@
             </div>
           `;
         }).join("");
+        }
 
         const timeline = Array.isArray(data.timeline) ? data.timeline : [];
         document.getElementById("attack-timeline").innerHTML = timeline.map((event) => `

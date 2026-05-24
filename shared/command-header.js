@@ -521,13 +521,13 @@
       renderStatusStrip([
         {
           text: `SOC Open: ${countSocOpen(socData)}`,
-          href: "/soc/",
-          ariaLabel: "View SOC open incidents"
+          href: "/soc/?filter=open",
+          ariaLabel: "View open SOC incidents"
         },
         {
           text: `SOC Critical: ${socCritical}`,
           className: socCritical > 0 ? "critical" : "critical zero",
-          href: "/soc/",
+          href: "/soc/?filter=critical",
           ariaLabel: "View critical SOC incidents"
         },
         {
