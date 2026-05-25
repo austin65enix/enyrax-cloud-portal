@@ -105,6 +105,10 @@
 
     .card + .card { margin-top: 16px; }
 
+    #ticket-create-panel[style*="display: none"] + .card {
+      margin-top: 0;
+    }
+
     .card-top,
     .ticket-top,
     .role-top,
@@ -126,6 +130,39 @@
       color: var(--muted);
       font-size: 13px;
       font-weight: 800;
+    }
+
+    .queue-heading {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .filter-chips {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .filter-chip {
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 999px;
+      padding: 6px 10px;
+      color: var(--muted);
+      background: rgba(255,255,255,.04);
+      font-size: 12px;
+      font-weight: 950;
+      text-decoration: none;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .filter-chip.active {
+      color: #081018;
+      border-color: rgba(115, 244, 223, .45);
+      background: var(--cyan);
     }
 
     .ticket,
@@ -192,6 +229,7 @@
     }
 
     .in_progress { color: #081018; background: var(--cyan); }
+    .pending { color: #241203; background: var(--orange); }
     .pending_approval { color: #241203; background: var(--orange); }
     .done { color: #062014; background: var(--green); }
     .not_started { color: #f7f2df; background: rgba(255,255,255,.14); }
@@ -376,6 +414,60 @@
       font-weight: 800;
     }
 
+    .create-card {
+      border-color: rgba(245, 211, 122, .2);
+      background: linear-gradient(180deg, rgba(245, 211, 122, .075), rgba(255,255,255,.045));
+    }
+
+    .create-card .card-top {
+      margin-bottom: 8px;
+    }
+
+    .create-note {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 750;
+      line-height: 1.45;
+    }
+
+    .create-card .form-grid {
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .create-card label {
+      gap: 5px;
+      font-size: 12px;
+    }
+
+    .create-card input,
+    .create-card select,
+    .create-card textarea {
+      min-height: 40px;
+      border-radius: 12px;
+      padding: 9px 10px;
+      font-size: 13px;
+    }
+
+    .create-card textarea {
+      min-height: 68px;
+    }
+
+    .create-card .submit-row {
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .create-card .submit-btn {
+      padding: 10px 13px;
+      border-radius: 12px;
+      font-size: 13px;
+    }
+
+    .create-card .form-message {
+      font-size: 12px;
+    }
+
     .error-text {
       color: var(--red);
       font-weight: 850;
@@ -462,7 +554,14 @@
       <div>
         <div class="card">
           <div class="card-top">
-            <h2>Work Queue</h2>
+            <div class="queue-heading">
+              <h2 id="work-queue-title">Pending work queue</h2>
+              <nav class="filter-chips" aria-label="Work queue filters">
+                <a class="filter-chip" data-filter-chip="pending" href="/serviceops/?filter=pending">Pending</a>
+                <a class="filter-chip" data-filter-chip="done" href="/serviceops/?filter=done">Done</a>
+                <a class="filter-chip" data-filter-chip="all" href="/serviceops/?filter=all">All</a>
+              </nav>
+            </div>
             <div class="status" id="load-status">Loading...</div>
           </div>
 
@@ -470,62 +569,6 @@
             <div class="ticket">
               <div class="meta">Loading ServiceOps tickets...</div>
             </div>
-          </div>
-
-          <div class="ticket" id="ticket-create-panel" style="margin-top: 16px;">
-            <div class="ticket-top">
-              <div class="title">Add ServiceOps Ticket</div>
-              <div class="pill create">CREATE</div>
-            </div>
-
-            <form id="ticket-form">
-              <div class="form-grid">
-                <label>
-                  Title
-                  <input id="ticket-title" required maxlength="200" placeholder="Example: Firewall Rule Review">
-                </label>
-
-                <label>
-                  Status
-                  <select id="ticket-status">
-                    <option value="pending_approval">Pending Approval</option>
-                    <option value="in_progress">In Progress</option>
-                    <option value="risk">Risk</option>
-                    <option value="done">Done</option>
-                  </select>
-                </label>
-
-                <label>
-                  Owner
-                  <input id="ticket-owner" required maxlength="100" value="atn">
-                </label>
-
-                <label>
-                  Project
-                  <input id="ticket-project" required maxlength="120" value="ENYRAX Cloud Demo">
-                </label>
-
-                <label>
-                  Estimate Hours
-                  <input id="ticket-estimate" type="number" step="0.5" min="0" value="1">
-                </label>
-
-                <label>
-                  Actual Hours
-                  <input id="ticket-actual" type="number" step="0.5" min="0" value="0">
-                </label>
-
-                <label class="form-full">
-                  Task
-                  <textarea id="ticket-task" required placeholder="Describe the infra task..."></textarea>
-                </label>
-              </div>
-
-              <div class="submit-row">
-                <button class="submit-btn" type="submit">Create Ticket</button>
-                <span class="form-message" id="ticket-form-message">Ready.</span>
-              </div>
-            </form>
           </div>
         </div>
 
@@ -544,6 +587,63 @@
       </div>
 
       <aside>
+        <div class="card create-card" id="ticket-create-panel">
+          <div class="card-top">
+            <h2>Add ServiceOps Ticket</h2>
+            <div class="pill create">CREATE</div>
+          </div>
+          <div class="create-note">Create a new infra work item and track progress.</div>
+
+          <form id="ticket-form">
+            <div class="form-grid">
+              <label>
+                Title
+                <input id="ticket-title" required maxlength="200" placeholder="Example: Firewall Rule Review">
+              </label>
+
+              <label>
+                Status
+                <select id="ticket-status">
+                  <option value="pending_approval">Pending Approval</option>
+                  <option value="in_progress">In Progress</option>
+                  <option value="risk">Risk</option>
+                  <option value="done">Done</option>
+                </select>
+              </label>
+
+              <label>
+                Owner
+                <input id="ticket-owner" required maxlength="100" value="atn">
+              </label>
+
+              <label>
+                Project
+                <input id="ticket-project" required maxlength="120" value="ENYRAX Cloud Demo">
+              </label>
+
+              <label>
+                Estimate Hours
+                <input id="ticket-estimate" type="number" step="0.5" min="0" value="1">
+              </label>
+
+              <label>
+                Actual Hours
+                <input id="ticket-actual" type="number" step="0.5" min="0" value="0">
+              </label>
+
+              <label class="form-full">
+                Task
+                <textarea id="ticket-task" required placeholder="Describe the infra task..."></textarea>
+              </label>
+            </div>
+
+            <div class="submit-row">
+              <button class="submit-btn" type="submit">Create Ticket</button>
+              <span class="form-message" id="ticket-form-message">Ready.</span>
+            </div>
+          </form>
+        </div>
+
         <div class="card">
           <div class="card-top">
             <h2>Role Views</h2>
@@ -667,6 +767,7 @@
 
     function statusLabel(status) {
       const labels = {
+        pending: "Pending",
         in_progress: "In Progress",
         not_started: "Not Started",
         waiting: "Waiting",
@@ -733,6 +834,85 @@
       if (!item || !item.created_at) return "";
 
       return `Created: ${escapeHtml(formatTime(item.created_at))}<br>`;
+    }
+
+    const WORK_QUEUE_FILTERS = {
+      pending: {
+        title: "Pending work queue",
+        empty: "No pending ServiceOps tickets."
+      },
+      done: {
+        title: "Done work queue",
+        empty: "No done ServiceOps tickets."
+      },
+      all: {
+        title: "All work queue",
+        empty: "No ServiceOps tickets."
+      }
+    };
+
+    function currentWorkQueueFilter() {
+      const params = new URLSearchParams(window.location.search);
+      const filter = params.get("filter") || "pending";
+      return Object.prototype.hasOwnProperty.call(WORK_QUEUE_FILTERS, filter) ? filter : "pending";
+    }
+
+    function applyWorkQueueFilterUi(filter) {
+      const title = document.getElementById("work-queue-title");
+      if (title) title.textContent = WORK_QUEUE_FILTERS[filter].title;
+
+      document.querySelectorAll("[data-filter-chip]").forEach((chip) => {
+        const active = chip.getAttribute("data-filter-chip") === filter;
+        chip.classList.toggle("active", active);
+        if (active) {
+          chip.setAttribute("aria-current", "page");
+        } else {
+          chip.removeAttribute("aria-current");
+        }
+      });
+    }
+
+    function isArchivedOrDeletedTicket(item) {
+      if (!item) return true;
+      const status = String(item.status || "").toLowerCase();
+      return status === "archived" || status === "deleted" || Boolean(item.deleted_at || item.archived_at);
+    }
+
+    function sortTimestamp(item, field) {
+      if (!item || !item[field]) return null;
+      const date = new Date(item[field]);
+      return Number.isNaN(date.getTime()) ? null : date.getTime();
+    }
+
+    function ticketId(item) {
+      const id = Number(item && item.id);
+      return Number.isNaN(id) ? 0 : id;
+    }
+
+    function newestTicketFirst(a, b) {
+      const aCreated = sortTimestamp(a, "created_at");
+      const bCreated = sortTimestamp(b, "created_at");
+      const aPrimary = sortTimestamp(a, "updated_at") || aCreated;
+      const bPrimary = sortTimestamp(b, "updated_at") || bCreated;
+      if (aPrimary !== bPrimary) return (bPrimary || 0) - (aPrimary || 0);
+
+      if (aCreated !== bCreated) return (bCreated || 0) - (aCreated || 0);
+
+      return ticketId(b) - ticketId(a);
+    }
+
+    function filterWorkQueueTickets(tickets, filter) {
+      const activeTickets = tickets.filter((item) => item && !isArchivedOrDeletedTicket(item));
+
+      if (filter === "done") {
+        return activeTickets.filter((item) => item.status === "done");
+      }
+
+      if (filter === "all") {
+        return activeTickets;
+      }
+
+      return activeTickets.filter((item) => item.status !== "done");
     }
 
     function renderProgressInfo(item) {
@@ -886,8 +1066,10 @@
       const queue = document.getElementById("work-queue");
       const roleList = document.getElementById("role-list");
       const flowList = document.getElementById("flow-list");
+      const filter = currentWorkQueueFilter();
 
       status.textContent = "Loading...";
+      applyWorkQueueFilterUi(filter);
 
       try {
         const res = await fetch("/api/serviceops/summary", {
@@ -909,12 +1091,12 @@
         document.getElementById("metric-projects").textContent = metrics.project_linked ?? "-";
         document.getElementById("metric-risk").textContent = metrics.risk_items ?? "-";
 
-        const tickets = data.work_queue || [];
+        const tickets = filterWorkQueueTickets(data.work_queue || [], filter).sort(newestTicketFirst);
 
         if (!tickets.length) {
           queue.innerHTML = `
             <div class="ticket">
-              <div class="empty-text">No active ServiceOps tickets found.</div>
+              <div class="empty-text">${escapeHtml(WORK_QUEUE_FILTERS[filter].empty)}</div>
             </div>
           `;
         } else {
@@ -993,7 +1175,7 @@
         }
 
         const data = await res.json();
-        const tickets = data.tickets || [];
+        const tickets = (data.tickets || []).sort(newestTicketFirst);
 
         if (!tickets.length) {
           archiveList.innerHTML = `

@@ -532,7 +532,7 @@
         },
         {
           text: `ServiceOps Pending: ${countServiceOpsPending(serviceOpsData)}`,
-          href: "/serviceops/",
+          href: "/serviceops/?filter=pending",
           ariaLabel: "View ServiceOps pending tickets"
         },
         {

@@ -122,12 +122,28 @@
     }
 
     .health-card {
+      display: block;
       min-height: 148px;
       padding: 15px;
       border-radius: 14px;
       border: 1px solid rgba(255, 215, 130, .18);
       background: rgba(13, 17, 38, .78);
       box-shadow: 0 16px 52px rgba(0, 0, 0, .2);
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .health-card-link {
+      cursor: pointer;
+      transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+    }
+
+    .health-card-link:hover,
+    .health-card-link:focus-visible {
+      border-color: rgba(115, 244, 223, .62);
+      box-shadow: 0 18px 56px rgba(0, 0, 0, .24), 0 0 22px rgba(115, 244, 223, .16);
+      transform: translateY(-1px);
+      outline: none;
     }
 
     .health-top {
@@ -617,21 +633,37 @@
       return value;
     }
 
+    function renderHealthCard(card) {
+      const content = `
+        <div class="health-top">
+          <div class="health-title">${escapeHtml(card.title)}</div>
+          ${healthBadge(card.status)}
+        </div>
+        <div class="health-value">${escapeHtml(healthValue(card.value))}</div>
+        <div class="health-message">${escapeHtml(card.message || "-")}</div>
+      `;
+
+      if (card.href) {
+        return `
+          <a class="health-card health-card-link" href="${escapeHtml(card.href)}" aria-label="${escapeHtml(card.ariaLabel || `Open ${card.title}`)}">
+            ${content}
+          </a>
+        `;
+      }
+
+      return `
+        <article class="health-card">
+          ${content}
+        </article>
+      `;
+    }
+
     function renderHealthCards(cards, generatedAt) {
       const grid = document.getElementById("health-panel-grid");
       const generated = document.getElementById("health-generated-at");
 
       generated.textContent = `Generated ${formatTime(generatedAt)}`;
-      grid.innerHTML = cards.map((card) => `
-        <article class="health-card">
-          <div class="health-top">
-            <div class="health-title">${escapeHtml(card.title)}</div>
-            ${healthBadge(card.status)}
-          </div>
-          <div class="health-value">${escapeHtml(healthValue(card.value))}</div>
-          <div class="health-message">${escapeHtml(card.message || "-")}</div>
-        </article>
-      `).join("");
+      grid.innerHTML = cards.map(renderHealthCard).join("");
     }
 
     function buildHealthCards(checks) {
@@ -660,31 +692,41 @@
           title: "Sync Gateway",
           status: checks.sync?.status || "unknown",
           value: `${syncSummary.healthy}/${syncSummary.warning}/${syncSummary.stale}/${syncSummary.error}`,
-          message: checks.sync?.message || "Source health unavailable"
+          message: checks.sync?.message || "Source health unavailable",
+          href: "/sync/",
+          ariaLabel: "Open Sync Gateway health details"
         },
         {
           title: "SOC Open",
           status: socOpen > 0 ? "warning" : "healthy",
           value: socOpen,
-          message: "Open incidents excluding closed and false positive"
+          message: "Open incidents excluding closed and false positive",
+          href: "/soc/?filter=open",
+          ariaLabel: "Open SOC filtered by open incidents"
         },
         {
           title: "SOC Critical",
           status: socCritical > 0 ? "critical" : "healthy",
           value: socCritical,
-          message: "Critical open incidents"
+          message: "Critical open incidents",
+          href: "/soc/?filter=critical",
+          ariaLabel: "Open SOC filtered by critical incidents"
         },
         {
           title: "ServiceOps Pending",
           status: servicePending > 0 ? "warning" : "healthy",
           value: servicePending,
-          message: "Pending and pending approval tickets"
+          message: "Pending and pending approval tickets",
+          href: "/serviceops/?filter=pending",
+          ariaLabel: "Open ServiceOps pending tickets"
         },
         {
           title: "Docker",
           status: checks.docker?.status || "unknown",
           value: dockerCount === undefined ? "-" : dockerCount,
-          message: checks.docker?.message || "-"
+          message: checks.docker?.message || "-",
+          href: "/sync/",
+          ariaLabel: "Open Sync Gateway Docker context"
         },
         {
           title: "Disk Usage",
@@ -702,7 +744,9 @@
           title: "Recent Errors",
           status: checks.recent_errors?.status || (recentErrorCount > 0 ? "warning" : "healthy"),
           value: recentErrorCount,
-          message: recentErrorCount > 0 ? "Recent system errors detected" : "No recent system errors configured"
+          message: recentErrorCount > 0 ? "Recent system errors detected" : "No recent system errors configured",
+          href: "/audit/",
+          ariaLabel: "Open audit log for recent system errors"
         }
       ];
     }
