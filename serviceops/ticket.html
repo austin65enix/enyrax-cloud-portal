@@ -1,0 +1,676 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ENYRAX ServiceOps Ticket</title>
+  <style>
+    :root {
+      --bg: #071018;
+      --card: rgba(255,255,255,.06);
+      --text: #f7f2df;
+      --muted: rgba(247,242,223,.68);
+      --line: rgba(255,255,255,.12);
+      --gold: #f5d37a;
+      --cyan: #73f4df;
+      --green: #8ff7b2;
+      --orange: #ffb86b;
+      --red: #ff6b86;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(115,244,223,.16), transparent 32%),
+        radial-gradient(circle at top right, rgba(245,211,122,.12), transparent 30%),
+        linear-gradient(180deg, #071018 0%, #090d16 100%);
+    }
+
+    .wrap {
+      width: min(1160px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 34px 0 48px;
+    }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      border: 1px solid rgba(245, 211, 122, .24);
+      border-radius: 999px;
+      padding: 8px 11px;
+      color: var(--gold);
+      background: rgba(245, 211, 122, .07);
+      text-decoration: none;
+      font-size: 12px;
+      font-weight: 950;
+    }
+
+    .hero {
+      display: grid;
+      gap: 14px;
+      margin: 18px 0 22px;
+    }
+
+    .eyebrow {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 950;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      max-width: 900px;
+      font-size: clamp(30px, 5vw, 58px);
+      line-height: 1;
+      letter-spacing: -.03em;
+      overflow-wrap: anywhere;
+    }
+
+    .hero-row,
+    .card-top,
+    .actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 340px;
+      gap: 16px;
+      align-items: start;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .card,
+    .summary-card {
+      border: 1px solid var(--line);
+      background: var(--card);
+      border-radius: 22px;
+      box-shadow: 0 24px 80px rgba(0,0,0,.22);
+    }
+
+    .card { padding: 20px; }
+    .card + .card,
+    .summary-grid + .card { margin-top: 16px; }
+    .summary-card { padding: 15px; }
+
+    .label {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 950;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .value {
+      margin-top: 7px;
+      color: var(--text);
+      font-size: 15px;
+      font-weight: 850;
+      line-height: 1.45;
+      overflow-wrap: anywhere;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 20px;
+      letter-spacing: -.02em;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 12px;
+      font-weight: 950;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .in_progress { color: #081018; background: var(--cyan); }
+    .pending, .pending_approval { color: #241203; background: var(--orange); }
+    .done { color: #062014; background: var(--green); }
+    .not_started { color: #f7f2df; background: rgba(255,255,255,.14); }
+    .waiting { color: #241203; background: var(--gold); }
+    .blocked, .risk { color: #26060c; background: var(--red); }
+    .archived, .deleted { color: #241203; background: var(--orange); }
+
+    .body-text {
+      color: var(--text);
+      line-height: 1.65;
+      overflow-wrap: anywhere;
+      white-space: pre-wrap;
+    }
+
+    .muted {
+      color: var(--muted);
+      font-weight: 800;
+      line-height: 1.55;
+    }
+
+    .context-link {
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      margin-top: 12px;
+      border: 1px solid rgba(115, 244, 223, .28);
+      border-radius: 999px;
+      padding: 8px 11px;
+      color: var(--cyan);
+      background: rgba(115, 244, 223, .08);
+      text-decoration: none;
+      font-size: 12px;
+      font-weight: 950;
+    }
+
+    .mini-btn,
+    .submit-btn {
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 12px;
+      padding: 9px 12px;
+      color: var(--text);
+      background: rgba(255,255,255,.05);
+      cursor: pointer;
+      font: inherit;
+      font-size: 12px;
+      font-weight: 950;
+      text-decoration: none;
+    }
+
+    .done-btn,
+    .restore-btn,
+    .submit-btn {
+      color: #062014;
+      background: var(--green);
+      border-color: rgba(143, 247, 178, .4);
+    }
+
+    .pending-btn,
+    .archive-btn {
+      color: #241203;
+      background: var(--orange);
+      border-color: rgba(255, 184, 107, .4);
+    }
+
+    .mini-btn:hover,
+    .submit-btn:hover,
+    .back-link:hover,
+    .context-link:hover {
+      transform: translateY(-1px);
+    }
+
+    .progress-form {
+      display: grid;
+      gap: 10px;
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid rgba(255,255,255,.08);
+    }
+
+    label {
+      display: grid;
+      gap: 6px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 850;
+    }
+
+    select,
+    input {
+      width: 100%;
+      min-height: 40px;
+      border: 1px solid rgba(115, 244, 223, .18);
+      border-radius: 12px;
+      padding: 9px 10px;
+      color: var(--text);
+      background: rgba(255,255,255,.05);
+      outline: none;
+      font: inherit;
+    }
+
+    select:focus,
+    input:focus {
+      border-color: rgba(115, 244, 223, .55);
+      box-shadow: 0 0 0 3px rgba(115, 244, 223, .08);
+    }
+
+    .message {
+      min-height: 18px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 850;
+    }
+
+    .error-text { color: var(--red); font-weight: 850; }
+
+    @media (max-width: 960px) {
+      .layout { grid-template-columns: 1fr; }
+      .summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 640px) {
+      .wrap { width: min(100% - 24px, 1160px); }
+      .summary-grid { grid-template-columns: 1fr; }
+      .card, .summary-card { border-radius: 18px; }
+      .actions { align-items: stretch; }
+      .mini-btn, .submit-btn { width: 100%; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <a class="back-link" href="/serviceops/">Back to ServiceOps</a>
+
+    <section class="hero">
+      <div class="eyebrow" id="ticket-kicker">ServiceOps Ticket</div>
+      <h1 id="ticket-title">Loading ticket...</h1>
+      <div class="hero-row" id="hero-status"></div>
+    </section>
+
+    <section class="layout">
+      <div>
+        <div class="summary-grid" id="summary-grid"></div>
+
+        <div class="card">
+          <div class="card-top">
+            <h2>Task</h2>
+          </div>
+          <div class="body-text" id="ticket-task">Loading...</div>
+          <div id="linked-soc-context"></div>
+        </div>
+
+        <div class="card" id="archive-card" style="display: none;">
+          <div class="card-top">
+            <h2>Archive Info</h2>
+          </div>
+          <div class="summary-grid" id="archive-grid"></div>
+        </div>
+      </div>
+
+      <aside class="card">
+        <div class="card-top">
+          <h2>Actions</h2>
+        </div>
+        <div class="muted" id="action-note">Loading permissions...</div>
+        <div class="actions" id="ticket-actions" style="margin-top: 12px;"></div>
+        <form class="progress-form" id="progress-form" style="display: none;">
+          <label>
+            Progress
+            <select name="progress_status">
+              <option value="in_progress">In Progress</option>
+              <option value="waiting">Waiting</option>
+              <option value="blocked">Blocked</option>
+              <option value="done">Done</option>
+            </select>
+          </label>
+          <label>
+            Note
+            <input name="progress_note" maxlength="500" placeholder="Brief update">
+          </label>
+          <button class="submit-btn" type="submit">Update Progress</button>
+          <span class="message" id="progress-message"></span>
+        </form>
+      </aside>
+    </section>
+  </main>
+
+  <script src="/shared/command-header.js?v=0523dock"></script>
+  <script src="/shared/auth-guard.js?v=0311"></script>
+  <script src="/shared/role-switcher.js?v=0523dock"></script>
+
+  <script>
+    let currentTicket = null;
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function currentRole() {
+      return window.ENYRAXRole ? window.ENYRAXRole.get() : "viewer";
+    }
+
+    function roleLevel(role) {
+      const levels = { viewer: 1, operator: 2, supervisor: 3, admin: 4 };
+      return levels[role] || 1;
+    }
+
+    function canWriteSession() {
+      return Boolean(window.ENYRAXRole && window.ENYRAXRole.canWriteSession && window.ENYRAXRole.canWriteSession());
+    }
+
+    function canWrite() {
+      return canWriteSession() && roleLevel(currentRole()) >= roleLevel("operator");
+    }
+
+    function canArchive() {
+      return canWrite();
+    }
+
+    function canRestore() {
+      return canWriteSession() && roleLevel(currentRole()) >= roleLevel("operator");
+    }
+
+    function statusLabel(status) {
+      const labels = {
+        pending: "Pending",
+        in_progress: "In Progress",
+        not_started: "Not Started",
+        waiting: "Waiting",
+        blocked: "Blocked",
+        pending_approval: "Pending",
+        done: "Done",
+        risk: "Risk",
+        archived: "Archived",
+        deleted: "Archived"
+      };
+      return labels[status] || status || "-";
+    }
+
+    function progressStatusLabel(status) {
+      const labels = {
+        not_started: "Not Started",
+        in_progress: "In Progress",
+        waiting: "Waiting",
+        blocked: "Blocked",
+        done: "Done"
+      };
+      return labels[status] || status || "-";
+    }
+
+    function formatTime(value) {
+      if (!value) return "-";
+      try {
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return value;
+        return date.toLocaleString("zh-TW", {
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit"
+        });
+      } catch {
+        return value;
+      }
+    }
+
+    function isArchivedOrDeletedTicket(item) {
+      if (!item) return false;
+      const status = String(item.status || "").toLowerCase();
+      return status === "archived" || status === "deleted" || Boolean(item.deleted_at || item.archived_at);
+    }
+
+    function effectiveStatus(item) {
+      return isArchivedOrDeletedTicket(item) ? "archived" : (item.status || "pending");
+    }
+
+    function ticketIdFromUrl() {
+      const id = Number(new URLSearchParams(window.location.search).get("id"));
+      return Number.isFinite(id) && id > 0 ? id : 0;
+    }
+
+    function parseError(res, fallback) {
+      return res.json()
+        .then((data) => new Error(data.detail || `${fallback}: ${res.status}`))
+        .catch(() => new Error(`${fallback}: ${res.status}`));
+    }
+
+    async function fetchTicketById(ticketId) {
+      const headers = window.ENYRAXRole ? window.ENYRAXRole.header() : {};
+      const direct = await fetch(`/api/serviceops/tickets/${ticketId}`, { headers });
+
+      if (direct.ok) {
+        const data = await direct.json();
+        return data.ticket;
+      }
+
+      const directError = await parseError(direct, "Ticket load failed");
+      const list = await fetch("/api/serviceops/tickets", { headers });
+      if (!list.ok) throw directError;
+
+      const data = await list.json();
+      const ticket = (data.tickets || []).find((item) => Number(item.id) === ticketId);
+      if (!ticket) throw directError;
+      return ticket;
+    }
+
+    function renderSummaryCard(label, value) {
+      return `
+        <div class="summary-card">
+          <div class="label">${escapeHtml(label)}</div>
+          <div class="value">${escapeHtml(value || "-")}</div>
+        </div>
+      `;
+    }
+
+    function linkedSocIncidentId(task) {
+      const match = String(task || "").match(/SOC\s+incident\s+id:\s*(\d+)/i);
+      return match ? match[1] : "";
+    }
+
+    function renderLinkedSocContext(item) {
+      const target = document.getElementById("linked-soc-context");
+      const incidentId = linkedSocIncidentId(item.task);
+      target.innerHTML = incidentId
+        ? `<a class="context-link" href="/soc/incident.html?id=${encodeURIComponent(incidentId)}">Linked SOC Incident #${escapeHtml(incidentId)}</a>`
+        : "";
+    }
+
+    function renderTicket(item) {
+      currentTicket = item;
+      const status = effectiveStatus(item);
+      document.title = `ENYRAX ServiceOps Ticket #${item.id}`;
+      document.getElementById("ticket-kicker").textContent = `ServiceOps Ticket #${item.id}`;
+      document.getElementById("ticket-title").textContent = item.title || `Ticket #${item.id}`;
+      document.getElementById("hero-status").innerHTML = `<span class="pill ${escapeHtml(status)}">${escapeHtml(statusLabel(status))}</span>`;
+      document.getElementById("ticket-task").textContent = item.task || "-";
+
+      document.getElementById("summary-grid").innerHTML = [
+        renderSummaryCard("Status", statusLabel(status)),
+        renderSummaryCard("Created At", formatTime(item.created_at)),
+        renderSummaryCard("Updated At", formatTime(item.updated_at)),
+        renderSummaryCard("Owner", item.owner),
+        renderSummaryCard("Project", item.project),
+        renderSummaryCard("Estimate / Actual Hours", `${item.estimate_hours ?? "-"}h / ${item.actual_hours ?? "-"}h`),
+        renderSummaryCard("Assignee", item.assignee),
+        renderSummaryCard("Progress Status", progressStatusLabel(item.progress_status)),
+        renderSummaryCard("Progress Updated By", item.progress_updated_by),
+        renderSummaryCard("Progress Updated At", formatTime(item.progress_updated_at)),
+        renderSummaryCard("Progress Note", item.progress_note)
+      ].join("");
+
+      const archiveCard = document.getElementById("archive-card");
+      if (isArchivedOrDeletedTicket(item)) {
+        archiveCard.style.display = "block";
+        document.getElementById("archive-grid").innerHTML = [
+          renderSummaryCard("Deleted By", item.deleted_by),
+          renderSummaryCard("Deleted At", formatTime(item.deleted_at || item.archived_at)),
+          renderSummaryCard("Reason", item.delete_reason || item.archive_reason)
+        ].join("");
+      } else {
+        archiveCard.style.display = "none";
+      }
+
+      renderLinkedSocContext(item);
+      renderActions(item);
+    }
+
+    function renderActions(item) {
+      const actions = document.getElementById("ticket-actions");
+      const note = document.getElementById("action-note");
+      const form = document.getElementById("progress-form");
+      const archived = isArchivedOrDeletedTicket(item);
+      const id = Number(item.id);
+      const buttons = [];
+
+      if (!canWriteSession()) {
+        note.textContent = "Preview only. Please log in with a write role to operate this ticket.";
+      } else if (!canWrite()) {
+        note.textContent = "Viewer role is read-only for ServiceOps tickets.";
+      } else if (archived) {
+        note.textContent = "Archived ticket. Restore before making regular updates.";
+      } else {
+        note.textContent = "Write actions are available for this ticket.";
+      }
+
+      if (!archived && canWrite()) {
+        buttons.push(`<button class="mini-btn" type="button" onclick="takeOwnership(${id})">Take Ownership</button>`);
+        buttons.push(item.status === "done"
+          ? `<button class="mini-btn pending-btn" type="button" onclick="markTicketPending(${id})">Mark Pending</button>`
+          : `<button class="mini-btn done-btn" type="button" onclick="markTicketDone(${id})">Mark Done</button>`);
+        if (canArchive()) {
+          buttons.push(`<button class="mini-btn archive-btn" type="button" onclick="archiveTicket(${id})">Archive</button>`);
+        }
+      }
+
+      if (archived && canRestore()) {
+        buttons.push(`<button class="mini-btn restore-btn" type="button" onclick="restoreTicket(${id})">Restore</button>`);
+      }
+
+      actions.innerHTML = buttons.join("");
+      form.style.display = !archived && canWrite() ? "grid" : "none";
+      form.elements.progress_status.value = item.progress_status || "in_progress";
+      form.elements.progress_note.value = item.progress_note || "";
+    }
+
+    function showWriteLoginRequired() {
+      alert("Preview only. Please log in with a write role to continue.");
+    }
+
+    async function apiUpdate(path, options, fallback) {
+      const res = await fetch(path, options);
+      if (!res.ok) throw await parseError(res, fallback);
+      await loadTicket();
+    }
+
+    async function markTicketDone(ticketId) {
+      if (!canWrite()) return showWriteLoginRequired();
+      await apiUpdate(`/api/serviceops/tickets/${ticketId}`, {
+        method: "PUT",
+        headers: window.ENYRAXRole ? window.ENYRAXRole.jsonHeaders() : { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "done" })
+      }, "Update failed").catch((err) => alert(err.message));
+    }
+
+    async function markTicketPending(ticketId) {
+      if (!canWrite()) return showWriteLoginRequired();
+      await apiUpdate(`/api/serviceops/tickets/${ticketId}`, {
+        method: "PUT",
+        headers: window.ENYRAXRole ? window.ENYRAXRole.jsonHeaders() : { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "pending_approval" })
+      }, "Update failed").catch((err) => alert(err.message));
+    }
+
+    async function takeOwnership(ticketId) {
+      if (!canWrite()) return showWriteLoginRequired();
+      await apiUpdate(`/api/serviceops/tickets/${ticketId}/take-ownership`, {
+        method: "PUT",
+        headers: window.ENYRAXRole ? window.ENYRAXRole.header() : {}
+      }, "Take ownership failed").catch((err) => alert(err.message));
+    }
+
+    async function archiveTicket(ticketId) {
+      if (!canArchive()) return showWriteLoginRequired();
+      if (!confirm(`Archive ServiceOps ticket #${ticketId}?`)) return;
+      await apiUpdate(`/api/serviceops/tickets/${ticketId}`, {
+        method: "DELETE",
+        headers: window.ENYRAXRole ? window.ENYRAXRole.header() : {}
+      }, "Archive failed").catch((err) => alert(err.message));
+    }
+
+    async function restoreTicket(ticketId) {
+      if (!canRestore()) return showWriteLoginRequired();
+      if (!confirm(`Restore ServiceOps ticket #${ticketId}?`)) return;
+      await apiUpdate(`/api/serviceops/tickets/${ticketId}/restore`, {
+        method: "PUT",
+        headers: window.ENYRAXRole ? window.ENYRAXRole.header() : {}
+      }, "Restore failed").catch((err) => alert(err.message));
+    }
+
+    async function updateTicketProgress(event) {
+      event.preventDefault();
+      if (!currentTicket || !canWrite()) return showWriteLoginRequired();
+
+      const form = event.currentTarget;
+      const message = document.getElementById("progress-message");
+      const payload = {
+        progress_status: form.elements.progress_status.value,
+        progress_note: form.elements.progress_note.value.trim()
+      };
+
+      if (payload.progress_status !== "done" && !payload.progress_note) {
+        if (!confirm("Progress note is recommended before submitting. Continue without a note?")) {
+          message.textContent = "Add a short note before submitting.";
+          message.style.color = "#ffb86b";
+          return;
+        }
+      }
+
+      message.textContent = "Updating...";
+      message.style.color = "rgba(247,242,223,.68)";
+
+      try {
+        await apiUpdate(`/api/serviceops/tickets/${currentTicket.id}/progress`, {
+          method: "PUT",
+          headers: window.ENYRAXRole ? window.ENYRAXRole.jsonHeaders() : { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        }, "Progress update failed");
+        message.textContent = "Updated.";
+        message.style.color = "#8ff7b2";
+      } catch (err) {
+        message.textContent = err.message;
+        message.style.color = "#ff6b86";
+      }
+    }
+
+    async function loadTicket() {
+      const ticketId = ticketIdFromUrl();
+      if (!ticketId) {
+        document.getElementById("ticket-title").textContent = "Missing ticket id";
+        document.getElementById("ticket-task").innerHTML = `<span class="error-text">Open this page with /serviceops/ticket.html?id=&lt;ticket_id&gt;.</span>`;
+        return;
+      }
+
+      try {
+        const ticket = await fetchTicketById(ticketId);
+        renderTicket(ticket);
+      } catch (err) {
+        console.error("Ticket load failed:", err);
+        document.getElementById("ticket-title").textContent = `Ticket #${ticketId}`;
+        document.getElementById("hero-status").innerHTML = `<span class="pill blocked">LOAD ERROR</span>`;
+        document.getElementById("summary-grid").innerHTML = "";
+        document.getElementById("ticket-task").innerHTML = `<span class="error-text">${escapeHtml(err.message)}</span>`;
+        document.getElementById("action-note").textContent = "Actions unavailable while the ticket cannot be loaded.";
+        document.getElementById("ticket-actions").innerHTML = "";
+        document.getElementById("progress-form").style.display = "none";
+      }
+    }
+
+    document.getElementById("progress-form").addEventListener("submit", updateTicketProgress);
+    window.addEventListener("enyrax-auth-session-changed", () => loadTicket());
+    window.addEventListener("enyrax-role-changed", () => loadTicket());
+    loadTicket();
+  </script>
+</body>
+</html>

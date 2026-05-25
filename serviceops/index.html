@@ -268,6 +268,24 @@
       vertical-align: middle;
     }
 
+    .context-link {
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      border: 1px solid rgba(115, 244, 223, .28);
+      border-radius: 999px;
+      padding: 8px 11px;
+      color: var(--cyan);
+      background: rgba(115, 244, 223, .08);
+      text-decoration: none;
+      font-size: 12px;
+      font-weight: 950;
+    }
+
+    .linked-soc-context {
+      margin-top: 8px;
+    }
+
     .ticket-actions {
       display: flex;
       gap: 10px;
@@ -310,7 +328,15 @@
       border-color: rgba(143, 247, 178, .4);
     }
 
-    .mini-btn:hover {
+    .detail-btn {
+      color: #081018;
+      background: linear-gradient(135deg, var(--gold), #fff0b8);
+      border-color: rgba(245, 211, 122, .42);
+      text-decoration: none;
+    }
+
+    .mini-btn:hover,
+    .context-link:hover {
       transform: translateY(-1px);
     }
 
@@ -889,6 +915,28 @@
       return Number.isNaN(id) ? 0 : id;
     }
 
+    function ticketDetailUrl(item) {
+      return `/serviceops/ticket.html?id=${encodeURIComponent(ticketId(item))}`;
+    }
+
+    function linkedSocIncidentId(task) {
+      const match = String(task || "").match(/SOC\s+incident\s+id:\s*(\d+)/i);
+      return match ? match[1] : "";
+    }
+
+    function renderLinkedSocContext(item) {
+      const incidentId = linkedSocIncidentId(item && item.task);
+      if (!incidentId) return "";
+
+      return `
+        <div class="linked-soc-context">
+          <a class="context-link" href="/soc/incident.html?id=${encodeURIComponent(incidentId)}">
+            Linked SOC Incident #${escapeHtml(incidentId)}
+          </a>
+        </div>
+      `;
+    }
+
     function newestTicketFirst(a, b) {
       const aCreated = sortTimestamp(a, "created_at");
       const bCreated = sortTimestamp(b, "created_at");
@@ -967,12 +1015,19 @@
 
     function renderTicketActions(item) {
       const id = Number(item.id);
+      const actions = [];
 
-      if (!id || !canWrite()) {
-        return "";
+      if (id) {
+        actions.push(`
+          <a class="mini-btn detail-btn" href="${escapeHtml(ticketDetailUrl(item))}">
+            View Detail
+          </a>
+        `);
       }
 
-      const actions = [];
+      if (!id || !canWrite()) {
+        return actions.length ? `<div class="ticket-actions">${actions.join("")}</div>` : "";
+      }
 
       if (item.status === "done") {
         actions.push(`
@@ -1044,18 +1099,25 @@
 
     function renderArchiveActions(item) {
       const id = Number(item.id);
+      const actions = [];
 
-      if (!id || !canRestore()) {
-        return "";
+      if (id) {
+        actions.push(`
+          <a class="mini-btn detail-btn" href="${escapeHtml(ticketDetailUrl(item))}">
+            View Detail
+          </a>
+        `);
       }
 
-      return `
-        <div class="ticket-actions">
+      if (id && canRestore()) {
+        actions.push(`
           <button class="mini-btn restore-btn" type="button" onclick="restoreTicket(${id})">
             Restore
           </button>
-        </div>
-      `;
+        `);
+      }
+
+      return actions.length ? `<div class="ticket-actions">${actions.join("")}</div>` : "";
     }
 
     async function loadServiceOpsSummary() {
@@ -1112,6 +1174,7 @@
                   Owner: ${escapeHtml(item.owner)} · Project: ${escapeHtml(item.project)}<br>
                   Estimate: ${escapeHtml(item.estimate_hours)}h · Actual: ${escapeHtml(item.actual_hours)}h<br>
                   Task: ${escapeHtml(item.task)}
+                  ${renderLinkedSocContext(item)}
                   ${renderProgressInfo(item)}
                 </div>
                 ${renderTicketActions(item)}
@@ -1200,6 +1263,7 @@
                 Deleted By: ${escapeHtml(item.deleted_by || "-")} · Deleted At: ${escapeHtml(formatTime(item.deleted_at))}<br>
                 Reason: ${escapeHtml(item.delete_reason || "-")}<br>
                 Task: ${escapeHtml(item.task)}
+                ${renderLinkedSocContext(item)}
                 ${renderProgressInfo(item)}
               </div>
               ${renderArchiveActions(item)}
