@@ -13,6 +13,7 @@
       --cyan: #73f4df;
       --green: #8ff7b2;
       --red: #ff6b86;
+      --gray: rgba(247, 242, 223, .58);
       --text: #f7f2df;
       --muted: rgba(247, 242, 223, .68);
     }
@@ -86,6 +87,82 @@
       grid-template-columns: repeat(3, 1fr);
       gap: 16px;
       margin-top: 28px;
+    }
+
+    .health-panel {
+      margin: 28px 0 30px;
+    }
+
+    .section-title {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 14px;
+    }
+
+    .section-title h2 {
+      margin: 0;
+      color: var(--gold);
+      font-size: 22px;
+      letter-spacing: .02em;
+    }
+
+    .section-title .generated {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 800;
+      text-align: right;
+    }
+
+    .health-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .health-card {
+      min-height: 148px;
+      padding: 15px;
+      border-radius: 14px;
+      border: 1px solid rgba(255, 215, 130, .18);
+      background: rgba(13, 17, 38, .78);
+      box-shadow: 0 16px 52px rgba(0, 0, 0, .2);
+    }
+
+    .health-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+      min-height: 26px;
+    }
+
+    .health-title {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      line-height: 1.35;
+    }
+
+    .health-value {
+      margin-top: 18px;
+      color: var(--text);
+      font-size: 26px;
+      font-weight: 950;
+      line-height: 1.1;
+      overflow-wrap: anywhere;
+    }
+
+    .health-message {
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 1.45;
+      overflow-wrap: anywhere;
     }
 
     .card {
@@ -202,7 +279,8 @@
       background: var(--gold);
     }
 
-    .status-pill.error {
+    .status-pill.error,
+    .status-pill.critical {
       color: #26060c;
       background: var(--red);
     }
@@ -215,6 +293,11 @@
     .status-pill.unknown {
       color: #071018;
       background: rgba(247, 242, 223, .72);
+    }
+
+    .status-pill.checking {
+      color: #071018;
+      background: var(--gray);
     }
 
     .wide {
@@ -275,10 +358,17 @@
 
     @media (max-width: 860px) {
       .grid { grid-template-columns: 1fr; }
+      .health-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .section-title { align-items: flex-start; flex-direction: column; }
+      .section-title .generated { text-align: left; }
       .wide { grid-column: span 1; }
       .services { grid-template-columns: 1fr; }
       .row { flex-direction: column; }
       .value { text-align: left; }
+    }
+
+    @media (max-width: 540px) {
+      .health-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -294,6 +384,14 @@
         </p>
       </div>
       <a class="back" href="/">Back to Portal</a>
+    </section>
+
+    <section class="health-panel" aria-labelledby="health-panel-title">
+      <div class="section-title">
+        <h2 id="health-panel-title">ENYRAX System Health Panel</h2>
+        <div class="generated" id="health-generated-at">Generated -</div>
+      </div>
+      <div class="health-grid" id="health-panel-grid"></div>
     </section>
 
     <section class="grid">
@@ -442,7 +540,7 @@
 
     function normalizeSyncStatus(value) {
       const normalized = String(value || "unknown").toLowerCase();
-      if (["ok", "warning", "error", "healthy", "stale", "unknown"].includes(normalized)) return normalized;
+      if (["ok", "warning", "error", "healthy", "stale", "critical", "checking", "unknown"].includes(normalized)) return normalized;
       return "unknown";
     }
 
@@ -510,6 +608,127 @@
       `;
     }
 
+    function healthBadge(value) {
+      return statusBadge(value);
+    }
+
+    function healthValue(value) {
+      if (value === null || value === undefined || value === "") return "-";
+      return value;
+    }
+
+    function renderHealthCards(cards, generatedAt) {
+      const grid = document.getElementById("health-panel-grid");
+      const generated = document.getElementById("health-generated-at");
+
+      generated.textContent = `Generated ${formatTime(generatedAt)}`;
+      grid.innerHTML = cards.map((card) => `
+        <article class="health-card">
+          <div class="health-top">
+            <div class="health-title">${escapeHtml(card.title)}</div>
+            ${healthBadge(card.status)}
+          </div>
+          <div class="health-value">${escapeHtml(healthValue(card.value))}</div>
+          <div class="health-message">${escapeHtml(card.message || "-")}</div>
+        </article>
+      `).join("");
+    }
+
+    function buildHealthCards(checks) {
+      const syncSummary = normalizeHealthSummary(checks.sync?.source_health_summary);
+      const dockerCount = checks.docker?.running_count;
+      const diskUsage = checks.disk?.usage_percent;
+      const recentErrorCount = Number(checks.recent_errors?.count || 0);
+      const socOpen = Number(checks.soc?.open_count || 0);
+      const socCritical = Number(checks.soc?.critical_count || 0);
+      const servicePending = Number(checks.serviceops?.pending_count || 0);
+
+      return [
+        {
+          title: "API",
+          status: checks.api?.status || "unknown",
+          value: String(checks.api?.status || "unknown").toUpperCase(),
+          message: checks.api?.message || "-"
+        },
+        {
+          title: "Database",
+          status: checks.database?.status || "unknown",
+          value: String(checks.database?.status || "unknown").toUpperCase(),
+          message: checks.database?.message || "-"
+        },
+        {
+          title: "Sync Gateway",
+          status: checks.sync?.status || "unknown",
+          value: `${syncSummary.healthy}/${syncSummary.warning}/${syncSummary.stale}/${syncSummary.error}`,
+          message: checks.sync?.message || "Source health unavailable"
+        },
+        {
+          title: "SOC Open",
+          status: socOpen > 0 ? "warning" : "healthy",
+          value: socOpen,
+          message: "Open incidents excluding closed and false positive"
+        },
+        {
+          title: "SOC Critical",
+          status: socCritical > 0 ? "critical" : "healthy",
+          value: socCritical,
+          message: "Critical open incidents"
+        },
+        {
+          title: "ServiceOps Pending",
+          status: servicePending > 0 ? "warning" : "healthy",
+          value: servicePending,
+          message: "Pending and pending approval tickets"
+        },
+        {
+          title: "Docker",
+          status: checks.docker?.status || "unknown",
+          value: dockerCount === undefined ? "-" : dockerCount,
+          message: checks.docker?.message || "-"
+        },
+        {
+          title: "Disk Usage",
+          status: checks.disk?.status || "unknown",
+          value: diskUsage === null || diskUsage === undefined ? "-" : `${diskUsage}%`,
+          message: checks.disk?.message || "-"
+        },
+        {
+          title: "SSL",
+          status: checks.ssl?.status || "unknown",
+          value: String(checks.ssl?.status || "unknown").toUpperCase(),
+          message: checks.ssl?.message || "-"
+        },
+        {
+          title: "Recent Errors",
+          status: checks.recent_errors?.status || (recentErrorCount > 0 ? "warning" : "healthy"),
+          value: recentErrorCount,
+          message: recentErrorCount > 0 ? "Recent system errors detected" : "No recent system errors configured"
+        }
+      ];
+    }
+
+    async function loadSystemHealthPanel() {
+      renderHealthCards([
+        { title: "API", status: "checking", value: "...", message: "Checking health panel" }
+      ], null);
+
+      try {
+        const res = await fetch("/api/system/health-panel", { cache: "no-store" });
+
+        if (!res.ok) {
+          throw new Error("Health Panel API returned " + res.status);
+        }
+
+        const data = await res.json();
+        renderHealthCards(buildHealthCards(data.checks || {}), data.generated_at);
+      } catch (err) {
+        console.error("System health panel check failed:", err);
+        renderHealthCards([
+          { title: "Health Panel", status: "error", value: "OFFLINE", message: "Health Panel API unavailable" }
+        ], null);
+      }
+    }
+
     async function loadSyncGatewayStatus() {
       try {
         const res = await fetch("/api/sync/status", { cache: "no-store" });
@@ -539,6 +758,7 @@
       }
     }
 
+    loadSystemHealthPanel();
     loadApiHealth();
     loadSyncGatewayStatus();
   </script>

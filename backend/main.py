@@ -2,7 +2,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 import os
+import shutil
 import socket
+import subprocess
 
 from fastapi import FastAPI, Header, HTTPException
 from pydantic import BaseModel, Field
@@ -61,6 +63,11 @@ class ServiceOpsTicketUpdate(BaseModel):
     estimate_hours: Optional[float] = None
     actual_hours: Optional[float] = None
     task: Optional[str] = None
+
+
+class ServiceOpsTicketProgressUpdate(BaseModel):
+    progress_status: str = Field(..., max_length=50)
+    progress_note: Optional[str] = Field(default=None, max_length=2000)
 
 
 class ProjectOpsProjectCreate(BaseModel):
@@ -314,16 +321,7 @@ def fetch_sync_source_rows(conn):
     return conn.execute(
         text(
             """
-            WITH ranked_events AS (
-                SELECT
-                    source, system, event_type, status, message, created_at, id,
-                    ROW_NUMBER() OVER (
-                        PARTITION BY source
-                        ORDER BY created_at DESC, id DESC
-                    ) AS source_rank
-                FROM local_sync_events
-            ),
-            source_rollup AS (
+            WITH source_rollup AS (
                 SELECT
                     source,
                     MAX(created_at) AS latest_event_at,
@@ -333,26 +331,21 @@ def fetch_sync_source_rows(conn):
                     COUNT(*) FILTER (WHERE status = 'ok') AS ok_count,
                     COUNT(*) FILTER (WHERE status = 'warning') AS warning_count,
                     COUNT(*) FILTER (WHERE status = 'error') AS error_count,
+                    (ARRAY_AGG(status ORDER BY created_at DESC, id DESC))[1] AS latest_status,
                     (ARRAY_AGG(message ORDER BY created_at DESC, id DESC))[1] AS latest_message
                 FROM local_sync_events
-                GROUP BY source
-            ),
-            recent_errors AS (
-                SELECT
-                    source,
-                    BOOL_OR(status = 'error') AS has_recent_error
-                FROM ranked_events
-                WHERE source_rank <= 30
                 GROUP BY source
             )
             SELECT
                 source_rollup.source,
                 CASE
-                    WHEN COALESCE(recent_errors.has_recent_error, FALSE) THEN 'error'
                     WHEN source_rollup.latest_heartbeat_at IS NULL THEN 'unknown'
-                    WHEN source_rollup.latest_heartbeat_at >= NOW() - INTERVAL '10 minutes' THEN 'healthy'
-                    WHEN source_rollup.latest_heartbeat_at >= NOW() - INTERVAL '30 minutes' THEN 'warning'
-                    ELSE 'stale'
+                    WHEN source_rollup.latest_status = 'error' THEN 'error'
+                    WHEN source_rollup.latest_status = 'warning' THEN 'warning'
+                    WHEN source_rollup.latest_heartbeat_at < NOW() - INTERVAL '30 minutes' THEN 'stale'
+                    WHEN source_rollup.latest_heartbeat_at < NOW() - INTERVAL '10 minutes' THEN 'warning'
+                    WHEN source_rollup.latest_status = 'ok' THEN 'healthy'
+                    ELSE 'unknown'
                 END AS health,
                 source_rollup.latest_event_at,
                 source_rollup.latest_heartbeat_at,
@@ -363,7 +356,6 @@ def fetch_sync_source_rows(conn):
                 source_rollup.error_count,
                 source_rollup.latest_message
             FROM source_rollup
-            LEFT JOIN recent_errors ON recent_errors.source = source_rollup.source
             ORDER BY source_rollup.source ASC
             """
         )
@@ -412,9 +404,14 @@ def auth_user_response(row):
 SERVICEOPS_TICKET_COLUMNS = """
     id, title, status, owner, project,
     estimate_hours, actual_hours, task,
+    assignee, progress_status, progress_note,
+    progress_updated_by, progress_updated_at,
     display_order, created_at, updated_at,
     deleted_at, deleted_by, delete_reason
 """
+
+
+SERVICEOPS_PROGRESS_STATUSES = {"not_started", "in_progress", "waiting", "blocked", "done"}
 
 
 PROJECTOPS_PROJECT_COLUMNS = """
@@ -438,6 +435,11 @@ def ticket_row_to_dict(row):
         "estimate_hours": float(data["estimate_hours"]),
         "actual_hours": float(data["actual_hours"]),
         "task": data["task"],
+        "assignee": data.get("assignee"),
+        "progress_status": data.get("progress_status"),
+        "progress_note": data.get("progress_note"),
+        "progress_updated_by": data.get("progress_updated_by"),
+        "progress_updated_at": data["progress_updated_at"].isoformat() if data.get("progress_updated_at") else None,
         "display_order": data["display_order"],
         "created_at": data["created_at"].isoformat() if data.get("created_at") else None,
         "updated_at": data["updated_at"].isoformat() if data.get("updated_at") else None,
@@ -582,6 +584,173 @@ def health():
             "status": "api-connected",
         },
     }
+
+
+def summarize_sync_health(source_health_summary):
+    if source_health_summary.get("error", 0) > 0:
+        return "error"
+    if source_health_summary.get("stale", 0) > 0:
+        return "stale"
+    if source_health_summary.get("warning", 0) > 0:
+        return "warning"
+    if source_health_summary.get("healthy", 0) > 0:
+        return "healthy"
+    return "unknown"
+
+
+def check_disk_usage():
+    try:
+        usage = shutil.disk_usage("/")
+        usage_percent = round((usage.used / usage.total) * 100, 1) if usage.total else None
+    except OSError as exc:
+        return {
+            "status": "unknown",
+            "usage_percent": None,
+            "message": f"Disk usage unavailable: {exc}",
+        }
+
+    if usage_percent is None:
+        status = "unknown"
+    elif usage_percent > 90:
+        status = "critical"
+    elif usage_percent >= 80:
+        status = "warning"
+    else:
+        status = "healthy"
+
+    return {
+        "status": status,
+        "usage_percent": usage_percent,
+        "message": f"Root filesystem usage is {usage_percent}%",
+    }
+
+
+def check_docker_status():
+    try:
+        result = subprocess.run(
+            ["docker", "ps", "--format", "{{.ID}}"],
+            capture_output=True,
+            check=False,
+            text=True,
+            timeout=3,
+        )
+    except (FileNotFoundError, PermissionError, subprocess.TimeoutExpired, OSError) as exc:
+        return {
+            "status": "unknown",
+            "message": f"Docker status unavailable: {exc}",
+        }
+
+    if result.returncode != 0:
+        detail = (result.stderr or result.stdout or "docker ps returned non-zero status").strip()
+        return {
+            "status": "unknown",
+            "message": f"Docker status unavailable: {detail}",
+        }
+
+    running_count = len([line for line in result.stdout.splitlines() if line.strip()])
+    return {
+        "status": "healthy" if running_count > 0 else "warning",
+        "running_count": running_count,
+        "message": f"{running_count} running container(s)",
+    }
+
+
+@app.get("/api/system/health-panel")
+def system_health_panel():
+    checks = {
+        "api": {"status": "healthy", "message": "API service alive"},
+        "database": {"status": "unknown", "message": "Database is not configured"},
+        "sync": {
+            "status": "unknown",
+            "message": "Sync Gateway health unavailable",
+            "source_health_summary": {},
+        },
+        "soc": {"open_count": 0, "critical_count": 0},
+        "serviceops": {"pending_count": 0},
+        "disk": check_disk_usage(),
+        "docker": check_docker_status(),
+        "ssl": {"status": "unknown", "message": "SSL expiry check not configured"},
+        "recent_errors": {"status": "healthy", "count": 0, "items": []},
+    }
+
+    if engine is not None:
+        try:
+            with engine.connect() as conn:
+                conn.execute(text("SELECT 1")).scalar_one()
+            checks["database"] = {"status": "healthy", "message": "Database connected"}
+        except SQLAlchemyError as exc:
+            checks["database"] = {"status": "error", "message": f"Database check failed: {exc}"}
+
+        if checks["database"]["status"] == "healthy":
+            try:
+                with engine.connect() as conn:
+                    source_health_rows = fetch_sync_source_rows(conn)
+
+                source_health_summary = {
+                    "healthy": 0,
+                    "warning": 0,
+                    "stale": 0,
+                    "error": 0,
+                    "unknown": 0,
+                }
+                for row in source_health_rows:
+                    health = row["health"] if row["health"] in source_health_summary else "unknown"
+                    source_health_summary[health] += 1
+
+                sync_status = summarize_sync_health(source_health_summary)
+                checks["sync"] = {
+                    "status": sync_status,
+                    "message": f"Sync Gateway source health is {sync_status}",
+                    "source_health_summary": source_health_summary,
+                }
+            except SQLAlchemyError as exc:
+                checks["sync"] = {
+                    "status": "unknown",
+                    "message": f"Sync Gateway health unavailable: {exc}",
+                    "source_health_summary": {},
+                }
+
+            try:
+                with engine.connect() as conn:
+                    soc_counts = conn.execute(
+                        text(
+                            """
+                            SELECT
+                                COUNT(*) FILTER (
+                                    WHERE lower(status) NOT IN ('closed', 'false_positive')
+                                ) AS open_count,
+                                COUNT(*) FILTER (
+                                    WHERE lower(severity) = 'critical'
+                                      AND lower(status) NOT IN ('closed', 'false_positive')
+                                ) AS critical_count
+                            FROM soc_incidents
+                            """
+                        )
+                    ).mappings().first()
+                checks["soc"] = {
+                    "open_count": int(soc_counts["open_count"] or 0),
+                    "critical_count": int(soc_counts["critical_count"] or 0),
+                }
+            except SQLAlchemyError:
+                checks["soc"] = {"open_count": 0, "critical_count": 0}
+
+            try:
+                with engine.connect() as conn:
+                    pending_count = conn.execute(
+                        text(
+                            """
+                            SELECT COUNT(*)
+                            FROM serviceops_tickets
+                            WHERE deleted_at IS NULL
+                              AND lower(status) IN ('pending', 'pending_approval')
+                            """
+                        )
+                    ).scalar_one()
+                checks["serviceops"] = {"pending_count": int(pending_count or 0)}
+            except SQLAlchemyError:
+                checks["serviceops"] = {"pending_count": 0}
+
+    return {"status": "ok", "generated_at": now_utc(), "checks": checks}
 
 
 @app.post("/api/auth/login")
@@ -854,6 +1023,12 @@ def serviceops_summary():
             "estimate_hours": 3.5,
             "actual_hours": 2.0,
             "task": "Provision VM, assign network, prepare OS baseline and handover checklist.",
+            "assignee": None,
+            "progress_status": "not_started",
+            "progress_note": None,
+            "progress_updated_by": None,
+            "progress_updated_at": None,
+            "created_at": None,
         },
         {
             "id": None,
@@ -864,6 +1039,12 @@ def serviceops_summary():
             "estimate_hours": 1.5,
             "actual_hours": 0.5,
             "task": "Review source/destination, service ports, business owner and expiry date.",
+            "assignee": None,
+            "progress_status": "not_started",
+            "progress_note": None,
+            "progress_updated_by": None,
+            "progress_updated_at": None,
+            "created_at": None,
         },
         {
             "id": None,
@@ -874,6 +1055,12 @@ def serviceops_summary():
             "estimate_hours": 2.0,
             "actual_hours": 4.0,
             "task": "Analyze growth trend, clean expired backup and report expansion risk.",
+            "assignee": None,
+            "progress_status": "not_started",
+            "progress_note": None,
+            "progress_updated_by": None,
+            "progress_updated_at": None,
+            "created_at": None,
         },
         {
             "id": None,
@@ -884,6 +1071,12 @@ def serviceops_summary():
             "estimate_hours": 1.0,
             "actual_hours": 1.0,
             "task": "Deploy portal, verify firewall, confirm public route and status page.",
+            "assignee": None,
+            "progress_status": "not_started",
+            "progress_note": None,
+            "progress_updated_by": None,
+            "progress_updated_at": None,
+            "created_at": None,
         },
     ]
 
@@ -896,16 +1089,9 @@ def serviceops_summary():
             with engine.connect() as conn:
                 rows = conn.execute(
                     text(
-                        """
+                        f"""
                         SELECT
-                            id,
-                            title,
-                            status,
-                            owner,
-                            project,
-                            estimate_hours,
-                            actual_hours,
-                            task
+                            {SERVICEOPS_TICKET_COLUMNS}
                         FROM serviceops_tickets
                         WHERE deleted_at IS NULL
                         ORDER BY display_order ASC, id ASC
@@ -913,19 +1099,7 @@ def serviceops_summary():
                     )
                 ).mappings().all()
 
-            work_queue = [
-                {
-                    "id": row["id"],
-                    "title": row["title"],
-                    "status": row["status"],
-                    "owner": row["owner"],
-                    "project": row["project"],
-                    "estimate_hours": float(row["estimate_hours"]),
-                    "actual_hours": float(row["actual_hours"]),
-                    "task": row["task"],
-                }
-                for row in rows
-            ]
+            work_queue = [ticket_row_to_dict(row) for row in rows]
             source = "postgresql"
 
         except SQLAlchemyError as exc:
@@ -1362,6 +1536,16 @@ def update_serviceops_ticket(
     if not set_clauses:
         raise HTTPException(status_code=400, detail="No valid fields to update")
 
+    if updates.get("status") == "done":
+        actor = demo_actor or role
+        set_clauses.extend([
+            "progress_status = 'done'",
+            "progress_updated_by = :progress_updated_by",
+            "progress_updated_at = NOW()",
+            "progress_note = CASE WHEN progress_note IS NULL OR btrim(progress_note) = '' THEN 'Marked done.' ELSE progress_note END",
+        ])
+        params["progress_updated_by"] = actor
+
     set_sql = ", ".join(set_clauses) + ", updated_at = NOW()"
 
     with db.begin() as conn:
@@ -1388,6 +1572,125 @@ def update_serviceops_ticket(
                 action="update",
                 summary=f"Updated ServiceOps ticket: {row['title']}",
                 actor=demo_actor or role,
+            )
+
+    if row is None:
+        raise HTTPException(status_code=404, detail="Ticket not found or archived")
+
+    return {
+        "status": "updated",
+        "ticket": ticket_row_to_dict(row),
+    }
+
+
+@app.put("/api/serviceops/tickets/{ticket_id}/take-ownership")
+def take_serviceops_ticket_ownership(
+    ticket_id: int,
+    demo_role: str = Header(default="admin", alias="X-Demo-Role"),
+    demo_actor: str = Header(default=None, alias="X-Demo-Actor"),
+):
+    role = require_role(demo_role, "operator")
+    actor = demo_actor or role
+    db = require_db()
+    progress_note = f"Ticket taken by {actor}."
+
+    with db.begin() as conn:
+        row = conn.execute(
+            text(
+                f"""
+                UPDATE serviceops_tickets
+                SET
+                    assignee = :actor,
+                    progress_status = 'in_progress',
+                    progress_note = :progress_note,
+                    progress_updated_by = :actor,
+                    progress_updated_at = NOW(),
+                    updated_at = NOW()
+                WHERE id = :ticket_id
+                  AND deleted_at IS NULL
+                RETURNING
+                    {SERVICEOPS_TICKET_COLUMNS}
+                """
+            ),
+            {
+                "ticket_id": ticket_id,
+                "actor": actor,
+                "progress_note": progress_note,
+            },
+        ).mappings().first()
+
+        if row is not None:
+            write_audit_log(
+                conn,
+                module="serviceops",
+                entity_type="ticket",
+                entity_id=row["id"],
+                action="take_ownership",
+                summary=f"Took ownership of ServiceOps ticket: {row['title']}",
+                actor=actor,
+            )
+
+    if row is None:
+        raise HTTPException(status_code=404, detail="Ticket not found or archived")
+
+    return {
+        "status": "updated",
+        "ticket": ticket_row_to_dict(row),
+    }
+
+
+@app.put("/api/serviceops/tickets/{ticket_id}/progress")
+def update_serviceops_ticket_progress(
+    ticket_id: int,
+    payload: ServiceOpsTicketProgressUpdate,
+    demo_role: str = Header(default="admin", alias="X-Demo-Role"),
+    demo_actor: str = Header(default=None, alias="X-Demo-Actor"),
+):
+    role = require_role(demo_role, "operator")
+    actor = demo_actor or role
+    progress_status = payload.progress_status.strip().lower()
+
+    if progress_status not in SERVICEOPS_PROGRESS_STATUSES:
+        raise HTTPException(status_code=400, detail="Invalid progress_status")
+
+    db = require_db()
+    status_sql = ", status = 'done'" if progress_status == "done" else ""
+
+    with db.begin() as conn:
+        row = conn.execute(
+            text(
+                f"""
+                UPDATE serviceops_tickets
+                SET
+                    progress_status = :progress_status,
+                    progress_note = :progress_note,
+                    progress_updated_by = :progress_updated_by,
+                    progress_updated_at = NOW(),
+                    updated_at = NOW()
+                    {status_sql}
+                WHERE id = :ticket_id
+                  AND deleted_at IS NULL
+                RETURNING
+                    {SERVICEOPS_TICKET_COLUMNS}
+                """
+            ),
+            {
+                "ticket_id": ticket_id,
+                "progress_status": progress_status,
+                "progress_note": payload.progress_note,
+                "progress_updated_by": actor,
+            },
+        ).mappings().first()
+
+        if row is not None:
+            write_audit_log(
+                conn,
+                module="serviceops",
+                entity_type="ticket",
+                entity_id=row["id"],
+                action="progress_update",
+                summary=f"Updated ServiceOps progress: {row['title']}",
+                actor=actor,
             )
 
     if row is None:
@@ -1823,7 +2126,7 @@ def list_soc_incidents():
                 SELECT
                     {SOC_INCIDENT_COLUMNS}
                 FROM soc_incidents
-                ORDER BY display_order ASC, id ASC
+                ORDER BY updated_at DESC NULLS LAST, created_at DESC NULLS LAST, id DESC
                 """
             )
         ).mappings().all()
@@ -2703,9 +3006,44 @@ def create_soc_incident_from_sync_candidate(
         ).mappings().first()
 
         if existing is not None:
+            resolution_note = (
+                candidate["reason"]
+                + " Recommended action: "
+                + candidate["recommended_action"]
+            )
+            row = conn.execute(
+                text(
+                    f"""
+                    UPDATE soc_incidents
+                    SET
+                        severity = :severity,
+                        resolution_note = :resolution_note,
+                        updated_at = NOW()
+                    WHERE id = :incident_id
+                    RETURNING
+                        {SOC_INCIDENT_COLUMNS}
+                    """
+                ),
+                {
+                    "incident_id": existing["id"],
+                    "severity": candidate["severity"],
+                    "resolution_note": resolution_note,
+                },
+            ).mappings().first()
+
+            write_audit_log(
+                conn,
+                module="soc",
+                entity_type="incident",
+                entity_id=row["id"],
+                action="sync_refresh",
+                summary=f"Refreshed SOC incident from sync candidate: {row['title']}",
+                actor=actor,
+            )
+
             return {
-                "status": "existing",
-                "incident": incident_row_to_dict(existing),
+                "status": "existing_updated",
+                "incident": incident_row_to_dict(row),
             }
 
         max_order = conn.execute(
