@@ -6,11 +6,11 @@
   <title>ENYRAX ServiceOps Ticket</title>
   <style>
     :root {
-      --bg: #071018;
-      --card: rgba(255,255,255,.06);
+      --bg: #0b1718;
+      --card: rgba(255,255,255,.065);
       --text: #f7f2df;
       --muted: rgba(247,242,223,.68);
-      --line: rgba(255,255,255,.12);
+      --line: rgba(255,255,255,.16);
       --gold: #f5d37a;
       --cyan: #73f4df;
       --green: #8ff7b2;
@@ -26,9 +26,11 @@
       color: var(--text);
       font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       background:
-        radial-gradient(circle at top left, rgba(115,244,223,.16), transparent 32%),
-        radial-gradient(circle at top right, rgba(245,211,122,.12), transparent 30%),
-        linear-gradient(180deg, #071018 0%, #090d16 100%);
+        radial-gradient(circle at 16% 8%, rgba(115,244,223,.18), transparent 30%),
+        radial-gradient(circle at 84% 12%, rgba(245,211,122,.14), transparent 30%),
+        radial-gradient(circle at 48% 62%, rgba(143,247,178,.08), transparent 34%),
+        linear-gradient(180deg, #0b1718 0%, #0a1417 48%, #0d1712 100%);
+      background-attachment: fixed;
     }
 
     .wrap {
@@ -101,12 +103,13 @@
       border: 1px solid var(--line);
       background: var(--card);
       border-radius: 22px;
-      box-shadow: 0 24px 80px rgba(0,0,0,.22);
+      box-shadow: 0 24px 80px rgba(0,0,0,.2), inset 0 1px 0 rgba(255,255,255,.035);
     }
 
     .card { padding: 20px; }
     .card + .card,
     .summary-grid + .card { margin-top: 16px; }
+    .card.timeline-card { margin-top: 22px; }
     .summary-card { padding: 15px; }
 
     .label {
@@ -259,6 +262,125 @@
 
     .error-text { color: var(--red); font-weight: 850; }
 
+    .timeline-card {
+      border-radius: 18px;
+      border: 1px solid rgba(245, 211, 122, .2);
+      background: rgba(255,255,255,.05);
+      overflow: hidden;
+    }
+
+    .timeline-head {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+
+    .timeline-head .label {
+      display: inline-flex;
+      align-items: center;
+      min-height: 24px;
+      border: 1px solid rgba(245, 211, 122, .24);
+      border-radius: 999px;
+      padding: 4px 9px;
+      color: rgba(245, 211, 122, .88);
+      background: rgba(245, 211, 122, .08);
+      font-size: 10px;
+    }
+
+    .timeline-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .timeline-item {
+      position: relative;
+      display: grid;
+      grid-template-columns: 18px minmax(0, 1fr);
+      gap: 12px;
+      padding: 14px 15px;
+      border: 1px solid rgba(255,255,255,.13);
+      border-left: 3px solid rgba(245, 211, 122, .58);
+      border-radius: 16px;
+      background: rgba(255,255,255,.075);
+    }
+
+    .timeline-item::before {
+      content: "";
+      align-self: start;
+      justify-self: center;
+      margin-top: 5px;
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--gold);
+      box-shadow: 0 0 0 5px rgba(245,211,122,.1);
+    }
+
+    .timeline-time {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 900;
+      line-height: 1.45;
+      min-width: 132px;
+      white-space: nowrap;
+    }
+
+    .timeline-main {
+      display: grid;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .timeline-summary {
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 850;
+      line-height: 1.6;
+      overflow-wrap: anywhere;
+    }
+
+    .timeline-meta {
+      display: grid;
+      grid-template-columns: max-content max-content minmax(120px, 1fr);
+      align-items: center;
+      column-gap: 10px;
+      row-gap: 6px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 850;
+      min-width: 0;
+    }
+
+    .timeline-actor {
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+
+    .action-badge {
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      max-width: 100%;
+      border-radius: 999px;
+      padding: 4px 8px;
+      font-size: 11px;
+      font-weight: 950;
+      text-transform: uppercase;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.08);
+      color: var(--text);
+    }
+
+    .action-create { color: #062014; background: var(--green); }
+    .action-take_ownership { color: #081018; background: var(--cyan); }
+    .action-progress_update { color: #241203; background: var(--gold); }
+    .action-update { color: #f7f2df; background: rgba(115,244,223,.18); border-color: rgba(115,244,223,.24); }
+    .action-archive, .action-restore { color: #241203; background: var(--orange); }
+    .action-delete { color: #26060c; background: var(--red); }
+
     @media (max-width: 960px) {
       .layout { grid-template-columns: 1fr; }
       .summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -270,6 +392,10 @@
       .card, .summary-card { border-radius: 18px; }
       .actions { align-items: stretch; }
       .mini-btn, .submit-btn { width: 100%; text-align: center; }
+      .timeline-item { grid-template-columns: 1fr; gap: 8px; }
+      .timeline-item::before { display: none; }
+      .timeline-meta { grid-template-columns: 1fr; }
+      .timeline-time { min-width: 0; white-space: normal; }
     }
   </style>
 </head>
@@ -300,6 +426,16 @@
             <h2>Archive Info</h2>
           </div>
           <div class="summary-grid" id="archive-grid"></div>
+        </div>
+
+        <div class="card timeline-card">
+          <div class="timeline-head">
+            <h2>Progress Timeline</h2>
+            <span class="label" id="timeline-source">LOADING</span>
+          </div>
+          <div class="timeline-list" id="progress-timeline">
+            <div class="muted">Loading progress timeline...</div>
+          </div>
         </div>
       </div>
 
@@ -477,6 +613,117 @@
         : "";
     }
 
+    function timelineActionClass(action) {
+      const normalized = String(action || "unknown").toLowerCase();
+      const supported = ["create", "take_ownership", "progress_update", "update", "archive", "restore", "delete"];
+      return supported.includes(normalized) ? `action-${normalized}` : "";
+    }
+
+    function timelineActionLabel(action) {
+      return String(action || "unknown").replaceAll("_", " ");
+    }
+
+    function renderTimelineItems(items) {
+      if (!items.length) {
+        return `<div class="muted">No timeline events found for this ticket.</div>`;
+      }
+
+      return items.map((item) => {
+        const action = item.action || "unknown";
+        return `
+          <div class="timeline-item">
+            <div class="timeline-main">
+              <div class="timeline-meta">
+                <span class="timeline-time">${escapeHtml(formatTime(item.created_at))}</span>
+                <span class="action-badge ${escapeHtml(timelineActionClass(action))}">${escapeHtml(timelineActionLabel(action))}</span>
+                <span class="timeline-actor">Actor: ${escapeHtml(item.actor || "-")}</span>
+              </div>
+              <div class="timeline-summary">${escapeHtml(item.summary || "-")}</div>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function localTimelineItems(ticket) {
+      const items = [];
+      if (ticket.created_at) {
+        items.push({
+          created_at: ticket.created_at,
+          action: "create",
+          summary: `Created at ${formatTime(ticket.created_at)}`,
+          actor: ticket.owner || ticket.assignee || "-"
+        });
+      }
+
+      if (ticket.progress_updated_at || ticket.progress_updated_by) {
+        const progressTime = ticket.progress_updated_at || ticket.updated_at || ticket.created_at;
+        items.push({
+          created_at: progressTime,
+          action: "progress_update",
+          summary: `Progress updated at ${formatTime(progressTime)} by ${ticket.progress_updated_by || "-"}`,
+          actor: ticket.progress_updated_by || "-"
+        });
+      }
+
+      if (ticket.deleted_at || ticket.archived_at || ticket.deleted_by) {
+        const deletedTime = ticket.deleted_at || ticket.archived_at || ticket.updated_at;
+        items.push({
+          created_at: deletedTime,
+          action: ticket.status === "deleted" ? "delete" : "archive",
+          summary: `Archived / deleted at ${formatTime(deletedTime)} by ${ticket.deleted_by || "-"}`,
+          actor: ticket.deleted_by || "-"
+        });
+      }
+
+      return items
+        .filter((item) => item.created_at || item.summary)
+        .sort((a, b) => new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime());
+    }
+
+    function setTimeline(source, items, note) {
+      document.getElementById("timeline-source").textContent = source;
+      document.getElementById("progress-timeline").innerHTML = [
+        note ? `<div class="muted">${escapeHtml(note)}</div>` : "",
+        renderTimelineItems(items)
+      ].join("");
+    }
+
+    async function loadProgressTimeline(ticket) {
+      const ticketId = Number(ticket.id);
+      document.getElementById("timeline-source").textContent = "LOADING";
+      document.getElementById("progress-timeline").innerHTML = `<div class="muted">Loading progress timeline...</div>`;
+
+      try {
+        const res = await fetch("/api/audit/logs?limit=100", {
+          headers: window.ENYRAXRole ? window.ENYRAXRole.header() : {}
+        });
+
+        if (!res.ok) {
+          const error = await parseError(res, "Audit timeline load failed");
+          error.status = res.status;
+          throw error;
+        }
+
+        const data = await res.json();
+        const timeline = (data.logs || [])
+          .filter((item) => item.module === "serviceops" && item.entity_type === "ticket" && Number(item.entity_id) === ticketId)
+          .sort((a, b) => new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime());
+
+        if (timeline.length) {
+          setTimeline("AUDIT TIMELINE", timeline, "");
+        } else {
+          setTimeline("LOCAL TICKET TIMELINE", localTimelineItems(ticket), "No audit events found for this ticket.");
+        }
+      } catch (err) {
+        console.error("Progress timeline load failed:", err);
+        const message = err.status === 401 || err.status === 403
+          ? "Progress timeline requires Supervisor/Admin audit access."
+          : "Unable to load progress timeline.";
+        setTimeline("LOCAL TICKET TIMELINE", localTimelineItems(ticket), message);
+      }
+    }
+
     function renderTicket(item) {
       currentTicket = item;
       const status = effectiveStatus(item);
@@ -514,6 +761,7 @@
 
       renderLinkedSocContext(item);
       renderActions(item);
+      loadProgressTimeline(item);
     }
 
     function renderActions(item) {
@@ -649,6 +897,8 @@
       if (!ticketId) {
         document.getElementById("ticket-title").textContent = "Missing ticket id";
         document.getElementById("ticket-task").innerHTML = `<span class="error-text">Open this page with /serviceops/ticket.html?id=&lt;ticket_id&gt;.</span>`;
+        document.getElementById("timeline-source").textContent = "UNAVAILABLE";
+        document.getElementById("progress-timeline").innerHTML = `<div class="muted">Unable to load progress timeline.</div>`;
         return;
       }
 
@@ -664,6 +914,8 @@
         document.getElementById("action-note").textContent = "Actions unavailable while the ticket cannot be loaded.";
         document.getElementById("ticket-actions").innerHTML = "";
         document.getElementById("progress-form").style.display = "none";
+        document.getElementById("timeline-source").textContent = "UNAVAILABLE";
+        document.getElementById("progress-timeline").innerHTML = `<div class="muted">Unable to load progress timeline.</div>`;
       }
     }
 
