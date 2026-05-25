@@ -1,5 +1,84 @@
 # ENYRAX Cloud Portal Release Notes
 
+## v0.6.11-serviceops-ticket-detail
+
+Release date: 2026-05-25
+
+## Summary
+
+This release upgrades ServiceOps from a work queue list into a ticket-level operation workflow.
+
+ServiceOps now supports single ticket detail pages, linked SOC incident context and clearer cross-module navigation between SOC and Infra work handling.
+
+## Completed
+
+- Added ServiceOps ticket detail page
+- Added `/serviceops/ticket.html?id=<ticket_id>`
+- Added detail view for:
+  - title
+  - status
+  - created time
+  - updated time
+  - owner
+  - project
+  - estimate / actual hours
+  - task
+  - assignee
+  - progress status
+  - progress note
+  - progress updated by
+  - progress updated at
+- Added ticket detail actions:
+  - Take Ownership
+  - Update Progress
+  - Mark Done
+  - Mark Pending
+  - Archive
+  - Restore
+- Added View Detail button on Work Queue cards
+- Added View Detail button on Archived Tickets
+- Added Linked SOC Incident context on ticket detail page
+- Added Linked SOC Incident context on Work Queue cards
+- Added link from ServiceOps ticket back to SOC incident detail
+- Preserved ServiceOps filters:
+  - pending
+  - done
+  - all
+- Preserved latest-first sorting
+- Preserved role gating and preview-only restrictions
+
+## Cross-module Workflow
+
+```text
+SOC Incident
+  → Create ServiceOps Ticket
+  → ServiceOps Work Queue
+  → Ticket Detail
+  → Linked SOC Incident
+  → SOC Incident Detail
+```
+
+## Current Product Status
+
+```text
+SOC Detail        Incident summary + lifecycle + audit trail
+ServiceOps       Ticket list + filters + progress handling
+Ticket Detail    Single ticket operation view enabled
+SOC Context      Linked SOC incident navigation enabled
+Audit Trail      Cross-module actions remain traceable
+```
+
+## Next Phase
+
+- Add ServiceOps ticket comments / worklog history
+- Add progress timeline on ticket detail
+- Add linked SOC incident summary preview
+- Add ServiceOps blocked / overdue count
+- Add SLA / due date fields
+- Add assignee workload summary
+
+---
+
 ## v0.6.9-command-critical-count
 
 Release date: 2026-05-24
