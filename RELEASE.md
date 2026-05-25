@@ -1,5 +1,77 @@
 # ENYRAX Cloud Portal Release Notes
 
+## v0.6.12-serviceops-progress-timeline
+
+Release date: 2026-05-25
+
+## Summary
+
+This release adds progress timeline visibility to ServiceOps ticket detail.
+
+Ticket detail pages now show handling history using audit events when available, with a local ticket timeline fallback when audit access is unavailable. The page also received visual layer refinements to make long-form ticket handling easier to read.
+
+## Completed
+
+- Added Progress Timeline section to ServiceOps ticket detail
+- Reads `GET /api/audit/logs?limit=100`
+- Filters audit events by:
+  - module = serviceops
+  - entity_type = ticket
+  - entity_id = current ticket id
+- Added action badges for:
+  - create
+  - take_ownership
+  - progress_update
+  - update
+  - archive
+  - restore
+  - delete
+- Added local fallback timeline when audit access is unavailable
+- Added fallback events from ticket fields:
+  - created_at
+  - progress_updated_at
+  - progress_updated_by
+  - deleted_at
+  - deleted_by
+- Added clear source labels:
+  - AUDIT TIMELINE
+  - LOCAL TICKET TIMELINE
+- Refined Ticket Detail visual layers
+- Improved timeline spacing to avoid overlap
+- Added more readable grid layout for timeline items
+- Improved mobile timeline layout
+- Preserved ticket actions and role gating
+
+## Timeline Behavior
+
+```text
+Supervisor / Admin
+  → Audit timeline when audit logs are available
+
+Operator / Viewer
+  → Local ticket timeline fallback when audit access is unavailable
+```
+
+## Current Product Status
+
+```text
+ServiceOps Ticket Detail   Summary + actions enabled
+Progress Timeline          Audit/fallback history enabled
+SOC Context                Linked SOC incident enabled
+Visual Layering            Ticket detail readability improved
+```
+
+## Next Phase
+
+- Add ServiceOps ticket comments
+- Add manual worklog entries
+- Add SLA / due date fields
+- Add blocked / overdue status
+- Add assignee workload summary
+- Add linked SOC summary preview inside ticket detail
+
+---
+
 ## v0.6.11-serviceops-ticket-detail
 
 Release date: 2026-05-25
