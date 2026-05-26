@@ -555,6 +555,11 @@
       display: inline-flex;
     }
 
+    .worklog-form select option {
+      color: #111827;
+      background: #ffffff;
+    }
+
     .worklog-form.is-preview select,
     .worklog-form.is-preview textarea {
       border-color: rgba(245, 211, 122, .16);
@@ -811,7 +816,7 @@
     let worklogEntries = [];
     let activeWorklogFilter = "all";
 
-    const WORKLOG_FILTERS = [
+    const worklogFilters = [
       { value: "all", label: "All" },
       { value: "worklog", label: "Worklog" },
       { value: "investigation", label: "Investigation" },
@@ -1140,7 +1145,7 @@
 
     function worklogEmptyMessage(filter) {
       if (filter === "all") return "No worklog entries yet.";
-      if (filter === "worklog") return "No worklog entries.";
+      if (filter === "worklog") return "No worklog entries yet.";
       return `No ${commentTypeLabel(filter)} worklog entries.`;
     }
 
@@ -1156,7 +1161,7 @@
     function renderWorklogFilters() {
       const target = document.getElementById("worklog-filter-row");
       const counts = worklogFilterCounts();
-      target.innerHTML = WORKLOG_FILTERS.map((filter) => `
+      target.innerHTML = worklogFilters.map((filter) => `
         <button class="worklog-filter-chip ${filter.value === activeWorklogFilter ? "is-active" : ""}" type="button" data-worklog-filter="${escapeHtml(filter.value)}" aria-pressed="${filter.value === activeWorklogFilter ? "true" : "false"}">
           <span>${escapeHtml(filter.label)}</span>
           <span class="worklog-filter-count">${escapeHtml(counts[filter.value] || 0)}</span>
