@@ -235,7 +235,8 @@
     }
 
     select,
-    input {
+    input,
+    textarea {
       width: 100%;
       min-height: 40px;
       border: 1px solid rgba(115, 244, 223, .18);
@@ -247,8 +248,15 @@
       font: inherit;
     }
 
+    textarea {
+      min-height: 86px;
+      line-height: 1.5;
+      resize: vertical;
+    }
+
     select:focus,
-    input:focus {
+    input:focus,
+    textarea:focus {
       border-color: rgba(115, 244, 223, .55);
       box-shadow: 0 0 0 3px rgba(115, 244, 223, .08);
     }
@@ -377,9 +385,129 @@
     .action-create { color: #062014; background: var(--green); }
     .action-take_ownership { color: #081018; background: var(--cyan); }
     .action-progress_update { color: #241203; background: var(--gold); }
+    .action-comment { color: #081018; background: var(--cyan); }
     .action-update { color: #f7f2df; background: rgba(115,244,223,.18); border-color: rgba(115,244,223,.24); }
     .action-archive, .action-restore { color: #241203; background: var(--orange); }
     .action-delete { color: #26060c; background: var(--red); }
+
+    .worklog-card {
+      border-radius: 18px;
+      border: 1px solid rgba(245, 211, 122, .18);
+      background: rgba(255,255,255,.05);
+    }
+
+    .worklog-form {
+      display: grid;
+      gap: 10px;
+      margin: 14px 0 16px;
+      padding: 14px;
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 16px;
+      background: rgba(0,0,0,.14);
+    }
+
+    .worklog-form.is-preview {
+      border-color: rgba(245, 211, 122, .36);
+      border-style: dashed;
+      background: rgba(245, 211, 122, .055);
+    }
+
+    .worklog-form-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .preview-badge {
+      display: none;
+      align-items: center;
+      width: fit-content;
+      border: 1px solid rgba(245, 211, 122, .32);
+      border-radius: 999px;
+      padding: 4px 8px;
+      color: var(--gold);
+      background: rgba(245, 211, 122, .09);
+      font-size: 10px;
+      font-weight: 950;
+      text-transform: uppercase;
+    }
+
+    .worklog-form.is-preview .preview-badge {
+      display: inline-flex;
+    }
+
+    .worklog-form.is-preview select,
+    .worklog-form.is-preview textarea {
+      border-color: rgba(245, 211, 122, .16);
+      background: rgba(255,255,255,.035);
+      color: rgba(247,242,223,.58);
+      opacity: .82;
+    }
+
+    .worklog-form.is-preview .submit-btn {
+      opacity: .52;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .worklog-form-row {
+      display: grid;
+      grid-template-columns: minmax(150px, 200px) minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: end;
+    }
+
+    .worklog-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .worklog-entry {
+      display: grid;
+      gap: 8px;
+      padding: 13px 14px;
+      border: 1px solid rgba(255,255,255,.12);
+      border-left: 3px solid rgba(115, 244, 223, .58);
+      border-radius: 14px;
+      background: rgba(255,255,255,.06);
+    }
+
+    .worklog-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 850;
+      line-height: 1.5;
+    }
+
+    .comment-type-badge {
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      border: 1px solid rgba(245, 211, 122, .24);
+      border-radius: 999px;
+      padding: 4px 8px;
+      color: #241203;
+      background: var(--gold);
+      font-size: 10px;
+      font-weight: 950;
+      text-transform: uppercase;
+      line-height: 1;
+    }
+
+    .worklog-comment {
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 760;
+      line-height: 1.6;
+      overflow-wrap: anywhere;
+      white-space: pre-wrap;
+    }
 
     @media (max-width: 960px) {
       .layout { grid-template-columns: 1fr; }
@@ -396,6 +524,7 @@
       .timeline-item::before { display: none; }
       .timeline-meta { grid-template-columns: 1fr; }
       .timeline-time { min-width: 0; white-space: normal; }
+      .worklog-form-row { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -426,6 +555,41 @@
             <h2>Archive Info</h2>
           </div>
           <div class="summary-grid" id="archive-grid"></div>
+        </div>
+
+        <div class="card worklog-card">
+          <div class="card-top">
+            <h2>Worklog Entries</h2>
+          </div>
+          <form class="worklog-form is-preview" id="worklog-form">
+            <div class="worklog-form-head">
+              <div class="label">Add Worklog</div>
+              <span class="preview-badge">Preview</span>
+            </div>
+            <div class="worklog-form-row">
+              <label>
+                Type
+                <select name="comment_type" disabled>
+                  <option value="worklog">worklog</option>
+                  <option value="investigation">investigation</option>
+                  <option value="waiting">waiting</option>
+                  <option value="vendor">vendor</option>
+                  <option value="recovery">recovery</option>
+                  <option value="note">note</option>
+                </select>
+              </label>
+              <label>
+                Comment
+                <textarea name="comment" maxlength="2000" placeholder="Add worklog context..." disabled></textarea>
+              </label>
+              <button class="submit-btn" type="submit" disabled>Add Worklog</button>
+            </div>
+            <span class="message" id="worklog-message"></span>
+            <div class="muted" id="worklog-permission-note">Login with Operator / Supervisor / Admin to add worklog entries.</div>
+          </form>
+          <div class="worklog-list" id="worklog-list">
+            <div class="muted">Loading worklog entries...</div>
+          </div>
         </div>
 
         <div class="card timeline-card">
@@ -615,7 +779,7 @@
 
     function timelineActionClass(action) {
       const normalized = String(action || "unknown").toLowerCase();
-      const supported = ["create", "take_ownership", "progress_update", "update", "archive", "restore", "delete"];
+      const supported = ["create", "take_ownership", "progress_update", "comment", "update", "archive", "restore", "delete"];
       return supported.includes(normalized) ? `action-${normalized}` : "";
     }
 
@@ -687,6 +851,71 @@
         note ? `<div class="muted">${escapeHtml(note)}</div>` : "",
         renderTimelineItems(items)
       ].join("");
+    }
+
+    function commentTypeLabel(type) {
+      return String(type || "worklog").replaceAll("_", " ");
+    }
+
+    function renderWorklogEntries(entries) {
+      if (!entries.length) {
+        return `<div class="muted">No worklog entries yet.</div>`;
+      }
+
+      return entries.map((item) => `
+        <div class="worklog-entry">
+          <div class="worklog-meta">
+            <span>${escapeHtml(item.actor || "-")}</span>
+            <span>Role: ${escapeHtml(item.role || "-")}</span>
+            <span class="comment-type-badge">${escapeHtml(commentTypeLabel(item.comment_type))}</span>
+            <span>${escapeHtml(formatTime(item.created_at))}</span>
+          </div>
+          <div class="worklog-comment">${escapeHtml(item.comment || "-")}</div>
+        </div>
+      `).join("");
+    }
+
+    function setWorklogComposerState(enabled, message) {
+      const form = document.getElementById("worklog-form");
+      const note = document.getElementById("worklog-permission-note");
+      const button = form.querySelector("button[type=\"submit\"]");
+
+      form.style.display = "grid";
+      form.classList.toggle("is-preview", !enabled);
+      form.elements.comment_type.disabled = !enabled;
+      form.elements.comment.disabled = !enabled;
+      button.disabled = !enabled;
+      note.textContent = message || "";
+
+      form.elements.comment_type.value = "worklog";
+      form.elements.comment.value = "";
+    }
+
+    function renderWorklogComposer(item) {
+      const enabled = canWrite();
+      setWorklogComposerState(
+        enabled,
+        enabled ? "" : "Login with Operator / Supervisor / Admin to add worklog entries."
+      );
+    }
+
+    async function loadWorklogEntries(ticketId) {
+      const target = document.getElementById("worklog-list");
+      target.innerHTML = `<div class="muted">Loading worklog entries...</div>`;
+
+      try {
+        const res = await fetch(`/api/serviceops/tickets/${ticketId}/comments`, {
+          headers: window.ENYRAXRole ? window.ENYRAXRole.header() : {}
+        });
+
+        if (!res.ok) throw await parseError(res, "Failed to load worklog entries");
+
+        const data = await res.json();
+        target.innerHTML = renderWorklogEntries(data.comments || []);
+      } catch (err) {
+        console.error("Worklog load failed:", err);
+        target.innerHTML = `<div class="error-text">Failed to load worklog entries.</div>`;
+      }
     }
 
     async function loadProgressTimeline(ticket) {
@@ -761,6 +990,8 @@
 
       renderLinkedSocContext(item);
       renderActions(item);
+      renderWorklogComposer(item);
+      loadWorklogEntries(item.id);
       loadProgressTimeline(item);
     }
 
@@ -892,6 +1123,47 @@
       }
     }
 
+    async function addWorklogEntry(event) {
+      event.preventDefault();
+      if (!currentTicket || !canWrite()) return showWriteLoginRequired();
+
+      const form = event.currentTarget;
+      const message = document.getElementById("worklog-message");
+      const payload = {
+        comment_type: form.elements.comment_type.value,
+        comment: form.elements.comment.value.trim()
+      };
+
+      if (!payload.comment) {
+        message.textContent = "Worklog comment cannot be empty.";
+        message.style.color = "#ffb86b";
+        return;
+      }
+
+      message.textContent = "Adding...";
+      message.style.color = "rgba(247,242,223,.68)";
+
+      try {
+        const res = await fetch(`/api/serviceops/tickets/${currentTicket.id}/comments`, {
+          method: "POST",
+          headers: window.ENYRAXRole ? window.ENYRAXRole.jsonHeaders() : { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) throw await parseError(res, "Add worklog failed");
+
+        form.elements.comment.value = "";
+        form.elements.comment_type.value = "worklog";
+        await loadWorklogEntries(currentTicket.id);
+        await loadProgressTimeline(currentTicket);
+        message.textContent = "Added.";
+        message.style.color = "#8ff7b2";
+      } catch (err) {
+        message.textContent = err.message;
+        message.style.color = "#ff6b86";
+      }
+    }
+
     async function loadTicket() {
       const ticketId = ticketIdFromUrl();
       if (!ticketId) {
@@ -899,6 +1171,8 @@
         document.getElementById("ticket-task").innerHTML = `<span class="error-text">Open this page with /serviceops/ticket.html?id=&lt;ticket_id&gt;.</span>`;
         document.getElementById("timeline-source").textContent = "UNAVAILABLE";
         document.getElementById("progress-timeline").innerHTML = `<div class="muted">Unable to load progress timeline.</div>`;
+        setWorklogComposerState(false, "Login with Operator / Supervisor / Admin to add worklog entries.");
+        document.getElementById("worklog-list").innerHTML = `<div class="muted">No worklog entries yet.</div>`;
         return;
       }
 
@@ -914,12 +1188,15 @@
         document.getElementById("action-note").textContent = "Actions unavailable while the ticket cannot be loaded.";
         document.getElementById("ticket-actions").innerHTML = "";
         document.getElementById("progress-form").style.display = "none";
+        setWorklogComposerState(false, "Login with Operator / Supervisor / Admin to add worklog entries.");
+        document.getElementById("worklog-list").innerHTML = `<div class="error-text">Failed to load worklog entries.</div>`;
         document.getElementById("timeline-source").textContent = "UNAVAILABLE";
         document.getElementById("progress-timeline").innerHTML = `<div class="muted">Unable to load progress timeline.</div>`;
       }
     }
 
     document.getElementById("progress-form").addEventListener("submit", updateTicketProgress);
+    document.getElementById("worklog-form").addEventListener("submit", addWorklogEntry);
     window.addEventListener("enyrax-auth-session-changed", () => loadTicket());
     window.addEventListener("enyrax-role-changed", () => loadTicket());
     loadTicket();

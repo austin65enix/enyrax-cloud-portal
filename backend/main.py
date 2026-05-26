@@ -70,6 +70,11 @@ class ServiceOpsTicketProgressUpdate(BaseModel):
     progress_note: Optional[str] = Field(default=None, max_length=2000)
 
 
+class ServiceOpsTicketCommentCreate(BaseModel):
+    comment: str = Field(..., min_length=1, max_length=2000)
+    comment_type: Optional[str] = Field(default="worklog", max_length=50)
+
+
 class ProjectOpsProjectCreate(BaseModel):
     title: str = Field(..., min_length=1, max_length=200)
     status: str = Field(default="watch", max_length=50)
@@ -501,6 +506,18 @@ def incident_comment_row_to_dict(row):
     return {
         "id": row["id"],
         "incident_id": row["incident_id"],
+        "actor": row["actor"],
+        "role": row["role"],
+        "comment": row["comment"],
+        "comment_type": row["comment_type"],
+        "created_at": row["created_at"].isoformat() if row["created_at"] else None,
+    }
+
+
+def serviceops_ticket_comment_row_to_dict(row):
+    return {
+        "id": row["id"],
+        "ticket_id": row["ticket_id"],
         "actor": row["actor"],
         "role": row["role"],
         "comment": row["comment"],
@@ -1444,6 +1461,115 @@ def get_serviceops_ticket(ticket_id: int):
     return {
         "status": "ok",
         "ticket": ticket_row_to_dict(row),
+    }
+
+
+@app.get("/api/serviceops/tickets/{ticket_id}/comments")
+def list_serviceops_ticket_comments(ticket_id: int):
+    db = require_db()
+
+    with db.connect() as conn:
+        ticket = conn.execute(
+            text(
+                """
+                SELECT id
+                FROM serviceops_tickets
+                WHERE id = :ticket_id
+                """
+            ),
+            {"ticket_id": ticket_id},
+        ).mappings().first()
+
+        if ticket is None:
+            raise HTTPException(status_code=404, detail="Ticket not found")
+
+        rows = conn.execute(
+            text(
+                """
+                SELECT
+                    id, ticket_id, actor, role, comment,
+                    comment_type, created_at
+                FROM serviceops_ticket_comments
+                WHERE ticket_id = :ticket_id
+                ORDER BY created_at ASC, id ASC
+                """
+            ),
+            {"ticket_id": ticket_id},
+        ).mappings().all()
+
+    return {
+        "status": "ok",
+        "source": "postgresql",
+        "count": len(rows),
+        "comments": [serviceops_ticket_comment_row_to_dict(row) for row in rows],
+    }
+
+
+@app.post("/api/serviceops/tickets/{ticket_id}/comments")
+def create_serviceops_ticket_comment(
+    ticket_id: int,
+    payload: ServiceOpsTicketCommentCreate,
+    demo_role: str = Header(default="admin", alias="X-Demo-Role"),
+    demo_actor: str = Header(default=None, alias="X-Demo-Actor"),
+):
+    role = require_role(demo_role, "operator")
+    actor = demo_actor or role
+    comment = payload.comment.strip()
+    comment_type = (payload.comment_type or "worklog").strip() or "worklog"
+    db = require_db()
+
+    if not comment:
+        raise HTTPException(status_code=400, detail="Comment cannot be empty")
+
+    with db.begin() as conn:
+        ticket = conn.execute(
+            text(
+                """
+                SELECT id, title
+                FROM serviceops_tickets
+                WHERE id = :ticket_id
+                """
+            ),
+            {"ticket_id": ticket_id},
+        ).mappings().first()
+
+        if ticket is None:
+            raise HTTPException(status_code=404, detail="Ticket not found")
+
+        row = conn.execute(
+            text(
+                """
+                INSERT INTO serviceops_ticket_comments
+                    (ticket_id, actor, role, comment, comment_type)
+                VALUES
+                    (:ticket_id, :actor, :role, :comment, :comment_type)
+                RETURNING
+                    id, ticket_id, actor, role, comment,
+                    comment_type, created_at
+                """
+            ),
+            {
+                "ticket_id": ticket_id,
+                "actor": actor,
+                "role": role,
+                "comment": comment,
+                "comment_type": comment_type,
+            },
+        ).mappings().first()
+
+        write_audit_log(
+            conn,
+            module="serviceops",
+            entity_type="ticket",
+            entity_id=ticket_id,
+            action="comment",
+            summary=f"Added ServiceOps worklog: {ticket['title']}",
+            actor=actor,
+        )
+
+    return {
+        "status": "created",
+        "comment": serviceops_ticket_comment_row_to_dict(row),
     }
 
 
