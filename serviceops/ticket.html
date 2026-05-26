@@ -87,9 +87,7 @@
 
     .layout {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) 340px;
-      gap: 16px;
-      align-items: start;
+      gap: 18px;
     }
 
     .summary-grid {
@@ -111,6 +109,41 @@
     .summary-grid + .card { margin-top: 16px; }
     .card.timeline-card { margin-top: 22px; }
     .summary-card { padding: 15px; }
+
+    .workbench-card {
+      padding: 18px;
+      border-color: rgba(245, 211, 122, .24);
+      background:
+        linear-gradient(135deg, rgba(115, 244, 223, .055), rgba(245, 211, 122, .045)),
+        rgba(255,255,255,.06);
+    }
+
+    .workbench-toolbar {
+      display: flex;
+      justify-content: flex-start;
+      margin-bottom: 16px;
+    }
+
+    .workbench-card .hero {
+      margin: 0 0 18px;
+    }
+
+    .workbench-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+
+    .workbench-grid {
+      display: grid;
+      grid-template-columns: minmax(245px, .95fr) minmax(275px, 1.08fr) minmax(285px, .92fr);
+      gap: 14px;
+      align-items: stretch;
+      margin-top: 14px;
+    }
 
     .label {
       color: var(--muted);
@@ -182,16 +215,92 @@
       font-weight: 950;
     }
 
+    .context-panel {
+      min-width: 0;
+      display: grid;
+      align-content: start;
+      gap: 12px;
+      padding: 14px;
+      border: 1px solid rgba(255,255,255,.095);
+      border-radius: 18px;
+      background: rgba(0,0,0,.115);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.025);
+    }
+
+    .action-panel {
+      border-color: rgba(245, 211, 122, .28);
+      background:
+        linear-gradient(180deg, rgba(245, 211, 122, .07), rgba(0,0,0,.12)),
+        rgba(0,0,0,.12);
+    }
+
+    .context-panel-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .context-panel h3 {
+      margin: 3px 0 0;
+      font-size: 16px;
+      letter-spacing: -.01em;
+    }
+
+    .task-context-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .context-field {
+      min-width: 0;
+      padding: 9px 10px;
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 12px;
+      background: rgba(255,255,255,.045);
+    }
+
+    .context-field .label {
+      font-size: 10px;
+      letter-spacing: .06em;
+    }
+
+    .context-field .value {
+      margin-top: 5px;
+      font-size: 12px;
+    }
+
+    .task-detail {
+      padding-top: 2px;
+    }
+
+    .task-detail summary {
+      width: fit-content;
+      color: var(--gold);
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 950;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .task-detail .body-text {
+      max-height: 28em;
+      overflow: auto;
+      margin-top: 9px;
+      font-size: 13px;
+      color: rgba(247,242,223,.76);
+    }
+
     .linked-soc-card {
       display: grid;
       gap: 12px;
-      margin-top: 14px;
-      padding: 14px;
-      border: 1px solid rgba(245, 211, 122, .24);
-      border-radius: 16px;
-      background:
-        linear-gradient(135deg, rgba(245, 211, 122, .085), rgba(115, 244, 223, .045)),
-        rgba(0,0,0,.16);
+      padding: 0;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
     }
 
     .linked-soc-head {
@@ -258,16 +367,16 @@
 
     .linked-soc-grid {
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 8px;
     }
 
     .linked-soc-field {
       min-width: 0;
       padding: 9px 10px;
-      border: 1px solid rgba(255,255,255,.1);
+      border: 1px solid rgba(255,255,255,.085);
       border-radius: 12px;
-      background: rgba(255,255,255,.045);
+      background: rgba(255,255,255,.035);
     }
 
     .linked-soc-field span {
@@ -574,6 +683,55 @@
       transform: none;
     }
 
+    .worklog-template-panel {
+      display: grid;
+      gap: 8px;
+      padding: 10px 0 2px;
+    }
+
+    .worklog-template-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .worklog-template-chip {
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      min-height: 30px;
+      border: 1px solid rgba(245, 211, 122, .28);
+      border-radius: 999px;
+      padding: 6px 10px;
+      color: var(--gold);
+      background: rgba(245, 211, 122, .075);
+      cursor: pointer;
+      font: inherit;
+      font-size: 11px;
+      font-weight: 950;
+      line-height: 1;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .worklog-template-chip:hover:not(:disabled) {
+      border-color: rgba(115, 244, 223, .45);
+      color: var(--cyan);
+      background: rgba(115, 244, 223, .1);
+      transform: translateY(-1px);
+    }
+
+    .worklog-template-chip:disabled,
+    .worklog-form.is-preview .worklog-template-chip {
+      border-color: rgba(245, 211, 122, .16);
+      color: rgba(247,242,223,.46);
+      background: rgba(255,255,255,.035);
+      cursor: not-allowed;
+      opacity: .62;
+      transform: none;
+    }
+
     .worklog-form-row {
       display: grid;
       grid-template-columns: minmax(150px, 200px) minmax(0, 1fr) auto;
@@ -671,6 +829,22 @@
       line-height: 1;
     }
 
+    .worklog-number-pill {
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      border: 1px solid rgba(115, 244, 223, .34);
+      border-radius: 999px;
+      padding: 4px 8px;
+      color: #081018;
+      background: var(--cyan);
+      font-size: 10px;
+      font-weight: 950;
+      line-height: 1;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
     .worklog-comment {
       color: var(--text);
       font-size: 14px;
@@ -681,13 +855,17 @@
     }
 
     @media (max-width: 960px) {
-      .layout { grid-template-columns: 1fr; }
+      .workbench-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .action-panel { grid-column: 1 / -1; }
       .summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .linked-soc-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
 
     @media (max-width: 640px) {
       .wrap { width: min(100% - 24px, 1160px); }
+      .workbench-card { padding: 14px; }
+      .workbench-grid { grid-template-columns: 1fr; }
+      .action-panel { grid-column: auto; }
       .summary-grid { grid-template-columns: 1fr; }
       .card, .summary-card { border-radius: 18px; }
       .actions { align-items: stretch; }
@@ -697,6 +875,7 @@
       .timeline-meta { grid-template-columns: 1fr; }
       .timeline-time { min-width: 0; white-space: normal; }
       .worklog-form-row { grid-template-columns: 1fr; }
+      .task-context-grid { grid-template-columns: 1fr; }
       .linked-soc-grid { grid-template-columns: 1fr; }
       .linked-soc-head { align-items: stretch; }
       .linked-soc-actions,
@@ -706,34 +885,87 @@
 </head>
 <body>
   <main class="wrap">
-    <a class="back-link" href="/serviceops/">Back to ServiceOps</a>
-
-    <section class="hero">
-      <div class="eyebrow" id="ticket-kicker">ServiceOps Ticket</div>
-      <h1 id="ticket-title">Loading ticket...</h1>
-      <div class="hero-row" id="hero-status"></div>
-    </section>
-
     <section class="layout">
-      <div>
+      <div class="card workbench-card">
+        <div class="workbench-toolbar">
+          <a class="back-link" href="/serviceops/">Back to ServiceOps</a>
+        </div>
+        <section class="hero">
+          <div class="eyebrow" id="ticket-kicker">ServiceOps Ticket</div>
+          <h1 id="ticket-title">Loading ticket...</h1>
+          <div class="hero-row" id="hero-status"></div>
+        </section>
+        <div class="workbench-head">
+          <div>
+            <div class="label">Summary Cards</div>
+            <h2>Ticket Summary</h2>
+          </div>
+        </div>
         <div class="summary-grid" id="summary-grid"></div>
 
-        <div class="card">
-          <div class="card-top">
-            <h2>Task</h2>
-          </div>
-          <div class="body-text" id="ticket-task">Loading...</div>
-          <div id="linked-soc-context"></div>
-        </div>
+        <div class="workbench-grid">
+          <section class="context-panel" aria-label="ServiceOps Task Context">
+            <div class="context-panel-head">
+              <div>
+                <div class="label">ServiceOps Ticket Task Context</div>
+                <h3>ServiceOps Task Context</h3>
+              </div>
+            </div>
+            <div class="task-context-grid" id="ticket-task-fields"></div>
+            <details class="task-detail">
+              <summary>Raw Task Detail</summary>
+              <div class="body-text" id="ticket-task">Loading...</div>
+            </details>
+          </section>
 
-        <div class="card" id="archive-card" style="display: none;">
-          <div class="card-top">
-            <h2>Archive Info</h2>
-          </div>
-          <div class="summary-grid" id="archive-grid"></div>
-        </div>
+          <section class="context-panel" aria-label="Linked SOC Source Context">
+            <div class="context-panel-head">
+              <div>
+                <div class="label">SOC Incident Source Context</div>
+                <h3>Linked SOC Source Context</h3>
+              </div>
+            </div>
+            <div id="linked-soc-context"></div>
+          </section>
 
-        <div class="card worklog-card">
+          <aside class="context-panel action-panel" aria-label="Ticket Actions">
+            <div class="context-panel-head">
+              <div>
+                <div class="label">Actions / Progress Update</div>
+                <h3>Ticket Actions</h3>
+              </div>
+            </div>
+            <div class="muted" id="action-note">Loading permissions...</div>
+            <div class="actions" id="ticket-actions"></div>
+            <form class="progress-form" id="progress-form" style="display: none;">
+              <label>
+                Progress
+                <select name="progress_status">
+                  <option value="in_progress">In Progress</option>
+                  <option value="waiting">Waiting</option>
+                  <option value="blocked">Blocked</option>
+                  <option value="done">Done</option>
+                </select>
+              </label>
+              <label>
+                Note
+                <input name="progress_note" maxlength="500" placeholder="Brief update">
+              </label>
+              <button class="submit-btn" type="submit">Update Progress</button>
+              <span class="message" id="progress-message"></span>
+            </form>
+          </aside>
+        </div>
+      </div>
+
+      <div class="card" id="archive-card" style="display: none;">
+        <div class="card-top">
+          <h2>Archive Info</h2>
+        </div>
+        <div class="summary-grid" id="archive-grid"></div>
+      </div>
+
+      <div class="card worklog-card">
           <div class="card-top">
             <h2>Worklog Entries</h2>
           </div>
@@ -742,6 +974,10 @@
             <div class="worklog-form-head">
               <div class="label">Add Worklog</div>
               <span class="preview-badge">Preview</span>
+            </div>
+            <div class="worklog-template-panel" aria-label="Quick Templates">
+              <div class="label">Quick Templates</div>
+              <div class="worklog-template-row" id="worklog-template-row"></div>
             </div>
             <div class="worklog-form-row">
               <label>
@@ -769,41 +1005,15 @@
           </div>
         </div>
 
-        <div class="card timeline-card">
-          <div class="timeline-head">
-            <h2>Progress Timeline</h2>
-            <span class="label" id="timeline-source">LOADING</span>
-          </div>
-          <div class="timeline-list" id="progress-timeline">
-            <div class="muted">Loading progress timeline...</div>
-          </div>
+      <div class="card timeline-card">
+        <div class="timeline-head">
+          <h2>Progress Timeline</h2>
+          <span class="label" id="timeline-source">LOADING</span>
+        </div>
+        <div class="timeline-list" id="progress-timeline">
+          <div class="muted">Loading progress timeline...</div>
         </div>
       </div>
-
-      <aside class="card">
-        <div class="card-top">
-          <h2>Actions</h2>
-        </div>
-        <div class="muted" id="action-note">Loading permissions...</div>
-        <div class="actions" id="ticket-actions" style="margin-top: 12px;"></div>
-        <form class="progress-form" id="progress-form" style="display: none;">
-          <label>
-            Progress
-            <select name="progress_status">
-              <option value="in_progress">In Progress</option>
-              <option value="waiting">Waiting</option>
-              <option value="blocked">Blocked</option>
-              <option value="done">Done</option>
-            </select>
-          </label>
-          <label>
-            Note
-            <input name="progress_note" maxlength="500" placeholder="Brief update">
-          </label>
-          <button class="submit-btn" type="submit">Update Progress</button>
-          <span class="message" id="progress-message"></span>
-        </form>
-      </aside>
     </section>
   </main>
 
@@ -824,6 +1034,61 @@
       { value: "vendor", label: "Vendor" },
       { value: "recovery", label: "Recovery" },
       { value: "note", label: "Note" }
+    ];
+
+    const worklogTemplates = [
+      {
+        id: "evidence-required",
+        label: "Evidence Required",
+        comment_type: "worklog",
+        comment: `Evidence Required:
+- uname -a output
+- apt list --upgradable kernel package result
+- ptrace scope = 2
+- /etc/ssh/*_key permission screenshot or command output
+- systemctl status enyrax-api
+- nginx reload success
+- SOC Incident linked
+- Infra Verify passed`
+      },
+      {
+        id: "actions-completed",
+        label: "Actions Completed",
+        comment_type: "worklog",
+        comment: `Actions Completed:
+- apt update completed
+- apt upgrade completed
+- snapd / vim / xxd packages upgraded
+- ptrace scope set to 2
+- persistent sysctl config created
+- SSH / API / Nginx maintenance commands executed
+- journalctl reviewed
+- setuid inventory command executed`
+      },
+      {
+        id: "waiting-for-vendor",
+        label: "Waiting for Vendor",
+        comment_type: "vendor",
+        comment: `Waiting for vendor confirmation.
+Current status and evidence have been recorded.
+Next action depends on vendor response.`
+      },
+      {
+        id: "recovery-verified",
+        label: "Recovery Verified",
+        comment_type: "recovery",
+        comment: `Recovery verified.
+Service health checked.
+Linked SOC incident reviewed.
+No new error event observed.`
+      },
+      {
+        id: "investigation-note",
+        label: "Investigation Note",
+        comment_type: "investigation",
+        comment: `Investigation note:
+Checked linked SOC incident, service status and recent worklog context.`
+      }
     ];
 
     function escapeHtml(value) {
@@ -953,6 +1218,41 @@
       `;
     }
 
+    function taskFieldValue(task, labels) {
+      const source = String(task || "");
+      const names = Array.isArray(labels) ? labels : [labels];
+      for (const label of names) {
+        const pattern = new RegExp(`(?:^|\\n)\\s*${label}\\s*:\\s*([^\\n]+)`, "i");
+        const match = source.match(pattern);
+        if (match) return match[1].trim();
+      }
+      return "";
+    }
+
+    function renderContextField(label, value) {
+      return `
+        <div class="context-field">
+          <div class="label">${escapeHtml(label)}</div>
+          <div class="value">${escapeHtml(value || "-")}</div>
+        </div>
+      `;
+    }
+
+    function renderTaskContextFields(item) {
+      const task = item && item.task;
+      const fields = [
+        ["SOC Incident ID", linkedSocIncidentId(task)],
+        ["Severity", taskFieldValue(task, "Severity")],
+        ["ServiceOps Priority", taskFieldValue(task, "ServiceOps priority")],
+        ["Source IP", taskFieldValue(task, "Source IP")],
+        ["Target", taskFieldValue(task, "Target")],
+        ["Analysis Type", taskFieldValue(task, "Analysis type")],
+        ["MITRE", taskFieldValue(task, "MITRE")],
+        ["Resolution Note", taskFieldValue(task, "Resolution note")]
+      ];
+      return fields.map(([label, value]) => renderContextField(label, value)).join("");
+    }
+
     function linkedSocIncidentId(task) {
       const match = String(task || "").match(/SOC\s+incident\s+id:\s*(\d+)/i);
       return match ? match[1] : "";
@@ -981,7 +1281,7 @@
         <div class="linked-soc-card">
           <div class="linked-soc-head">
             <div class="linked-soc-title">
-              <div class="label">Linked SOC Incident</div>
+              <div class="label">Linked SOC Source Context</div>
               <strong>Incident #${escapeHtml(incidentId)}</strong>
             </div>
             <div class="linked-soc-actions">
@@ -1169,9 +1469,50 @@
       `).join("");
     }
 
+    function renderWorklogTemplates(enabled = canWrite()) {
+      const target = document.getElementById("worklog-template-row");
+      target.innerHTML = worklogTemplates.map((template) => `
+        <button class="worklog-template-chip" type="button" data-worklog-template="${escapeHtml(template.id)}" ${enabled ? "" : "disabled"}>
+          ${escapeHtml(template.label)}
+        </button>
+      `).join("");
+    }
+
+    function worklogSortTime(item) {
+      if (!item || !item.created_at) return 0;
+      const time = new Date(item.created_at).getTime();
+      return Number.isNaN(time) ? 0 : time;
+    }
+
+    function sortWorklogEntries(entries) {
+      return [...entries].sort((a, b) => {
+        const timeDiff = worklogSortTime(b) - worklogSortTime(a);
+        if (timeDiff !== 0) return timeDiff;
+        return Number(b.id || 0) - Number(a.id || 0);
+      });
+    }
+
+    function assignStableWorklogNumbers(entries) {
+      const numbered = [...(entries || [])].sort((a, b) => {
+        const timeDiff = worklogSortTime(a) - worklogSortTime(b);
+        if (timeDiff !== 0) return timeDiff;
+        return Number(a.id || 0) - Number(b.id || 0);
+      });
+      const numbersByItem = new Map();
+      numbered.forEach((item, index) => {
+        numbersByItem.set(item, index + 1);
+      });
+      return (entries || []).map((item, index) => ({
+        ...item,
+        stableDisplayNumber: numbersByItem.get(item) || index + 1
+      }));
+    }
+
     function filteredWorklogEntries() {
-      if (activeWorklogFilter === "all") return worklogEntries;
-      return worklogEntries.filter((item) => (item.comment_type || "worklog") === activeWorklogFilter);
+      const filtered = activeWorklogFilter === "all"
+        ? worklogEntries
+        : worklogEntries.filter((item) => (item.comment_type || "worklog") === activeWorklogFilter);
+      return sortWorklogEntries(filtered);
     }
 
     function renderWorklogList() {
@@ -1190,14 +1531,30 @@
       renderWorklogList();
     }
 
+    function handleWorklogTemplateClick(event) {
+      const button = event.target.closest("[data-worklog-template]");
+      if (!button || button.disabled) return;
+      if (!canWrite()) return showWriteLoginRequired();
+
+      const template = worklogTemplates.find((item) => item.id === button.dataset.worklogTemplate);
+      if (!template) return;
+
+      const form = document.getElementById("worklog-form");
+      form.elements.comment_type.value = template.comment_type;
+      form.elements.comment.value = template.comment;
+      form.elements.comment.focus();
+      document.getElementById("worklog-message").textContent = "Template applied. Review and add worklog.";
+    }
+
     function renderWorklogEntries(entries, emptyMessage) {
       if (!entries.length) {
         return `<div class="muted">${escapeHtml(emptyMessage || "No worklog entries yet.")}</div>`;
       }
 
-      return entries.map((item) => `
+      return entries.map((item, index) => `
         <div class="worklog-entry">
           <div class="worklog-meta">
+            <span class="worklog-number-pill">Worklog #${escapeHtml(item.stableDisplayNumber || index + 1)}</span>
             <span>${escapeHtml(item.actor || "-")}</span>
             <span>Role: ${escapeHtml(item.role || "-")}</span>
             <span class="comment-type-badge">${escapeHtml(commentTypeLabel(item.comment_type))}</span>
@@ -1219,6 +1576,7 @@
       form.elements.comment.disabled = !enabled;
       button.disabled = !enabled;
       note.textContent = message || "";
+      renderWorklogTemplates(enabled);
 
       form.elements.comment_type.value = "worklog";
       form.elements.comment.value = "";
@@ -1244,7 +1602,7 @@
         if (!res.ok) throw await parseError(res, "Failed to load worklog entries");
 
         const data = await res.json();
-        worklogEntries = data.comments || [];
+        worklogEntries = assignStableWorklogNumbers(data.comments || []);
         renderWorklogList();
       } catch (err) {
         console.error("Worklog load failed:", err);
@@ -1297,6 +1655,7 @@
       document.getElementById("ticket-title").textContent = item.title || `Ticket #${item.id}`;
       document.getElementById("hero-status").innerHTML = `<span class="pill ${escapeHtml(status)}">${escapeHtml(statusLabel(status))}</span>`;
       document.getElementById("ticket-task").textContent = item.task || "-";
+      document.getElementById("ticket-task-fields").innerHTML = renderTaskContextFields(item);
 
       document.getElementById("summary-grid").innerHTML = [
         renderSummaryCard("Status", statusLabel(status)),
@@ -1534,7 +1893,9 @@
     document.getElementById("progress-form").addEventListener("submit", updateTicketProgress);
     document.getElementById("worklog-form").addEventListener("submit", addWorklogEntry);
     document.getElementById("worklog-filter-row").addEventListener("click", handleWorklogFilterClick);
+    document.getElementById("worklog-template-row").addEventListener("click", handleWorklogTemplateClick);
     renderWorklogFilters();
+    renderWorklogTemplates(false);
     window.addEventListener("enyrax-auth-session-changed", () => loadTicket());
     window.addEventListener("enyrax-role-changed", () => loadTicket());
     loadTicket();
