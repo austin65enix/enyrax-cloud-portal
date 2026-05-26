@@ -576,9 +576,58 @@
       align-items: end;
     }
 
+    .worklog-filter-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+
+    .worklog-filter-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 30px;
+      border: 1px solid rgba(245, 211, 122, .24);
+      border-radius: 999px;
+      padding: 6px 10px;
+      color: var(--text);
+      background: rgba(245, 211, 122, .07);
+      cursor: pointer;
+      font: inherit;
+      font-size: 11px;
+      font-weight: 950;
+      line-height: 1;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .worklog-filter-chip:hover {
+      border-color: rgba(115, 244, 223, .42);
+      background: rgba(115, 244, 223, .1);
+      transform: translateY(-1px);
+    }
+
+    .worklog-filter-chip.is-active {
+      color: #081018;
+      border-color: rgba(115, 244, 223, .72);
+      background: var(--cyan);
+      box-shadow: 0 0 0 3px rgba(115, 244, 223, .1);
+    }
+
+    .worklog-filter-count {
+      color: inherit;
+      opacity: .78;
+      font-weight: 950;
+    }
+
     .worklog-list {
       display: grid;
       gap: 10px;
+      max-height: min(520px, 60vh);
+      overflow: auto;
+      padding-right: 2px;
     }
 
     .worklog-entry {
@@ -683,6 +732,7 @@
           <div class="card-top">
             <h2>Worklog Entries</h2>
           </div>
+          <div class="worklog-filter-row" id="worklog-filter-row" aria-label="Worklog type filters"></div>
           <form class="worklog-form is-preview" id="worklog-form">
             <div class="worklog-form-head">
               <div class="label">Add Worklog</div>
@@ -758,6 +808,18 @@
 
   <script>
     let currentTicket = null;
+    let worklogEntries = [];
+    let activeWorklogFilter = "all";
+
+    const WORKLOG_FILTERS = [
+      { value: "all", label: "All" },
+      { value: "worklog", label: "Worklog" },
+      { value: "investigation", label: "Investigation" },
+      { value: "waiting", label: "Waiting" },
+      { value: "vendor", label: "Vendor" },
+      { value: "recovery", label: "Recovery" },
+      { value: "note", label: "Note" }
+    ];
 
     function escapeHtml(value) {
       return String(value ?? "")
@@ -1076,9 +1138,56 @@
       return String(type || "worklog").replaceAll("_", " ");
     }
 
-    function renderWorklogEntries(entries) {
+    function worklogEmptyMessage(filter) {
+      if (filter === "all") return "No worklog entries yet.";
+      if (filter === "worklog") return "No worklog entries.";
+      return `No ${commentTypeLabel(filter)} worklog entries.`;
+    }
+
+    function worklogFilterCounts() {
+      return worklogEntries.reduce((counts, item) => {
+        const type = item.comment_type || "worklog";
+        counts.all += 1;
+        counts[type] = (counts[type] || 0) + 1;
+        return counts;
+      }, { all: 0 });
+    }
+
+    function renderWorklogFilters() {
+      const target = document.getElementById("worklog-filter-row");
+      const counts = worklogFilterCounts();
+      target.innerHTML = WORKLOG_FILTERS.map((filter) => `
+        <button class="worklog-filter-chip ${filter.value === activeWorklogFilter ? "is-active" : ""}" type="button" data-worklog-filter="${escapeHtml(filter.value)}" aria-pressed="${filter.value === activeWorklogFilter ? "true" : "false"}">
+          <span>${escapeHtml(filter.label)}</span>
+          <span class="worklog-filter-count">${escapeHtml(counts[filter.value] || 0)}</span>
+        </button>
+      `).join("");
+    }
+
+    function filteredWorklogEntries() {
+      if (activeWorklogFilter === "all") return worklogEntries;
+      return worklogEntries.filter((item) => (item.comment_type || "worklog") === activeWorklogFilter);
+    }
+
+    function renderWorklogList() {
+      renderWorklogFilters();
+      document.getElementById("worklog-list").innerHTML = renderWorklogEntries(
+        filteredWorklogEntries(),
+        worklogEmptyMessage(activeWorklogFilter)
+      );
+    }
+
+    function handleWorklogFilterClick(event) {
+      const chip = event.target.closest("[data-worklog-filter]");
+      if (!chip) return;
+
+      activeWorklogFilter = chip.dataset.worklogFilter || "all";
+      renderWorklogList();
+    }
+
+    function renderWorklogEntries(entries, emptyMessage) {
       if (!entries.length) {
-        return `<div class="muted">No worklog entries yet.</div>`;
+        return `<div class="muted">${escapeHtml(emptyMessage || "No worklog entries yet.")}</div>`;
       }
 
       return entries.map((item) => `
@@ -1130,9 +1239,12 @@
         if (!res.ok) throw await parseError(res, "Failed to load worklog entries");
 
         const data = await res.json();
-        target.innerHTML = renderWorklogEntries(data.comments || []);
+        worklogEntries = data.comments || [];
+        renderWorklogList();
       } catch (err) {
         console.error("Worklog load failed:", err);
+        worklogEntries = [];
+        renderWorklogFilters();
         target.innerHTML = `<div class="error-text">Failed to load worklog entries.</div>`;
       }
     }
@@ -1416,6 +1528,8 @@
 
     document.getElementById("progress-form").addEventListener("submit", updateTicketProgress);
     document.getElementById("worklog-form").addEventListener("submit", addWorklogEntry);
+    document.getElementById("worklog-filter-row").addEventListener("click", handleWorklogFilterClick);
+    renderWorklogFilters();
     window.addEventListener("enyrax-auth-session-changed", () => loadTicket());
     window.addEventListener("enyrax-role-changed", () => loadTicket());
     loadTicket();
