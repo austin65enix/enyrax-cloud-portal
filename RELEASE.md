@@ -1,5 +1,85 @@
 # ENYRAX Cloud Portal Release Notes
 
+## v0.6.16-portal-product-features
+
+Release date: 2026-05-26
+
+## Summary
+
+This release upgrades the Portal homepage from a module launcher into a product-facing landing page.
+
+The homepage now highlights the ENYRAX Command Center product value with ten core features, while the Orbit Portal hero section has been compacted so visitors can see product capabilities earlier on the page.
+
+## Completed
+
+- Added ENYRAX Command Center 十大特色 section
+- Placed product features near the top of the homepage
+- Added 10 product feature cards:
+  - 單一戰情中心
+  - 事件一路追到結案
+  - 地端主機同步
+  - 多角色協作
+  - Worklog 工作歷程
+  - Recovery Evidence
+  - Command Header 情報列
+  - 即時事件中心
+  - Preview Demo 模式
+  - 模組化擴充
+- Used responsive feature grid
+- Preserved existing module entry cards
+- Compacted Orbit Portal hero height
+- Reduced orbit visual size
+- Reduced hero spacing and button gaps
+- Improved first-screen visibility for product features
+
+## Homepage Structure
+
+```text
+Orbit Portal Hero
+  → Product feature summary
+  → ENYRAX Command Center 十大特色
+  → Module entry cards
+```
+
+## Product Positioning
+
+```text
+SOC
+  → Incident detection and lifecycle
+
+Sync Gateway
+  → Local Wazuh / Docker / Host / Agent status
+
+ServiceOps
+  → Work order handling, progress, SLA and worklog
+
+ProjectOps
+  → Delivery and project operation control
+
+Audit / Status
+  → Traceability and system health
+```
+
+## Current Product Status
+
+```text
+Portal Homepage   Product landing page enabled
+Hero Section      Compact layout enabled
+Feature Cards     Ten product capabilities shown
+Module Entry      Existing demo navigation preserved
+```
+
+## Next Phase
+
+- Add visual icons to product feature cards
+- Add interactive feature drill-down
+- Add product workflow diagram
+- Add homepage system health summary
+- Add bilingual Chinese / English toggle
+- Add interview demo mode walkthrough
+
+---
+
 ## v0.6.13-serviceops-worklog-entries
 
 Release date: 2026-05-26
