@@ -1,5 +1,70 @@
 # ENYRAX Cloud Portal Release Notes
 
+## v0.6.13-serviceops-worklog-entries
+
+Release date: 2026-05-26
+
+## Summary
+
+This release adds ticket-level worklog entries to ServiceOps.
+
+Operators can now add structured handling notes directly to a ServiceOps ticket, while preview and viewer modes clearly show the disabled Add Worklog form so users understand where worklog entries are created.
+
+## Completed
+
+- Added `serviceops_ticket_comments` database table
+- Added ServiceOps ticket comments migration
+- Added `GET /api/serviceops/tickets/{ticket_id}/comments`
+- Added `POST /api/serviceops/tickets/{ticket_id}/comments`
+- Added worklog entry types:
+  - worklog
+  - investigation
+  - waiting
+  - vendor
+  - recovery
+  - note
+- Added audit log action for ServiceOps worklog creation
+- Added Worklog Entries section to ServiceOps ticket detail
+- Added Add Worklog form to ticket detail
+- Added disabled preview form for read-only users
+- Added role-aware worklog controls:
+  - Preview / Viewer: read-only
+  - Operator / Supervisor / Admin: can add worklog
+- Added immediate worklog list refresh after submit
+- Preserved Progress Timeline refresh after worklog creation
+
+## Worklog Flow
+
+```text
+ServiceOps Ticket Detail
+  → Add Worklog
+  → Save comment
+  → Worklog Entries refresh
+  → Audit log records comment action
+  → Progress Timeline can show comment event for audit users
+```
+
+## Current Product Status
+
+```text
+ServiceOps Ticket Detail   Summary + actions enabled
+Progress Timeline          Audit/fallback history enabled
+Worklog Entries            Ticket-level handling notes enabled
+SOC Context                Linked SOC incident enabled
+Role Gating                Preview read-only / Operator write enabled
+```
+
+## Next Phase
+
+- Add ServiceOps worklog filters
+- Add worklog edit/delete for Supervisor/Admin
+- Add SLA / due date fields
+- Add blocked / overdue status
+- Add assignee workload summary
+- Add linked SOC summary preview inside ticket detail
+
+---
+
 ## v0.6.12-serviceops-progress-timeline
 
 Release date: 2026-05-25
