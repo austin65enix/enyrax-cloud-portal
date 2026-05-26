@@ -182,6 +182,123 @@
       font-weight: 950;
     }
 
+    .linked-soc-card {
+      display: grid;
+      gap: 12px;
+      margin-top: 14px;
+      padding: 14px;
+      border: 1px solid rgba(245, 211, 122, .24);
+      border-radius: 16px;
+      background:
+        linear-gradient(135deg, rgba(245, 211, 122, .085), rgba(115, 244, 223, .045)),
+        rgba(0,0,0,.16);
+    }
+
+    .linked-soc-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .linked-soc-title {
+      display: grid;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .linked-soc-title strong {
+      color: var(--text);
+      font-size: 15px;
+      line-height: 1.35;
+      overflow-wrap: anywhere;
+    }
+
+    .linked-soc-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .linked-soc-actions .context-link {
+      margin-top: 0;
+    }
+
+    .soc-badge-row {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      flex-wrap: wrap;
+    }
+
+    .soc-badge {
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      border: 1px solid rgba(255,255,255,.14);
+      border-radius: 999px;
+      padding: 4px 8px;
+      color: var(--text);
+      background: rgba(255,255,255,.08);
+      font-size: 10px;
+      font-weight: 950;
+      line-height: 1;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .soc-status-closed { color: #062014; background: var(--green); border-color: rgba(143, 247, 178, .44); }
+    .soc-status-open { color: #241203; background: var(--gold); border-color: rgba(245, 211, 122, .44); }
+    .soc-status-investigating, .soc-status-in_progress { color: #081018; background: var(--cyan); border-color: rgba(115, 244, 223, .42); }
+    .soc-severity-critical, .soc-severity-high { color: #26060c; background: var(--red); border-color: rgba(255, 107, 134, .52); }
+    .soc-severity-medium { color: #241203; background: var(--orange); border-color: rgba(255, 184, 107, .44); }
+    .soc-severity-low { color: #062014; background: var(--green); border-color: rgba(143, 247, 178, .4); }
+
+    .linked-soc-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .linked-soc-field {
+      min-width: 0;
+      padding: 9px 10px;
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 12px;
+      background: rgba(255,255,255,.045);
+    }
+
+    .linked-soc-field span {
+      display: block;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 950;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+
+    .linked-soc-field strong {
+      display: block;
+      margin-top: 5px;
+      color: var(--text);
+      font-size: 12px;
+      font-weight: 850;
+      line-height: 1.45;
+      overflow-wrap: anywhere;
+    }
+
+    .linked-soc-note {
+      grid-column: 1 / -1;
+    }
+
+    .linked-soc-note strong {
+      max-height: 7.2em;
+      overflow: auto;
+      white-space: pre-wrap;
+    }
+
     .mini-btn,
     .submit-btn {
       border: 1px solid rgba(255,255,255,.12);
@@ -512,6 +629,7 @@
     @media (max-width: 960px) {
       .layout { grid-template-columns: 1fr; }
       .summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .linked-soc-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
 
     @media (max-width: 640px) {
@@ -525,6 +643,10 @@
       .timeline-meta { grid-template-columns: 1fr; }
       .timeline-time { min-width: 0; white-space: normal; }
       .worklog-form-row { grid-template-columns: 1fr; }
+      .linked-soc-grid { grid-template-columns: 1fr; }
+      .linked-soc-head { align-items: stretch; }
+      .linked-soc-actions,
+      .linked-soc-actions .context-link { width: 100%; }
     }
   </style>
 </head>
@@ -769,12 +891,109 @@
       return match ? match[1] : "";
     }
 
+    function socClassToken(value) {
+      return String(value || "unknown").toLowerCase().replace(/[^a-z0-9_-]/g, "_");
+    }
+
+    function renderSocBadge(type, value) {
+      const normalized = socClassToken(value);
+      return `<span class="soc-badge soc-${type}-${escapeHtml(normalized)}">${escapeHtml(value || "-")}</span>`;
+    }
+
+    function renderLinkedSocField(label, value, className = "") {
+      return `
+        <div class="linked-soc-field ${escapeHtml(className)}">
+          <span>${escapeHtml(label)}</span>
+          <strong>${escapeHtml(value || "-")}</strong>
+        </div>
+      `;
+    }
+
+    function renderLinkedSocShell(incidentId, content) {
+      return `
+        <div class="linked-soc-card">
+          <div class="linked-soc-head">
+            <div class="linked-soc-title">
+              <div class="label">Linked SOC Incident</div>
+              <strong>Incident #${escapeHtml(incidentId)}</strong>
+            </div>
+            <div class="linked-soc-actions">
+              <a class="context-link" href="/soc/incident.html?id=${encodeURIComponent(incidentId)}">Linked SOC Incident #${escapeHtml(incidentId)}</a>
+            </div>
+          </div>
+          ${content}
+        </div>
+      `;
+    }
+
+    function renderLinkedSocLoading(incidentId) {
+      return renderLinkedSocShell(incidentId, `<div class="muted">Loading linked SOC summary...</div>`);
+    }
+
+    function renderLinkedSocUnavailable(incidentId) {
+      return renderLinkedSocShell(incidentId, `<div class="error-text">Linked SOC summary unavailable.</div>`);
+    }
+
+    function renderLinkedSocSummary(incidentId, incident) {
+      const status = incident.status || "-";
+      const severity = incident.severity || "-";
+      return renderLinkedSocShell(incidentId, `
+        <div class="soc-badge-row">
+          ${renderSocBadge("status", status)}
+          ${renderSocBadge("severity", severity)}
+        </div>
+        <div class="linked-soc-grid">
+          ${renderLinkedSocField("Title", incident.title)}
+          ${renderLinkedSocField("Status", status)}
+          ${renderLinkedSocField("Severity", severity)}
+          ${renderLinkedSocField("Source IP", incident.source_ip)}
+          ${renderLinkedSocField("Target", incident.target)}
+          ${renderLinkedSocField("Analysis Type", incident.analysis_type)}
+          ${renderLinkedSocField("MITRE", incident.mitre)}
+          ${renderLinkedSocField("Infra Result", incident.infra_verification_result)}
+          ${renderLinkedSocField("Infra Verified By", incident.infra_verified_by)}
+          ${renderLinkedSocField("Infra Verified At", formatTime(incident.infra_verified_at))}
+          ${renderLinkedSocField("Resolution Note", incident.resolution_note, "linked-soc-note")}
+        </div>
+      `);
+    }
+
     function renderLinkedSocContext(item) {
       const target = document.getElementById("linked-soc-context");
       const incidentId = linkedSocIncidentId(item.task);
-      target.innerHTML = incidentId
-        ? `<a class="context-link" href="/soc/incident.html?id=${encodeURIComponent(incidentId)}">Linked SOC Incident #${escapeHtml(incidentId)}</a>`
-        : "";
+      if (!incidentId) {
+        target.innerHTML = "";
+        return;
+      }
+
+      target.innerHTML = renderLinkedSocLoading(incidentId);
+      loadLinkedSocSummary(incidentId);
+    }
+
+    async function loadLinkedSocSummary(incidentId) {
+      const target = document.getElementById("linked-soc-context");
+
+      try {
+        const res = await fetch(`/api/soc/incidents/${encodeURIComponent(incidentId)}`, {
+          cache: "no-store",
+          headers: window.ENYRAXRole ? window.ENYRAXRole.header() : {}
+        });
+
+        if (!res.ok) throw await parseError(res, "Linked SOC summary failed");
+
+        const data = await res.json();
+        const incident = data.incident || null;
+        if (!incident) throw new Error("Linked SOC summary response missing incident.");
+
+        if (linkedSocIncidentId(currentTicket && currentTicket.task) === String(incidentId)) {
+          target.innerHTML = renderLinkedSocSummary(incidentId, incident);
+        }
+      } catch (err) {
+        console.error("Linked SOC summary load failed:", err);
+        if (linkedSocIncidentId(currentTicket && currentTicket.task) === String(incidentId)) {
+          target.innerHTML = renderLinkedSocUnavailable(incidentId);
+        }
+      }
     }
 
     function timelineActionClass(action) {
