@@ -229,6 +229,41 @@
       box-shadow: 0 18px 56px rgba(245, 211, 122, .12);
     }
 
+    .feature-card-head {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-height: 32px;
+    }
+
+    .feature-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 34px;
+      height: 32px;
+      border: 1px solid rgba(245, 211, 122, .26);
+      border-radius: 12px;
+      color: var(--gold);
+      background:
+        radial-gradient(circle at 35% 22%, rgba(115, 244, 223, .16), transparent 58%),
+        rgba(245, 211, 122, .075);
+      box-shadow: inset 0 0 18px rgba(245, 211, 122, .05);
+      font-size: 18px;
+      font-weight: 900;
+      line-height: 1;
+      transition: color .18s ease, border-color .18s ease, box-shadow .18s ease, text-shadow .18s ease;
+    }
+
+    .feature-card:hover .feature-icon {
+      color: var(--cyan);
+      border-color: rgba(115, 244, 223, .46);
+      box-shadow:
+        inset 0 0 18px rgba(115, 244, 223, .08),
+        0 0 22px rgba(115, 244, 223, .18);
+      text-shadow: 0 0 14px rgba(115, 244, 223, .72);
+    }
+
     .feature-index {
       display: inline-flex;
       align-items: center;
@@ -546,61 +581,91 @@
 
       <div class="feature-grid">
         <article class="feature-card">
-          <span class="feature-index">01</span>
+          <div class="feature-card-head">
+            <span class="feature-icon" aria-hidden="true">◎</span>
+            <span class="feature-index">01</span>
+          </div>
           <h3>單一戰情中心</h3>
           <p>把 SOC、ServiceOps、ProjectOps、Sync Gateway、Audit Logs 與 Status Center 收斂在同一個入口。</p>
         </article>
 
         <article class="feature-card">
-          <span class="feature-index">02</span>
+          <div class="feature-card-head">
+            <span class="feature-icon" aria-hidden="true">↳</span>
+            <span class="feature-index">02</span>
+          </div>
           <h3>事件一路追到結案</h3>
           <p>從事件發現、查核、復原佐證、服務工單到結案，形成完整處理鏈。</p>
         </article>
 
         <article class="feature-card">
-          <span class="feature-index">03</span>
+          <div class="feature-card-head">
+            <span class="feature-icon" aria-hidden="true">⇄</span>
+            <span class="feature-index">03</span>
+          </div>
           <h3>地端主機同步</h3>
           <p>透過 Sync Gateway 將地端 Wazuh、Docker、Host、Agent 狀態回拋到東京 Portal。</p>
         </article>
 
         <article class="feature-card">
-          <span class="feature-index">04</span>
+          <div class="feature-card-head">
+            <span class="feature-icon" aria-hidden="true">◔</span>
+            <span class="feature-index">04</span>
+          </div>
           <h3>多角色協作</h3>
           <p>支援 Preview、Viewer、Operator、Supervisor、Admin，讓不同角色看到符合權限的操作能力。</p>
         </article>
 
         <article class="feature-card">
-          <span class="feature-index">05</span>
+          <div class="feature-card-head">
+            <span class="feature-icon" aria-hidden="true">✎</span>
+            <span class="feature-index">05</span>
+          </div>
           <h3>Worklog 工作歷程</h3>
           <p>ServiceOps Ticket 可記錄 investigation、vendor、recovery、note 等處理紀錄。</p>
         </article>
 
         <article class="feature-card">
-          <span class="feature-index">06</span>
+          <div class="feature-card-head">
+            <span class="feature-icon" aria-hidden="true">✓</span>
+            <span class="feature-index">06</span>
+          </div>
           <h3>Recovery Evidence</h3>
           <p>SOC Detail 可根據同步來源健康度、Heartbeat 與最近事件，判斷服務是否恢復正常。</p>
         </article>
 
         <article class="feature-card">
-          <span class="feature-index">07</span>
+          <div class="feature-card-head">
+            <span class="feature-icon" aria-hidden="true">▬</span>
+            <span class="feature-index">07</span>
+          </div>
           <h3>Command Header 情報列</h3>
           <p>固定在畫面上方，快速顯示 SOC Open、SOC Critical、ServiceOps Pending 與 Sync Health。</p>
         </article>
 
         <article class="feature-card">
-          <span class="feature-index">08</span>
+          <div class="feature-card-head">
+            <span class="feature-icon" aria-hidden="true">●</span>
+            <span class="feature-index">08</span>
+          </div>
           <h3>即時事件中心</h3>
           <p>Sync Gateway、SOC、Status Panel 都能顯示最近事件與狀態變化，協助團隊掌握現況。</p>
         </article>
 
         <article class="feature-card">
-          <span class="feature-index">09</span>
+          <div class="feature-card-head">
+            <span class="feature-icon" aria-hidden="true">👁</span>
+            <span class="feature-index">09</span>
+          </div>
           <h3>Preview Demo 模式</h3>
           <p>未登入也可用 read-only 方式展示系統，適合面試、簡報與客戶展示。</p>
         </article>
 
         <article class="feature-card">
-          <span class="feature-index">10</span>
+          <div class="feature-card-head">
+            <span class="feature-icon" aria-hidden="true">＋</span>
+            <span class="feature-index">10</span>
+          </div>
           <h3>模組化擴充</h3>
           <p>架構可延伸到 HRM、MES、HIS、Asset、Supplier、DecisionOps 等企業流程。</p>
         </article>
