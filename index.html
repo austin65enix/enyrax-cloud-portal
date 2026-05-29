@@ -172,6 +172,262 @@
       50% { transform: scale(1.04); filter: brightness(1.08); }
     }
 
+
+    .architecture-section {
+      margin-top: 24px;
+      border: 1px solid rgba(115, 244, 223, .2);
+      border-radius: 24px;
+      background:
+        radial-gradient(circle at 18% 8%, rgba(115, 244, 223, .12), transparent 32%),
+        linear-gradient(145deg, rgba(245, 211, 122, .075), transparent 42%),
+        rgba(9, 12, 31, .72);
+      padding: 28px;
+      box-shadow:
+        0 24px 90px rgba(0,0,0,.24),
+        inset 0 1px 0 rgba(255,255,255,.04);
+    }
+
+    .architecture-head {
+      max-width: 880px;
+      margin-bottom: 22px;
+    }
+
+    .architecture-head h2 {
+      margin: 0;
+      color: var(--gold);
+      font-size: clamp(28px, 4vw, 42px);
+      line-height: 1.12;
+    }
+
+    .architecture-head p {
+      margin: 12px 0 0;
+      color: var(--muted);
+      font-size: 17px;
+      line-height: 1.55;
+    }
+
+    .architecture-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 236px;
+      gap: 18px;
+      align-items: start;
+    }
+
+    .architecture-map {
+      display: grid;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .arch-layer {
+      position: relative;
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 20px;
+      background: rgba(255,255,255,.035);
+      padding: 16px;
+    }
+
+    .arch-layer + .arch-layer::before {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: -13px;
+      width: 1px;
+      height: 12px;
+      background: linear-gradient(to bottom, rgba(115, 244, 223, .12), rgba(115, 244, 223, .58));
+    }
+
+    .arch-layer + .arch-layer::after {
+      content: "";
+      position: absolute;
+      left: calc(50% - 5px);
+      top: -4px;
+      width: 9px;
+      height: 9px;
+      border-right: 1px solid rgba(115, 244, 223, .64);
+      border-bottom: 1px solid rgba(115, 244, 223, .64);
+      transform: rotate(45deg);
+    }
+
+    .arch-layer-title {
+      margin: 0 0 12px;
+      color: var(--cyan);
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+    }
+
+    .arch-cards {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .arch-cards.two {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .arch-cards.output {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .arch-card {
+      min-width: 0;
+      border: 1px solid rgba(255,255,255,.11);
+      border-radius: 16px;
+      background:
+        linear-gradient(145deg, rgba(255,255,255,.055), rgba(255,255,255,.025)),
+        rgba(9, 12, 31, .72);
+      padding: 14px;
+      box-shadow: inset 0 0 24px rgba(115, 244, 223, .025);
+    }
+
+    .arch-card strong {
+      display: block;
+      color: var(--text);
+      font-size: 15px;
+      line-height: 1.25;
+    }
+
+    .arch-card p {
+      margin: 7px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.42;
+    }
+
+    .arch-card.accent-n8n {
+      border-color: rgba(245, 130, 75, .32);
+      box-shadow: 0 0 34px rgba(245, 130, 75, .08);
+    }
+
+    .arch-card.accent-ai {
+      border-color: rgba(115, 244, 223, .28);
+      box-shadow: 0 0 34px rgba(115, 244, 223, .08);
+    }
+
+    .arch-card.accent-summary {
+      border-color: rgba(245, 211, 122, .28);
+      box-shadow: 0 0 34px rgba(245, 211, 122, .08);
+    }
+
+    .arch-card.accent-ansible {
+      border-color: rgba(143, 247, 178, .34);
+      box-shadow: 0 0 34px rgba(143, 247, 178, .08);
+    }
+
+    .arch-card.wide {
+      padding: 16px;
+    }
+
+    .flow-steps {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .flow-steps span,
+    .core-pills span {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      border: 1px solid rgba(115, 244, 223, .22);
+      border-radius: 999px;
+      color: var(--cyan);
+      background: rgba(115, 244, 223, .065);
+      padding: 5px 10px;
+      font-size: 12px;
+      font-weight: 900;
+      line-height: 1.2;
+      white-space: nowrap;
+    }
+
+    .serviceops-core {
+      border-color: rgba(245, 211, 122, .48);
+      background:
+        radial-gradient(circle at 50% 0%, rgba(245, 211, 122, .18), transparent 46%),
+        linear-gradient(135deg, rgba(115, 244, 223, .09), rgba(245, 211, 122, .07)),
+        rgba(12, 16, 38, .94);
+      padding: 22px;
+      box-shadow:
+        0 0 52px rgba(245, 211, 122, .16),
+        0 0 70px rgba(115, 244, 223, .08),
+        inset 0 0 36px rgba(245, 211, 122, .055);
+    }
+
+    .serviceops-core strong {
+      color: var(--gold);
+      font-size: clamp(24px, 3.6vw, 36px);
+      letter-spacing: .02em;
+    }
+
+    .serviceops-core p {
+      max-width: 780px;
+      font-size: 16px;
+    }
+
+    .core-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .value-rail {
+      border: 1px solid rgba(245, 211, 122, .2);
+      border-radius: 20px;
+      background:
+        linear-gradient(160deg, rgba(245, 211, 122, .08), transparent 42%),
+        rgba(255,255,255,.035);
+      padding: 16px;
+      box-shadow: inset 0 0 30px rgba(245, 211, 122, .035);
+    }
+
+    .value-rail h3 {
+      margin: 0 0 14px;
+      color: var(--gold);
+      font-size: 18px;
+    }
+
+    .value-item {
+      border-top: 1px solid rgba(255,255,255,.09);
+      padding: 12px 0;
+    }
+
+    .value-item:first-of-type {
+      border-top: 0;
+      padding-top: 0;
+    }
+
+    .value-item strong {
+      display: block;
+      color: var(--cyan);
+      font-size: 14px;
+    }
+
+    .value-item span {
+      display: block;
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .architecture-statement {
+      margin: 18px 0 0;
+      border: 1px solid rgba(115, 244, 223, .2);
+      border-radius: 18px;
+      background: rgba(115, 244, 223, .055);
+      padding: 15px 18px;
+      color: var(--text);
+      font-size: 16px;
+      font-weight: 800;
+      line-height: 1.55;
+      box-shadow: 0 0 34px rgba(115, 244, 223, .07);
+    }
+
     .feature-section {
       margin-top: 10px;
       border: 1px solid rgba(245, 211, 122, .2);
@@ -455,6 +711,18 @@
     }
 
     @media (max-width: 1080px) {
+      .architecture-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .arch-cards {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .arch-cards.output {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
       .modules {
         grid-template-columns: repeat(2, 1fr);
       }
@@ -526,6 +794,29 @@
         height: 70px;
       }
 
+      .architecture-section {
+        padding: 20px;
+      }
+
+      .arch-layer {
+        padding: 14px;
+      }
+
+      .arch-cards,
+      .arch-cards.two,
+      .arch-cards.output {
+        grid-template-columns: 1fr;
+      }
+
+      .serviceops-core {
+        padding: 18px;
+      }
+
+      .flow-steps span,
+      .core-pills span {
+        white-space: normal;
+      }
+
       .modules,
       .feature-grid,
       .steps {
@@ -570,6 +861,142 @@
         <div class="orbit three"></div>
         <div class="core"></div>
       </div>
+    </section>
+
+
+    <section class="architecture-section" aria-labelledby="enterprise-ops-architecture">
+      <div class="architecture-head">
+        <p class="feature-kicker">Enterprise Architecture</p>
+        <h2 id="enterprise-ops-architecture">ENYRAX Enterprise Ops Control Center</h2>
+        <p>以 ServiceOps 為核心，整合事件來源、流程自動化、AI 判斷與自動化執行，形成企業營運治理閉環。</p>
+      </div>
+
+      <div class="architecture-grid">
+        <div class="architecture-map">
+          <section class="arch-layer" aria-label="事件與資料來源層">
+            <h3 class="arch-layer-title">事件 / 資料來源層</h3>
+            <div class="arch-cards">
+              <article class="arch-card">
+                <strong>SOC / Wazuh</strong>
+                <p>告警、弱點、日誌、資安事件</p>
+              </article>
+              <article class="arch-card">
+                <strong>ERP / 財務系統</strong>
+                <p>採購、庫存、會計、成本</p>
+              </article>
+              <article class="arch-card">
+                <strong>Open Source HRM</strong>
+                <p>人員、角色、權限、班表</p>
+              </article>
+              <article class="arch-card">
+                <strong>MES / 現場系統</strong>
+                <p>製令、工單、設備、品質</p>
+              </article>
+              <article class="arch-card">
+                <strong>其他系統 / 外部</strong>
+                <p>Email、API、表單、Excel、Webhook</p>
+              </article>
+            </div>
+          </section>
+
+          <section class="arch-layer" aria-label="整合流程層">
+            <h3 class="arch-layer-title">整合流程層</h3>
+            <article class="arch-card wide accent-n8n">
+              <strong>n8n Workflow Engine</strong>
+              <p>流程串接、資料轉拋、通知、Webhook、自動排程</p>
+              <div class="flow-steps" aria-label="n8n flow steps">
+                <span>資料接收</span>
+                <span>資料轉換</span>
+                <span>規則判斷</span>
+                <span>事件路由</span>
+                <span>通知</span>
+              </div>
+            </article>
+          </section>
+
+          <section class="arch-layer" aria-label="核心平台層">
+            <h3 class="arch-layer-title">核心平台層</h3>
+            <article class="arch-card serviceops-core">
+              <strong>ENYRAX ServiceOps Core</strong>
+              <p>企業事件、工單、責任、證據、稽核與結案管理核心。</p>
+              <div class="core-pills" aria-label="ServiceOps modules">
+                <span>IncidentOps</span>
+                <span>TicketOps</span>
+                <span>SLAOps</span>
+                <span>OwnerOps</span>
+                <span>EvidenceOps</span>
+                <span>AuditOps</span>
+                <span>CloseOps</span>
+                <span>AssetOps</span>
+              </div>
+            </article>
+          </section>
+
+          <section class="arch-layer" aria-label="智慧判斷層">
+            <h3 class="arch-layer-title">智慧判斷層</h3>
+            <div class="arch-cards two">
+              <article class="arch-card accent-ai">
+                <strong>AI Agent</strong>
+                <p>摘要、分類、風險評估、MITRE 對應、建議行動、SOP 推薦</p>
+              </article>
+              <article class="arch-card accent-summary">
+                <strong>AI Summary</strong>
+                <p>事件摘要、影響評估、成本預估、風險等級、管理決策</p>
+              </article>
+            </div>
+          </section>
+
+          <section class="arch-layer" aria-label="自動化執行層">
+            <h3 class="arch-layer-title">自動化執行層</h3>
+            <article class="arch-card wide accent-ansible">
+              <strong>Ansible Automation</strong>
+              <p>Patch、Deploy、Restart、Config、Account、Evidence。</p>
+            </article>
+          </section>
+
+          <section class="arch-layer" aria-label="管理輸出層">
+            <h3 class="arch-layer-title">管理輸出層</h3>
+            <div class="arch-cards output">
+              <article class="arch-card"><strong>Dashboard</strong></article>
+              <article class="arch-card"><strong>Report</strong></article>
+              <article class="arch-card"><strong>Audit Log</strong></article>
+              <article class="arch-card"><strong>Recovery Evidence</strong></article>
+              <article class="arch-card"><strong>Management View</strong></article>
+              <article class="arch-card"><strong>Closure Statistics</strong></article>
+            </div>
+          </section>
+        </div>
+
+        <aside class="value-rail" aria-label="ENYRAX 價值欄">
+          <h3>ENYRAX Value</h3>
+          <div class="value-item">
+            <strong>集中化</strong>
+            <span>整合多系統事件，單一平台管理</span>
+          </div>
+          <div class="value-item">
+            <strong>自動化</strong>
+            <span>流程自動串接，減少人工作業</span>
+          </div>
+          <div class="value-item">
+            <strong>標準化</strong>
+            <span>SLA / SOP / 稽核證據標準化</span>
+          </div>
+          <div class="value-item">
+            <strong>可視化</strong>
+            <span>即時儀表板，決策有依據</span>
+          </div>
+          <div class="value-item">
+            <strong>智慧化</strong>
+            <span>AI 協助分析判斷，提高處理效率</span>
+          </div>
+          <div class="value-item">
+            <strong>閉環化</strong>
+            <span>從事件到結案完整追蹤</span>
+          </div>
+        </aside>
+      </div>
+
+      <p class="architecture-statement">Wazuh 負責偵測，n8n 負責串流程，ServiceOps 負責管責任，AI Agent 負責判斷，Ansible 負責動手做。</p>
     </section>
 
     <section class="feature-section" aria-labelledby="command-center-features">
