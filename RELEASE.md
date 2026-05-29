@@ -1,5 +1,65 @@
 # ENYRAX Cloud Portal Release Notes
 
+## v0.6.17-wazuh-local-sync-recovery
+
+Release date: 2026-05-29
+
+## Summary
+
+This release documents and operationalizes the local Wazuh sync recovery workflow.
+
+The local Wazuh lab source now reports heartbeat, host summary, Docker status and Wazuh alert summary back to the Tokyo Portal. The Sync Gateway can identify the source as healthy, enabling SOC Recovery Evidence to support Infra Confirm Normal and incident closure.
+
+## Completed
+
+- Added Wazuh local sync recovery plan
+- Added local sync cron installer
+- Added local Wazuh sync health check script
+- Documented local-wazuh-lab-01 source identity
+- Documented heartbeat / host / docker / wazuh sync frequencies
+- Documented Sync Gateway health states
+- Added troubleshooting for `.env` export behavior
+- Confirmed local Wazuh source recovered from stale to healthy
+- Confirmed SOC Incident #9 with Recovery Evidence
+- Closed recovered local sync SOC incident
+
+## Workflow
+
+```text
+Local Wazuh Lab
+  → local_sync_agent.py
+  → heartbeat / host / docker / wazuh summary
+  → Tokyo Sync Gateway
+  → Sync Source Health
+  → SOC Recovery Evidence
+  → Infra Confirm Normal
+  → Close Incident
+```
+
+## Operational Notes
+
+`.env` variables must use `export`:
+
+```bash
+export ENYRAX_SYNC_URL=...
+export ENYRAX_SYNC_KEY=...
+export ENYRAX_SYNC_SOURCE=local-wazuh-lab-01
+```
+
+Without `export`, shell `echo` may look correct but Python `os.environ` will not receive the variable values.
+
+## Next Phase
+
+- Convert local sync cron to systemd timer
+- Add source archive / deprecated source management
+- Add Wazuh detailed alert ingestion
+- Add Sync Source detail page
+- Add local agent installer package
+- Add sync key rotation workflow
+- Add multi-site source registration
+
+---
+
 ## v0.6.16-portal-product-features
 
 Release date: 2026-05-26
