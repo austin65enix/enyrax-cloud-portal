@@ -832,6 +832,111 @@ def parse_vulnerability_limit(limit: Optional[str]) -> int:
     return min(parsed_limit, 500)
 
 
+def unique_sorted_values(items, key: str) -> list[str]:
+    values = {str(item.get(key) or "").strip() for item in items}
+    return sorted(value for value in values if value)
+
+
+def first_vulnerability_value(items, key: str):
+    for item in items:
+        value = item.get(key)
+        if value not in (None, ""):
+            return value
+    return None
+
+
+def highest_vulnerability_severity(items) -> str:
+    highest = "unknown"
+    for item in items:
+        severity = normalized_severity(item.get("severity"))
+        if SEVERITY_ORDER[severity] < SEVERITY_ORDER[highest]:
+            highest = severity
+    return highest
+
+
+def highest_cvss_score(items):
+    scores = []
+    for item in items:
+        try:
+            scores.append(float(item.get("cvss_score")))
+        except (TypeError, ValueError):
+            continue
+
+    if not scores:
+        return None
+
+    score = max(scores)
+    return int(score) if score.is_integer() else score
+
+
+def vulnerability_cve_response(items, requested_cve: str):
+    cve_filter = requested_cve.strip().lower()
+    cve_items = [
+        item for item in items
+        if str(item.get("cve_id") or "").strip().lower() == cve_filter
+    ]
+
+    if not cve_items:
+        raise HTTPException(status_code=404, detail="CVE not found.")
+
+    cve_id = first_vulnerability_value(cve_items, "cve_id") or requested_cve
+    packages = unique_sorted_values(cve_items, "package_name")
+    reference_urls = sorted({
+        str(url).strip()
+        for item in cve_items
+        for url in (item.get("reference_urls") if isinstance(item.get("reference_urls"), list) else [])
+        if str(url).strip()
+    })
+    affected_host_keys = {
+        host_key for host_key in (vulnerability_host_key(item) for item in cve_items)
+        if host_key
+    }
+
+    affected_hosts = sorted(
+        [
+            {
+                "hostname": item.get("hostname"),
+                "host_id": item.get("host_id"),
+                "agent_id": item.get("agent_id"),
+                "os_name": item.get("os_name"),
+                "os_version": item.get("os_version"),
+                "package_name": item.get("package_name"),
+                "installed_version": item.get("installed_version"),
+                "fixed_version": item.get("fixed_version"),
+                "detected_at": item.get("detected_at"),
+                "last_seen_at": item.get("last_seen_at"),
+                "status": item.get("status"),
+                "remediation_status": item.get("remediation_status"),
+            }
+            for item in cve_items
+        ],
+        key=lambda host: (
+            str(host.get("hostname") or ""),
+            str(host.get("package_name") or ""),
+            str(host.get("detected_at") or ""),
+        ),
+    )
+
+    return {
+        "status": "ok",
+        "source": "normalized_vulnerabilities",
+        "cve": {
+            "cve_id": cve_id,
+            "title": first_vulnerability_value(cve_items, "title"),
+            "highest_severity": highest_vulnerability_severity(cve_items),
+            "cvss_score": highest_cvss_score(cve_items),
+            "published_at": first_vulnerability_value(cve_items, "published_at"),
+            "modified_at": first_vulnerability_value(cve_items, "modified_at"),
+            "affected_host_count": len(affected_host_keys),
+            "affected_package_count": len(packages),
+            "packages": packages,
+            "reference_urls": reference_urls,
+            "remediation_hint": first_vulnerability_value(cve_items, "remediation_hint"),
+        },
+        "affected_hosts": affected_hosts,
+    }
+
+
 
 VULNERABILITY_SLA_LEVELS = {
     "critical": "urgent",
@@ -929,6 +1034,17 @@ def write_vulnerability_ticket_audit(db, action: str, entity_id, summary: str, a
 def vulnerabilities_summary():
     items = load_normalized_vulnerabilities()
     response = vulnerability_summary_response(items)
+    warning = load_normalized_vulnerabilities.warning
+    if warning:
+        response["warning"] = warning
+
+    return response
+
+
+@app.get("/api/vulnerabilities/cves/{cve_id}")
+def vulnerability_cve_detail(cve_id: str):
+    items = load_normalized_vulnerabilities()
+    response = vulnerability_cve_response(items, cve_id)
     warning = load_normalized_vulnerabilities.warning
     if warning:
         response["warning"] = warning

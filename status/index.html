@@ -285,7 +285,7 @@
 
     .vuln-table {
       width: 100%;
-      min-width: 1020px;
+      min-width: 1180px;
       border-collapse: collapse;
       font-size: 13px;
     }
@@ -807,13 +807,15 @@
                 <th>Host</th>
                 <th>Package</th>
                 <th>Version</th>
-                <th>Status</th>
+                <th>Published</th>
+                <th>Detected</th>
+                <th>Last Seen</th>
                 <th>Remediation Hint</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody id="vuln-preview-body">
-              <tr><td colspan="8">Loading vulnerability inventory...</td></tr>
+              <tr><td colspan="10">Loading vulnerability inventory...</td></tr>
             </tbody>
           </table>
         </div>
@@ -968,6 +970,15 @@
         minute: "2-digit",
         second: "2-digit"
       });
+    }
+
+    function formatDateShort(value) {
+      if (!value) return "-";
+
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return value;
+
+      return date.toISOString().slice(0, 10);
     }
 
     function setSyncValue(id, value) {
@@ -1387,18 +1398,24 @@
 
     function renderTopCves(items) {
       const list = Array.isArray(items) ? items.slice(0, 5) : [];
-      document.getElementById("vuln-top-cves").innerHTML = list.length ? list.map((item) => `
-        <div class="vuln-list-item">
-          <div class="vuln-item-top">
-            <div class="vuln-item-name">${escapeHtml(item.cve_id || item.cve || "-")}</div>
-            <div class="vuln-count">${escapeHtml(formatCount(item.count))}</div>
+      document.getElementById("vuln-top-cves").innerHTML = list.length ? list.map((item) => {
+        const cveId = item.cve_id || item.cve || "-";
+        const detailHref = `/api/vulnerabilities/cves/${encodeURIComponent(cveId)}`;
+
+        return `
+          <div class="vuln-list-item">
+            <div class="vuln-item-top">
+              <div class="vuln-item-name">${escapeHtml(cveId)}</div>
+              <div class="vuln-count">${escapeHtml(formatCount(item.count))}</div>
+            </div>
+            <div class="vuln-counts">
+              <span>${severityBadge(item.highest_severity || item.severity)}</span>
+              <span>Affected hosts: ${escapeHtml(formatCount(countValue(item.affected_hosts ?? item.affected_host_count)))}</span>
+              <a class="vuln-ticket-button" href="${escapeHtml(detailHref)}" target="_blank" rel="noopener">View CVE</a>
+            </div>
           </div>
-          <div class="vuln-counts">
-            <span>${severityBadge(item.highest_severity || item.severity)}</span>
-            <span>Affected hosts ${escapeHtml(formatCount(countValue(item.affected_hosts ?? item.affected_host_count)))}</span>
-          </div>
-        </div>
-      `).join("") : `<div class="key">No CVE data available.</div>`;
+        `;
+      }).join("") : `<div class="key">No CVE data available.</div>`;
     }
 
     function renderTopHosts(items) {
@@ -1431,7 +1448,7 @@
       const body = document.getElementById("vuln-preview-body");
 
       if (!rows.length) {
-        body.innerHTML = `<tr><td colspan="8">No vulnerability inventory rows available.</td></tr>`;
+        body.innerHTML = `<tr><td colspan="10">No vulnerability inventory rows available.</td></tr>`;
         return;
       }
 
@@ -1441,9 +1458,11 @@
           <td>${escapeHtml(row.cve_id || row.cve || "-")}</td>
           <td>${escapeHtml(row.hostname || row.host || "-")}</td>
           <td>${escapeHtml(row.package_name || row.package || "-")}</td>
-          <td>${escapeHtml(row.installed_version || "-")} → ${escapeHtml(row.fixed_version || "-")}</td>
-          <td>${escapeHtml(row.remediation_status || "-")}</td>
-          <td>${escapeHtml(row.remediation_hint || "-")}</td>
+          <td>${escapeHtml(row.installed_version || "-")} &rarr; ${escapeHtml(row.fixed_version || "-")}</td>
+          <td>${escapeHtml(formatDateShort(row.published_at))}</td>
+          <td>${escapeHtml(formatDateShort(row.detected_at))}</td>
+          <td>${escapeHtml(formatDateShort(row.last_seen_at))}</td>
+          <td>${escapeHtml(row.remediation_hint || row.remediation_status || "-")}</td>
           <td class="vuln-action-cell">${renderVulnerabilityTicketAction(row)}</td>
         </tr>
       `).join("");
@@ -1535,7 +1554,7 @@
       renderTopPackages([]);
       renderTopCves([]);
       renderTopHosts([]);
-      document.getElementById("vuln-preview-body").innerHTML = `<tr><td colspan="8">Vulnerability inventory unavailable</td></tr>`;
+      document.getElementById("vuln-preview-body").innerHTML = `<tr><td colspan="10">Vulnerability inventory unavailable</td></tr>`;
       setVulnMessage("Vulnerability inventory unavailable", true);
     }
 

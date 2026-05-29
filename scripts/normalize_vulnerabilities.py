@@ -18,6 +18,8 @@ NORMALIZED_FIELDS = [
     "severity",
     "cvss_score",
     "title",
+    "published_at",
+    "modified_at",
     "package_name",
     "installed_version",
     "fixed_version",
