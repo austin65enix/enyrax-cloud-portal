@@ -504,6 +504,7 @@
       align-items: center;
     }
 
+    .source-detail,
     .source-action,
     .candidate-create,
     .candidate-open-soc {
@@ -534,6 +535,13 @@
       padding: 8px 10px;
       font-size: 12px;
       font-weight: 950;
+    }
+
+    .source-detail {
+      min-height: 36px;
+      border: 1px solid rgba(245, 211, 122, .3);
+      background: rgba(245, 211, 122, .08);
+      color: var(--gold);
     }
 
     .source-action.archive {
@@ -655,6 +663,7 @@
         justify-content: flex-start;
       }
 
+      .source-detail,
       .source-action,
       .candidate-create,
       .candidate-open-soc {
@@ -955,11 +964,17 @@
     }
 
     function syncSourceActions(item) {
-      if (!canManageSyncSources()) return "";
-
       const source = escapeHtml(item.source || "");
+      const detailHref = `/sync/source.html?source=${encodeURIComponent(item.source || "")}`;
+      const actions = [
+        `<a class="source-detail" href="${escapeHtml(detailHref)}">View Detail</a>`
+      ];
+
+      if (!canManageSyncSources()) {
+        return `<div class="source-actions">${actions.join("")}</div>`;
+      }
+
       const status = normalizeSourceStatus(item.source_status);
-      const actions = [];
 
       if (status === "active") {
         actions.push(`<button type="button" class="source-action deprecated" data-source-metadata="deprecated" data-source="${source}">Mark Deprecated</button>`);

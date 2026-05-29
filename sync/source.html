@@ -1,0 +1,677 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ENYRAX Sync Source Detail</title>
+  <style>
+    :root {
+      --bg: #071018;
+      --card: rgba(255,255,255,.06);
+      --card2: rgba(255,255,255,.09);
+      --text: #f7f2df;
+      --muted: rgba(247,242,223,.68);
+      --line: rgba(255,255,255,.12);
+      --gold: #f5d37a;
+      --cyan: #73f4df;
+      --green: #8ff7b2;
+      --amber: #ffcf6f;
+      --orange: #ff9d5c;
+      --red: #ff6b86;
+      --gray: #aab3c5;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(115,244,223,.16), transparent 32%),
+        radial-gradient(circle at top right, rgba(245,211,122,.12), transparent 30%),
+        linear-gradient(180deg, #071018 0%, #090d16 100%);
+    }
+
+    .wrap {
+      width: min(1120px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 34px 0 48px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 38px;
+      border: 1px solid rgba(245, 211, 122, .3);
+      background: rgba(245, 211, 122, .08);
+      color: var(--gold);
+      border-radius: 12px;
+      padding: 9px 12px;
+      font-size: 13px;
+      font-weight: 950;
+      text-decoration: none;
+    }
+
+    .load-status {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 850;
+    }
+
+    h1,
+    h2 {
+      margin: 0;
+      letter-spacing: 0;
+    }
+
+    h1 {
+      font-size: clamp(32px, 5vw, 56px);
+      line-height: 1;
+      overflow-wrap: anywhere;
+    }
+
+    h2 {
+      font-size: 20px;
+    }
+
+    .subtitle {
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    .card {
+      border: 1px solid var(--line);
+      background: var(--card);
+      box-shadow: 0 24px 80px rgba(0,0,0,.2);
+      border-radius: 24px;
+      padding: 20px;
+    }
+
+    .card + .card {
+      margin-top: 14px;
+    }
+
+    .source-header {
+      padding: clamp(20px, 4vw, 30px);
+      background:
+        linear-gradient(135deg, rgba(115,244,223,.08), rgba(245,211,122,.05)),
+        var(--card);
+    }
+
+    .source-title-row,
+    .card-top,
+    .event-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .badges,
+    .event-badges {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 6px;
+      flex: 0 0 auto;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 5px 9px;
+      font-size: 12px;
+      font-weight: 950;
+      text-transform: uppercase;
+    }
+
+    .health-healthy {
+      color: #062014;
+      background: linear-gradient(135deg, var(--green), var(--cyan));
+    }
+
+    .health-warning {
+      color: #241203;
+      background: var(--amber);
+    }
+
+    .health-stale {
+      color: #241203;
+      background: var(--orange);
+    }
+
+    .health-error,
+    .status-error {
+      color: #26060c;
+      background: var(--red);
+    }
+
+    .health-unknown,
+    .source-status-archived,
+    .status-unknown {
+      color: #071018;
+      background: var(--gray);
+    }
+
+    .source-status-active,
+    .status-ok {
+      color: #062014;
+      background: linear-gradient(135deg, var(--green), var(--cyan));
+    }
+
+    .source-status-deprecated,
+    .status-warning {
+      color: #241203;
+      background: var(--amber);
+    }
+
+    .meta-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px 14px;
+      margin-top: 22px;
+    }
+
+    .meta-row {
+      min-width: 0;
+      border: 1px solid rgba(255,255,255,.09);
+      background: rgba(255,255,255,.035);
+      border-radius: 14px;
+      padding: 11px 12px;
+    }
+
+    .meta-key {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 950;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .meta-value {
+      margin-top: 6px;
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 850;
+      line-height: 1.45;
+      overflow-wrap: anywhere;
+      white-space: pre-wrap;
+    }
+
+    .counts {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .count-box {
+      border: 1px solid rgba(255,255,255,.1);
+      background: rgba(255,255,255,.04);
+      border-radius: 14px;
+      padding: 12px;
+    }
+
+    .count-box span {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 950;
+      text-transform: uppercase;
+    }
+
+    .count-box strong {
+      display: block;
+      margin-top: 5px;
+      color: var(--gold);
+      font-size: 24px;
+      line-height: 1;
+      overflow-wrap: anywhere;
+    }
+
+    .summary-text,
+    .empty,
+    .error-box {
+      color: var(--muted);
+      line-height: 1.6;
+      overflow-wrap: anywhere;
+    }
+
+    .summary-text {
+      display: grid;
+      gap: 9px;
+    }
+
+    .summary-line {
+      border: 1px solid rgba(255,255,255,.1);
+      background: rgba(255,255,255,.035);
+      border-radius: 14px;
+      padding: 11px 12px;
+      color: var(--text);
+      font-weight: 820;
+    }
+
+    .summary-healthy {
+      border-color: rgba(115,244,223,.3);
+      background: rgba(115,244,223,.08);
+      color: #d8fff7;
+    }
+
+    .summary-deprecated {
+      border-color: rgba(255,207,111,.35);
+      background: rgba(255,207,111,.1);
+      color: #ffe2a3;
+    }
+
+    .summary-archived {
+      border-color: rgba(170,179,197,.28);
+      background: rgba(170,179,197,.08);
+      color: #d6dbea;
+    }
+
+    .error-box {
+      border: 1px solid rgba(255, 107, 134, .35);
+      background: rgba(255, 107, 134, .08);
+      color: var(--text);
+      border-radius: 18px;
+      padding: 14px 16px;
+    }
+
+    .timeline {
+      display: grid;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .event-card {
+      min-width: 0;
+      border: 1px solid rgba(245, 211, 122, .16);
+      background: rgba(255,255,255,.04);
+      border-radius: 18px;
+      padding: 14px;
+    }
+
+    .event-title {
+      min-width: 0;
+      display: grid;
+      gap: 5px;
+    }
+
+    .event-time {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 850;
+      overflow-wrap: anywhere;
+    }
+
+    .event-type {
+      color: var(--text);
+      font-size: 16px;
+      font-weight: 950;
+      overflow-wrap: anywhere;
+    }
+
+    .event-system {
+      color: var(--cyan);
+      font-size: 12px;
+      font-weight: 950;
+      text-transform: uppercase;
+      overflow-wrap: anywhere;
+    }
+
+    .event-message {
+      margin-top: 11px;
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 760;
+      line-height: 1.45;
+      overflow-wrap: anywhere;
+    }
+
+    .payload {
+      max-width: 100%;
+      margin: 10px 0 0;
+      color: var(--muted);
+      background: rgba(0,0,0,.22);
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 12px;
+      padding: 10px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size: 12px;
+      line-height: 1.45;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
+    @media (max-width: 760px) {
+      .wrap {
+        width: min(100% - 24px, 1120px);
+      }
+
+      .source-title-row,
+      .card-top,
+      .event-top {
+        flex-direction: column;
+      }
+
+      .badges,
+      .event-badges {
+        justify-content: flex-start;
+      }
+
+      .meta-grid,
+      .counts {
+        grid-template-columns: 1fr;
+      }
+
+      .back-link {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="wrap">
+    <div class="topbar">
+      <a class="back-link" href="/sync/">Back to Sync Gateway</a>
+      <div class="load-status" id="load-status">Loading...</div>
+    </div>
+
+    <section id="error-box" class="error-box" hidden></section>
+
+    <section id="source-header" class="card source-header" hidden></section>
+
+    <section id="recovery-summary" class="card" hidden>
+      <div class="card-top">
+        <h2>Recovery Evidence Summary</h2>
+      </div>
+      <div class="summary-text" id="recovery-summary-text"></div>
+    </section>
+
+    <section id="events-section" class="card" hidden>
+      <div class="card-top">
+        <h2>Recent Events</h2>
+        <div class="load-status" id="events-count">0 events</div>
+      </div>
+      <div class="timeline" id="events-list">
+        <div class="empty">Loading recent events...</div>
+      </div>
+    </section>
+  </main>
+
+  <script src="/shared/auth-guard.js?v=0311"></script>
+  <script src="/shared/role-switcher.js?v=0280"></script>
+  <script src="/shared/command-header.js?v=0522"></script>
+
+  <script>
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function formatTime(value) {
+      if (!value) return "-";
+
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return value;
+
+      return date.toLocaleString("zh-TW", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit"
+      });
+    }
+
+    function normalizeArray(value) {
+      return Array.isArray(value) ? value.filter(Boolean) : [];
+    }
+
+    function normalizeHealth(health) {
+      const normalized = String(health || "unknown").trim().toLowerCase();
+      if (["healthy", "warning", "stale", "error", "unknown"].includes(normalized)) return normalized;
+      return "unknown";
+    }
+
+    function normalizeSourceStatus(status) {
+      const normalized = String(status || "active").trim().toLowerCase();
+      if (["active", "deprecated", "archived"].includes(normalized)) return normalized;
+      return "active";
+    }
+
+    function normalizeStatus(status) {
+      const normalized = String(status || "unknown").toLowerCase();
+      if (["ok", "warning", "error"].includes(normalized)) return normalized;
+      return "unknown";
+    }
+
+    function healthBadge(health) {
+      const normalized = normalizeHealth(health);
+      return `<span class="status-badge health-${normalized}">${escapeHtml(normalized)}</span>`;
+    }
+
+    function sourceStatusBadge(status) {
+      const normalized = normalizeSourceStatus(status);
+      return `<span class="status-badge source-status-${normalized}">${escapeHtml(normalized)}</span>`;
+    }
+
+    function statusBadge(status) {
+      const normalized = normalizeStatus(status);
+      return `<span class="status-badge status-${normalized}">${escapeHtml(normalized)}</span>`;
+    }
+
+    function metaRow(label, value) {
+      return `
+        <div class="meta-row">
+          <div class="meta-key">${escapeHtml(label)}</div>
+          <div class="meta-value">${escapeHtml(value ?? "-")}</div>
+        </div>
+      `;
+    }
+
+    function payloadSummary(payload) {
+      if (!payload || typeof payload !== "object" || Array.isArray(payload)) return "";
+
+      try {
+        const summary = JSON.stringify(payload, null, 2);
+        return summary.length > 300 ? summary.slice(0, 300) + "..." : summary;
+      } catch {
+        return "";
+      }
+    }
+
+    function recoveryEvidenceLines(item) {
+      const health = normalizeHealth(item.health);
+      const status = normalizeSourceStatus(item.source_status);
+      const messages = {
+        healthy: "Source is reporting normally. Heartbeat and recent sync events are available.",
+        warning: "Source needs attention. Recent event or heartbeat timing indicates warning state.",
+        stale: "Heartbeat is stale. Check local agent cron, network path and sync key.",
+        error: "Latest event reported error. Review local agent, Wazuh manager, Docker and host status.",
+        unknown: "No heartbeat or insufficient data. Confirm local agent is running and source name is correct."
+      };
+      const lines = [{
+        type: health === "healthy" ? "healthy" : "default",
+        text: messages[health] || messages.unknown
+      }];
+
+      if (status === "deprecated") {
+        lines.push({
+          type: "deprecated",
+          text: "This source is marked deprecated and may represent legacy test data."
+        });
+      }
+      if (status === "archived") {
+        lines.push({
+          type: "archived",
+          text: "This source is archived and hidden from the default Sync Gateway view."
+        });
+      }
+
+      return lines;
+    }
+
+    function showError(message) {
+      document.getElementById("load-status").textContent = "Error";
+      const box = document.getElementById("error-box");
+      box.hidden = false;
+      box.textContent = message;
+      document.getElementById("source-header").hidden = true;
+      document.getElementById("recovery-summary").hidden = true;
+      document.getElementById("events-section").hidden = true;
+    }
+
+    function renderSourceHeader(item) {
+      const header = document.getElementById("source-header");
+      const systems = normalizeArray(item.systems);
+      const systemsText = systems.length ? systems.join(", ") : "-";
+
+      header.hidden = false;
+      header.innerHTML = `
+        <div class="source-title-row">
+          <div>
+            <h1>${escapeHtml(item.source || "-")}</h1>
+            <div class="subtitle">${escapeHtml(item.latest_message || "-")}</div>
+          </div>
+          <div class="badges">
+            ${healthBadge(item.health)}
+            ${sourceStatusBadge(item.source_status)}
+          </div>
+        </div>
+        <div class="meta-grid">
+          ${metaRow("Source Status", normalizeSourceStatus(item.source_status))}
+          ${metaRow("Latest Event At", formatTime(item.latest_event_at))}
+          ${metaRow("Latest Heartbeat At", formatTime(item.latest_heartbeat_at))}
+          ${metaRow("Systems", systemsText)}
+          ${metaRow("Source Note", item.source_note || "-")}
+          ${metaRow("Archived At", formatTime(item.archived_at))}
+          ${metaRow("Archived By", item.archived_by || "-")}
+        </div>
+        <div class="counts">
+          <div class="count-box"><span>Total Events</span><strong>${escapeHtml(item.total_events ?? 0)}</strong></div>
+          <div class="count-box"><span>OK</span><strong>${escapeHtml(item.ok_count ?? 0)}</strong></div>
+          <div class="count-box"><span>Warning</span><strong>${escapeHtml(item.warning_count ?? 0)}</strong></div>
+          <div class="count-box"><span>Error</span><strong>${escapeHtml(item.error_count ?? 0)}</strong></div>
+        </div>
+      `;
+    }
+
+    function renderRecoverySummary(item) {
+      document.getElementById("recovery-summary").hidden = false;
+      document.getElementById("recovery-summary-text").innerHTML = recoveryEvidenceLines(item)
+        .map((line) => `<div class="summary-line summary-${escapeHtml(line.type)}">${escapeHtml(line.text)}</div>`)
+        .join("");
+    }
+
+    function renderEvents(events) {
+      const sortedEvents = Array.isArray(events) ? events.slice().sort((a, b) => {
+        const left = new Date(a.created_at || 0).getTime();
+        const right = new Date(b.created_at || 0).getTime();
+        return right - left;
+      }) : [];
+      const list = document.getElementById("events-list");
+      const count = document.getElementById("events-count");
+
+      document.getElementById("events-section").hidden = false;
+      count.textContent = `${sortedEvents.length} ${sortedEvents.length === 1 ? "event" : "events"}`;
+
+      if (!sortedEvents.length) {
+        list.innerHTML = `<div class="empty">No recent events found for this source.</div>`;
+        return;
+      }
+
+      list.innerHTML = sortedEvents.map((event) => {
+        const summary = payloadSummary(event.payload);
+        const payload = summary ? `<pre class="payload">${escapeHtml(summary)}</pre>` : "";
+
+        return `
+          <article class="event-card">
+            <div class="event-top">
+              <div class="event-title">
+                <div class="event-time">${escapeHtml(formatTime(event.created_at))}</div>
+                <div class="event-type">${escapeHtml(event.event_type || "-")}</div>
+                <div class="event-system">${escapeHtml(event.system || "-")}</div>
+              </div>
+              <div class="event-badges">${statusBadge(event.status)}</div>
+            </div>
+            <div class="event-message">${escapeHtml(event.message || "-")}</div>
+            ${payload}
+          </article>
+        `;
+      }).join("");
+    }
+
+    async function fetchJson(url) {
+      const res = await fetch(url, { cache: "no-store" });
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        throw new Error(data.detail || ("HTTP " + res.status));
+      }
+
+      return data;
+    }
+
+    async function loadSourceDetail() {
+      const params = new URLSearchParams(window.location.search);
+      const source = params.get("source");
+
+      if (!source) {
+        showError("Open this page with /sync/source.html?source=<source_name>.");
+        return;
+      }
+
+      document.getElementById("load-status").textContent = "Loading source...";
+
+      try {
+        const sourcesData = await fetchJson("/api/sync/sources");
+        const sources = Array.isArray(sourcesData.sources) ? sourcesData.sources : [];
+        const item = sources.find((entry) => entry && entry.source === source);
+
+        if (!item) {
+          showError("Source not found.");
+          return;
+        }
+
+        renderSourceHeader(item);
+        renderRecoverySummary(item);
+
+        document.getElementById("load-status").textContent = "Loading events...";
+        const eventsData = await fetchJson(`/api/sync/events?source=${encodeURIComponent(source)}&limit=20`);
+        const events = Array.isArray(eventsData.events) ? eventsData.events : [];
+        renderEvents(events);
+
+        document.getElementById("load-status").textContent = `Loaded ${events.length} ${events.length === 1 ? "event" : "events"}`;
+      } catch (err) {
+        console.error("Failed to load sync source detail:", err);
+        showError(err.message || "Unable to load sync source detail.");
+      }
+    }
+
+    loadSourceDetail();
+  </script>
+</body>
+</html>
