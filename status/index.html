@@ -93,6 +93,284 @@
       margin: 28px 0 30px;
     }
 
+    .vuln-panel {
+      margin: 0 0 28px;
+      padding: 18px;
+      border-radius: 20px;
+      border: 1px solid rgba(115, 244, 223, .22);
+      background:
+        linear-gradient(135deg, rgba(13, 17, 38, .88), rgba(8, 10, 24, .92)),
+        radial-gradient(circle at top right, rgba(115, 244, 223, .08), transparent 34%);
+      box-shadow: 0 20px 70px rgba(0, 0, 0, .22);
+    }
+
+    .vuln-subtitle {
+      margin: -6px 0 16px;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 650;
+      line-height: 1.45;
+    }
+
+    .vuln-message {
+      display: none;
+      margin: 0 0 14px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(245, 211, 122, .24);
+      color: var(--gold);
+      background: rgba(245, 211, 122, .08);
+      font-size: 13px;
+      font-weight: 850;
+      line-height: 1.4;
+    }
+
+    .vuln-message.bad {
+      border-color: rgba(255, 107, 134, .28);
+      color: var(--red);
+      background: rgba(255, 107, 134, .08);
+    }
+
+    .vuln-summary-grid {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .vuln-summary-card,
+    .vuln-mini-card {
+      min-height: 86px;
+      padding: 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255, 215, 130, .16);
+      background: rgba(255, 255, 255, .035);
+    }
+
+    .vuln-summary-card.warning,
+    .vuln-summary-card.critical {
+      border-color: rgba(255, 107, 134, .38);
+      background: rgba(255, 107, 134, .08);
+      box-shadow: inset 0 0 0 1px rgba(255, 107, 134, .08);
+    }
+
+    .vuln-label {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 950;
+      letter-spacing: .04em;
+      line-height: 1.25;
+      text-transform: uppercase;
+    }
+
+    .vuln-number {
+      margin-top: 9px;
+      color: var(--text);
+      font-size: 25px;
+      font-weight: 950;
+      line-height: 1;
+      overflow-wrap: anywhere;
+    }
+
+    .vuln-note {
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 750;
+      line-height: 1.35;
+      overflow-wrap: anywhere;
+    }
+
+    .vuln-breakdown {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .vuln-mini-card {
+      min-height: 58px;
+      padding: 10px;
+    }
+
+    .vuln-mini-card .vuln-number {
+      margin-top: 6px;
+      font-size: 19px;
+    }
+
+    .sev-critical { color: #ff6b86; }
+    .sev-high { color: #ff9b54; }
+    .sev-medium { color: #f5d37a; }
+    .sev-low { color: var(--cyan); }
+    .sev-unknown { color: rgba(247, 242, 223, .7); }
+
+    .vuln-content-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .vuln-list-card,
+    .vuln-preview-card {
+      padding: 14px;
+      border-radius: 16px;
+      border: 1px solid rgba(255, 215, 130, .16);
+      background: rgba(13, 17, 38, .7);
+    }
+
+    .vuln-list-card h3,
+    .vuln-preview-card h3 {
+      margin: 0 0 10px;
+      color: var(--gold);
+      font-size: 14px;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+
+    .vuln-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .vuln-list-item {
+      padding: 9px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, .07);
+    }
+
+    .vuln-list-item:last-child {
+      border-bottom: 0;
+      padding-bottom: 0;
+    }
+
+    .vuln-item-top,
+    .vuln-counts {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .vuln-item-name {
+      min-width: 0;
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 900;
+      overflow-wrap: anywhere;
+    }
+
+    .vuln-count {
+      flex: 0 0 auto;
+      color: var(--cyan);
+      font-size: 12px;
+      font-weight: 950;
+    }
+
+    .vuln-counts {
+      justify-content: flex-start;
+      flex-wrap: wrap;
+      margin-top: 7px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 850;
+    }
+
+    .vuln-preview-card {
+      margin-bottom: 12px;
+    }
+
+    .vuln-table-wrap {
+      overflow-x: auto;
+    }
+
+    .vuln-table {
+      width: 100%;
+      min-width: 860px;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    .vuln-table th,
+    .vuln-table td {
+      padding: 9px 8px;
+      border-bottom: 1px solid rgba(255, 255, 255, .07);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    .vuln-table th {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 950;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+
+    .severity-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 70px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 950;
+      line-height: 1;
+      text-transform: uppercase;
+    }
+
+    .severity-badge.critical {
+      color: #2a050d;
+      background: #ff6b86;
+    }
+
+    .severity-badge.high {
+      color: #241003;
+      background: #ff9b54;
+    }
+
+    .severity-badge.medium {
+      color: #251903;
+      background: #f5d37a;
+    }
+
+    .severity-badge.low {
+      color: #061c1b;
+      background: #73f4df;
+    }
+
+    .severity-badge.unknown {
+      color: #071018;
+      background: rgba(247, 242, 223, .72);
+    }
+
+    .vuln-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .vuln-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 34px;
+      padding: 8px 11px;
+      border-radius: 12px;
+      border: 1px solid rgba(115, 244, 223, .22);
+      color: var(--cyan);
+      background: rgba(115, 244, 223, .06);
+      font-size: 12px;
+      font-weight: 900;
+      text-decoration: none;
+    }
+
+    .vuln-link:hover,
+    .vuln-link:focus-visible {
+      border-color: rgba(115, 244, 223, .58);
+      outline: none;
+    }
+
     .section-title {
       display: flex;
       align-items: end;
@@ -375,6 +653,9 @@
     @media (max-width: 860px) {
       .grid { grid-template-columns: 1fr; }
       .health-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .vuln-summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .vuln-breakdown { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .vuln-content-grid { grid-template-columns: 1fr; }
       .section-title { align-items: flex-start; flex-direction: column; }
       .section-title .generated { text-align: left; }
       .wide { grid-column: span 1; }
@@ -385,6 +666,8 @@
 
     @media (max-width: 540px) {
       .health-grid { grid-template-columns: 1fr; }
+      .vuln-summary-grid,
+      .vuln-breakdown { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -408,6 +691,61 @@
         <div class="generated" id="health-generated-at">Generated -</div>
       </div>
       <div class="health-grid" id="health-panel-grid"></div>
+    </section>
+
+    <section class="vuln-panel" aria-labelledby="vuln-panel-title">
+      <div class="section-title">
+        <h2 id="vuln-panel-title">ENYRAX Vulnerability Inventory</h2>
+        <div class="generated" id="vuln-generated-at">Checking inventory</div>
+      </div>
+      <p class="vuln-subtitle">Wazuh vulnerability data normalized into ServiceOps / ProjectOps remediation planning.</p>
+      <div class="vuln-message" id="vuln-message" role="status"></div>
+
+      <div class="vuln-summary-grid" id="vuln-summary-grid" aria-label="Vulnerability summary cards"></div>
+      <div class="vuln-breakdown" id="vuln-breakdown" aria-label="Severity breakdown"></div>
+
+      <div class="vuln-content-grid">
+        <article class="vuln-list-card">
+          <h3>Top Packages</h3>
+          <div class="vuln-list" id="vuln-top-packages"></div>
+        </article>
+        <article class="vuln-list-card">
+          <h3>Top CVEs</h3>
+          <div class="vuln-list" id="vuln-top-cves"></div>
+        </article>
+        <article class="vuln-list-card">
+          <h3>Top Hosts</h3>
+          <div class="vuln-list" id="vuln-top-hosts"></div>
+        </article>
+      </div>
+
+      <article class="vuln-preview-card">
+        <h3>Inventory Preview</h3>
+        <div class="vuln-table-wrap">
+          <table class="vuln-table">
+            <thead>
+              <tr>
+                <th>Severity</th>
+                <th>CVE</th>
+                <th>Host</th>
+                <th>Package</th>
+                <th>Version</th>
+                <th>Status</th>
+                <th>Remediation Hint</th>
+              </tr>
+            </thead>
+            <tbody id="vuln-preview-body">
+              <tr><td colspan="7">Loading vulnerability inventory...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </article>
+
+      <div class="vuln-links" aria-label="Vulnerability inventory quick links">
+        <a class="vuln-link" href="/api/vulnerabilities?severity=critical" target="_blank" rel="noopener">Critical only</a>
+        <a class="vuln-link" href="/api/vulnerabilities?package=openssl" target="_blank" rel="noopener">OpenSSL package</a>
+        <a class="vuln-link" href="/api/vulnerabilities?host=linux-prod-01" target="_blank" rel="noopener">Linux prod host</a>
+      </div>
     </section>
 
     <section class="grid">
@@ -773,6 +1111,240 @@
       }
     }
 
+    const VULN_SEVERITIES = ["critical", "high", "medium", "low", "unknown"];
+
+    function normalizeSeverity(value) {
+      const normalized = String(value || "unknown").toLowerCase();
+      return VULN_SEVERITIES.includes(normalized) ? normalized : "unknown";
+    }
+
+    function nestedCount(item, severity) {
+      if (!item || typeof item !== "object") return 0;
+
+      const direct = item[severity] ?? item[`${severity}_count`];
+      if (direct !== undefined) return Number(direct || 0);
+
+      const buckets = item.severity_counts || item.severities || item.counts;
+      if (buckets && typeof buckets === "object") return Number(buckets[severity] || 0);
+
+      return 0;
+    }
+
+    function countValue(value) {
+      if (Array.isArray(value)) return value.length;
+      if (value && typeof value === "object") return Number(value.count || value.total || 0);
+      return Number(value || 0);
+    }
+
+    function formatCount(value) {
+      const number = Number(value || 0);
+      return Number.isFinite(number) ? number.toLocaleString("en-US") : "0";
+    }
+
+    function severityBadge(value) {
+      const severity = normalizeSeverity(value);
+      return `<span class="severity-badge ${severity}">${escapeHtml(severity)}</span>`;
+    }
+
+    function collectWarnings(...payloads) {
+      return payloads.flatMap((payload) => {
+        if (!payload || typeof payload !== "object") return [];
+        if (Array.isArray(payload.warnings)) return payload.warnings;
+        if (payload.warning) return [payload.warning];
+        return [];
+      }).filter(Boolean);
+    }
+
+    function setVulnMessage(message, isError = false) {
+      const target = document.getElementById("vuln-message");
+      if (!message) {
+        target.style.display = "none";
+        target.className = "vuln-message";
+        target.textContent = "";
+        return;
+      }
+
+      target.style.display = "block";
+      target.className = isError ? "vuln-message bad" : "vuln-message";
+      target.textContent = message;
+    }
+
+    function vulnerabilityTotals(summary) {
+      const totals = summary.totals && typeof summary.totals === "object" ? summary.totals : {};
+      return {
+        total: countValue(totals.total ?? totals.total_vulnerabilities ?? totals.count ?? summary.total),
+        critical: countValue(totals.critical ?? summary.critical),
+        high: countValue(totals.high ?? summary.high),
+        medium: countValue(totals.medium ?? summary.medium),
+        low: countValue(totals.low ?? summary.low),
+        unknown: countValue(totals.unknown ?? summary.unknown),
+        affectedHosts: countValue(summary.affected_hosts_count ?? summary.affected_hosts ?? totals.affected_hosts)
+      };
+    }
+
+    function renderVulnSummary(summary) {
+      const totals = vulnerabilityTotals(summary);
+      const escalation = summary.project_escalation && typeof summary.project_escalation === "object" ? summary.project_escalation : {};
+      const required = Boolean(escalation.required);
+      const escalationClass = required ? "critical" : "";
+      const escalationValue = required ? "REQUIRED" : "NOT REQUIRED";
+      const cards = [
+        ["Total Vulnerabilities", totals.total, ""],
+        ["Critical", totals.critical, "sev-critical"],
+        ["High", totals.high, "sev-high"],
+        ["Medium", totals.medium, "sev-medium"],
+        ["Low", totals.low, "sev-low"],
+        ["Affected Hosts", totals.affectedHosts, ""],
+        ["Project Escalation", escalationValue, escalationClass, escalation.reason || "No escalation reason provided"]
+      ];
+
+      document.getElementById("vuln-summary-grid").innerHTML = cards.map(([label, value, className, note]) => `
+        <article class="vuln-summary-card ${escapeHtml(className || "")}">
+          <div class="vuln-label">${escapeHtml(label)}</div>
+          <div class="vuln-number ${escapeHtml(className && className.startsWith("sev-") ? className : "")}">${escapeHtml(typeof value === "number" ? formatCount(value) : value)}</div>
+          ${note ? `<div class="vuln-note">${escapeHtml(note)}</div>` : ""}
+        </article>
+      `).join("");
+
+      document.getElementById("vuln-breakdown").innerHTML = VULN_SEVERITIES.map((severity) => `
+        <article class="vuln-mini-card">
+          <div class="vuln-label ${escapeHtml(`sev-${severity}`)}">${escapeHtml(severity)}</div>
+          <div class="vuln-number">${escapeHtml(formatCount(totals[severity]))}</div>
+        </article>
+      `).join("");
+    }
+
+    function renderVulnEmptySummary() {
+      renderVulnSummary({ totals: {}, affected_hosts: 0, project_escalation: { required: false, reason: "Unavailable" } });
+    }
+
+    function renderTopPackages(items) {
+      const list = Array.isArray(items) ? items.slice(0, 5) : [];
+      document.getElementById("vuln-top-packages").innerHTML = list.length ? list.map((item) => `
+        <div class="vuln-list-item">
+          <div class="vuln-item-top">
+            <div class="vuln-item-name">${escapeHtml(item.package_name || item.package || "-")}</div>
+            <div class="vuln-count">${escapeHtml(formatCount(item.count))}</div>
+          </div>
+          <div class="vuln-counts">
+            <span class="sev-critical">C ${escapeHtml(formatCount(nestedCount(item, "critical")))}</span>
+            <span class="sev-high">H ${escapeHtml(formatCount(nestedCount(item, "high")))}</span>
+            <span class="sev-medium">M ${escapeHtml(formatCount(nestedCount(item, "medium")))}</span>
+            <span class="sev-low">L ${escapeHtml(formatCount(nestedCount(item, "low")))}</span>
+          </div>
+        </div>
+      `).join("") : `<div class="key">No package data available.</div>`;
+    }
+
+    function renderTopCves(items) {
+      const list = Array.isArray(items) ? items.slice(0, 5) : [];
+      document.getElementById("vuln-top-cves").innerHTML = list.length ? list.map((item) => `
+        <div class="vuln-list-item">
+          <div class="vuln-item-top">
+            <div class="vuln-item-name">${escapeHtml(item.cve_id || item.cve || "-")}</div>
+            <div class="vuln-count">${escapeHtml(formatCount(item.count))}</div>
+          </div>
+          <div class="vuln-counts">
+            <span>${severityBadge(item.highest_severity || item.severity)}</span>
+            <span>Affected hosts ${escapeHtml(formatCount(countValue(item.affected_hosts ?? item.affected_host_count)))}</span>
+          </div>
+        </div>
+      `).join("") : `<div class="key">No CVE data available.</div>`;
+    }
+
+    function renderTopHosts(items) {
+      const list = Array.isArray(items) ? items.slice(0, 5) : [];
+      document.getElementById("vuln-top-hosts").innerHTML = list.length ? list.map((item) => `
+        <div class="vuln-list-item">
+          <div class="vuln-item-top">
+            <div class="vuln-item-name">${escapeHtml(item.hostname || item.host || "-")}</div>
+            <div class="vuln-count">${escapeHtml(formatCount(item.count))}</div>
+          </div>
+          <div class="vuln-counts">
+            <span class="sev-critical">C ${escapeHtml(formatCount(nestedCount(item, "critical")))}</span>
+            <span class="sev-high">H ${escapeHtml(formatCount(nestedCount(item, "high")))}</span>
+            <span class="sev-medium">M ${escapeHtml(formatCount(nestedCount(item, "medium")))}</span>
+            <span class="sev-low">L ${escapeHtml(formatCount(nestedCount(item, "low")))}</span>
+          </div>
+        </div>
+      `).join("") : `<div class="key">No host data available.</div>`;
+    }
+
+    function vulnerabilityRows(payload) {
+      if (Array.isArray(payload)) return payload;
+      if (!payload || typeof payload !== "object") return [];
+      return payload.vulnerabilities || payload.items || payload.results || payload.data || payload.inventory || [];
+    }
+
+    function renderVulnerabilityPreview(payload) {
+      const rows = vulnerabilityRows(payload).slice(0, 8);
+      const body = document.getElementById("vuln-preview-body");
+
+      if (!rows.length) {
+        body.innerHTML = `<tr><td colspan="7">No vulnerability inventory rows available.</td></tr>`;
+        return;
+      }
+
+      body.innerHTML = rows.map((row) => `
+        <tr>
+          <td>${severityBadge(row.severity || row.highest_severity)}</td>
+          <td>${escapeHtml(row.cve_id || row.cve || "-")}</td>
+          <td>${escapeHtml(row.hostname || row.host || "-")}</td>
+          <td>${escapeHtml(row.package_name || row.package || "-")}</td>
+          <td>${escapeHtml(row.installed_version || "-")} → ${escapeHtml(row.fixed_version || "-")}</td>
+          <td>${escapeHtml(row.remediation_status || "-")}</td>
+          <td>${escapeHtml(row.remediation_hint || "-")}</td>
+        </tr>
+      `).join("");
+    }
+
+    function setVulnerabilityUnavailable() {
+      document.getElementById("vuln-generated-at").textContent = "Unavailable";
+      renderVulnEmptySummary();
+      renderTopPackages([]);
+      renderTopCves([]);
+      renderTopHosts([]);
+      document.getElementById("vuln-preview-body").innerHTML = `<tr><td colspan="7">Vulnerability inventory unavailable</td></tr>`;
+      setVulnMessage("Vulnerability inventory unavailable", true);
+    }
+
+    async function fetchJson(url) {
+      const res = await fetch(url, { cache: "no-store" });
+
+      if (!res.ok) {
+        throw new Error(`${url} returned ${res.status}`);
+      }
+
+      return res.json();
+    }
+
+    async function loadVulnerabilityInventory() {
+      renderVulnEmptySummary();
+      renderTopPackages([]);
+      renderTopCves([]);
+      renderTopHosts([]);
+
+      try {
+        const [summary, preview] = await Promise.all([
+          fetchJson("/api/vulnerabilities/summary"),
+          fetchJson("/api/vulnerabilities?limit=8")
+        ]);
+
+        renderVulnSummary(summary || {});
+        renderTopPackages(summary?.top_packages);
+        renderTopCves(summary?.top_cves);
+        renderTopHosts(summary?.top_hosts);
+        renderVulnerabilityPreview(preview);
+
+        const warnings = collectWarnings(summary, preview);
+        setVulnMessage(warnings.length ? warnings.join(" · ") : "");
+        document.getElementById("vuln-generated-at").textContent = `Generated ${formatTime(summary?.generated_at || summary?.updated_at || new Date().toISOString())}`;
+      } catch (err) {
+        console.error("Vulnerability inventory check failed:", err);
+        setVulnerabilityUnavailable();
+      }
+    }
+
     async function loadSyncGatewayStatus() {
       try {
         const res = await fetch("/api/sync/status", { cache: "no-store" });
@@ -803,6 +1375,7 @@
     }
 
     loadSystemHealthPanel();
+    loadVulnerabilityInventory();
     loadApiHealth();
     loadSyncGatewayStatus();
   </script>

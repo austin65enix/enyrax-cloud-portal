@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
+import json
 import os
 import shutil
 import socket
@@ -43,6 +44,22 @@ load_env()
 
 DATABASE_URL = os.environ.get("DATABASE_URL")
 engine = create_engine(DATABASE_URL) if DATABASE_URL else None
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+NORMALIZED_VULNERABILITIES_PATH = (
+    PROJECT_ROOT / "data" / "vulnerabilities" / "normalized_vulnerabilities.json"
+)
+SEVERITY_ORDER = {
+    "critical": 0,
+    "high": 1,
+    "medium": 2,
+    "low": 3,
+    "unknown": 4,
+}
+PROJECT_ESCALATION_THRESHOLD = {
+    "affected_hosts": 10,
+    "critical_count": 3,
+}
 
 
 class ServiceOpsTicketCreate(BaseModel):
@@ -305,8 +322,8 @@ def sync_source_row_to_dict(row):
         "latest_message": row["latest_message"],
         "source_status": source_status if source_status in SYNC_SOURCE_STATUSES else "active",
         "source_note": row.get("source_note"),
-        "archived_at": row["archived_at"].isoformat() if row.get("archived_at") else None,
-        "archived_by": row.get("archived_by"),
+        "archived_at": row["archived_at"].isoformat() if source_status == "archived" and row.get("archived_at") else None,
+        "archived_by": row.get("archived_by") if source_status == "archived" else None,
     }
 
 
@@ -622,6 +639,267 @@ def write_audit_log(
             "actor": actor,
         },
     )
+
+
+
+def normalized_severity(value) -> str:
+    severity = str(value or "unknown").strip().lower()
+    if severity in SEVERITY_ORDER:
+        return severity
+    return "unknown"
+
+
+def load_normalized_vulnerabilities():
+    load_normalized_vulnerabilities.warning = None
+
+    try:
+        data = json.loads(NORMALIZED_VULNERABILITIES_PATH.read_text())
+    except FileNotFoundError:
+        load_normalized_vulnerabilities.warning = "normalized vulnerability data not found"
+        return []
+    except json.JSONDecodeError:
+        load_normalized_vulnerabilities.warning = "normalized vulnerability data parse error"
+        return []
+    except OSError:
+        load_normalized_vulnerabilities.warning = "normalized vulnerability data unavailable"
+        return []
+
+    if not isinstance(data, list):
+        load_normalized_vulnerabilities.warning = "normalized vulnerability data parse error"
+        return []
+
+    return data
+
+
+load_normalized_vulnerabilities.warning = None
+
+
+def vulnerability_host_key(item) -> Optional[str]:
+    hostname = str(item.get("hostname") or "").strip()
+    if hostname:
+        return hostname
+
+    host_id = str(item.get("host_id") or "").strip()
+    if host_id:
+        return host_id
+
+    return None
+
+
+def vulnerability_summary_response(items):
+    totals = {
+        "critical": 0,
+        "high": 0,
+        "medium": 0,
+        "low": 0,
+        "unknown": 0,
+    }
+    affected_hosts = set()
+    package_counts = {}
+    cve_counts = {}
+    host_counts = {}
+    remediation_status = {}
+
+    for item in items:
+        severity = normalized_severity(item.get("severity"))
+        totals[severity] += 1
+
+        host_key = vulnerability_host_key(item)
+        if host_key:
+            affected_hosts.add(host_key)
+
+        package_name = str(item.get("package_name") or "").strip()
+        if package_name:
+            package_entry = package_counts.setdefault(
+                package_name,
+                {
+                    "package_name": package_name,
+                    "count": 0,
+                    "critical": 0,
+                    "high": 0,
+                    "medium": 0,
+                    "low": 0,
+                    "unknown": 0,
+                },
+            )
+            package_entry["count"] += 1
+            package_entry[severity] += 1
+
+        cve_id = str(item.get("cve_id") or "").strip()
+        if cve_id:
+            cve_entry = cve_counts.setdefault(
+                cve_id,
+                {
+                    "cve_id": cve_id,
+                    "count": 0,
+                    "highest_severity": "unknown",
+                    "affected_hosts": set(),
+                },
+            )
+            cve_entry["count"] += 1
+            if SEVERITY_ORDER[severity] < SEVERITY_ORDER[cve_entry["highest_severity"]]:
+                cve_entry["highest_severity"] = severity
+            if host_key:
+                cve_entry["affected_hosts"].add(host_key)
+
+        hostname = str(item.get("hostname") or "").strip()
+        if hostname:
+            host_entry = host_counts.setdefault(
+                hostname,
+                {
+                    "hostname": hostname,
+                    "count": 0,
+                    "critical": 0,
+                    "high": 0,
+                    "medium": 0,
+                    "low": 0,
+                    "unknown": 0,
+                },
+            )
+            host_entry["count"] += 1
+            host_entry[severity] += 1
+
+        item_status = str(item.get("remediation_status") or "unknown").strip().lower() or "unknown"
+        remediation_status[item_status] = remediation_status.get(item_status, 0) + 1
+
+    totals["total"] = len(items)
+    affected_host_count = len(affected_hosts)
+
+    top_packages = sorted(
+        package_counts.values(),
+        key=lambda entry: (-entry["count"], entry["package_name"]),
+    )[:5]
+    top_cves = sorted(
+        cve_counts.values(),
+        key=lambda entry: (-entry["count"], SEVERITY_ORDER[entry["highest_severity"]], entry["cve_id"]),
+    )[:5]
+    for entry in top_cves:
+        entry["affected_hosts"] = len(entry["affected_hosts"])
+    top_hosts = sorted(
+        host_counts.values(),
+        key=lambda entry: (-entry["count"], entry["hostname"]),
+    )[:5]
+
+    escalation_required = (
+        affected_host_count >= PROJECT_ESCALATION_THRESHOLD["affected_hosts"]
+        or totals["critical"] >= PROJECT_ESCALATION_THRESHOLD["critical_count"]
+    )
+    if escalation_required:
+        reason = "Critical vulnerability count reached project escalation threshold."
+        if affected_host_count >= PROJECT_ESCALATION_THRESHOLD["affected_hosts"]:
+            reason = "Affected host count reached project escalation threshold."
+    else:
+        reason = "Vulnerability scope can be handled as ServiceOps tickets."
+
+    return {
+        "status": "ok",
+        "source": "normalized_vulnerabilities",
+        "generated_at": now_utc(),
+        "totals": totals,
+        "affected_hosts": affected_host_count,
+        "top_packages": top_packages,
+        "top_cves": top_cves,
+        "top_hosts": top_hosts,
+        "remediation_status": dict(sorted(remediation_status.items())),
+        "project_escalation": {
+            "required": escalation_required,
+            "reason": reason,
+            "threshold": PROJECT_ESCALATION_THRESHOLD,
+        },
+    }
+
+
+def parse_vulnerability_limit(limit: Optional[str]) -> int:
+    if limit is None:
+        return 100
+
+    try:
+        parsed_limit = int(limit)
+    except (TypeError, ValueError):
+        return 100
+
+    if parsed_limit < 1:
+        return 100
+
+    return min(parsed_limit, 500)
+
+
+@app.get("/api/vulnerabilities/summary")
+def vulnerabilities_summary():
+    items = load_normalized_vulnerabilities()
+    response = vulnerability_summary_response(items)
+    warning = load_normalized_vulnerabilities.warning
+    if warning:
+        response["warning"] = warning
+
+    return response
+
+
+@app.get("/api/vulnerabilities")
+def vulnerabilities(
+    severity: Optional[str] = None,
+    cve: Optional[str] = None,
+    host: Optional[str] = None,
+    package: Optional[str] = None,
+    status: Optional[str] = None,
+    limit: Optional[str] = None,
+):
+    items = load_normalized_vulnerabilities()
+    requested_limit = parse_vulnerability_limit(limit)
+
+    severity_filter = severity.strip().lower() if severity else None
+    cve_filter = cve.strip().lower() if cve else None
+    host_filter = host.strip().lower() if host else None
+    package_filter = package.strip().lower() if package else None
+    status_filter = status.strip().lower() if status else None
+
+    filtered_items = []
+    for item in items:
+        if severity_filter and normalized_severity(item.get("severity")) != severity_filter:
+            continue
+
+        if cve_filter and cve_filter not in str(item.get("cve_id") or "").lower():
+            continue
+
+        if host_filter:
+            hostname = str(item.get("hostname") or "").lower()
+            host_id = str(item.get("host_id") or "").lower()
+            if host_filter not in hostname and host_filter not in host_id:
+                continue
+
+        if package_filter and package_filter not in str(item.get("package_name") or "").lower():
+            continue
+
+        if status_filter:
+            remediation = str(item.get("remediation_status") or "").lower()
+            item_status = str(item.get("status") or "").lower()
+            if status_filter not in remediation and status_filter not in item_status:
+                continue
+
+        filtered_items.append(item)
+
+    sorted_items = sorted(
+        filtered_items,
+        key=lambda item: str(item.get("last_seen_at") or ""),
+        reverse=True,
+    )
+    sorted_items = sorted(
+        sorted_items,
+        key=lambda item: SEVERITY_ORDER[normalized_severity(item.get("severity"))],
+    )
+
+    response = {
+        "status": "ok",
+        "source": "normalized_vulnerabilities",
+        "count": len(filtered_items),
+        "limit": requested_limit,
+        "items": sorted_items[:requested_limit],
+    }
+    warning = load_normalized_vulnerabilities.warning
+    if warning:
+        response["warning"] = warning
+
+    return response
 
 
 @app.get("/api/health")
@@ -3242,13 +3520,11 @@ def update_sync_source_metadata(
                     note = EXCLUDED.note,
                     archived_by = CASE
                         WHEN EXCLUDED.status = 'archived' THEN EXCLUDED.archived_by
-                        WHEN EXCLUDED.status = 'active' THEN NULL
-                        ELSE sync_source_metadata.archived_by
+                        ELSE NULL
                     END,
                     archived_at = CASE
-                        WHEN EXCLUDED.status = 'archived' THEN COALESCE(sync_source_metadata.archived_at, NOW())
-                        WHEN EXCLUDED.status = 'active' THEN NULL
-                        ELSE sync_source_metadata.archived_at
+                        WHEN EXCLUDED.status = 'archived' THEN NOW()
+                        ELSE NULL
                     END,
                     updated_at = NOW()
                 RETURNING
@@ -3283,8 +3559,8 @@ def update_sync_source_metadata(
             "source": row["source"],
             "source_status": row["status"],
             "source_note": row["note"],
-            "archived_at": row["archived_at"].isoformat() if row["archived_at"] else None,
-            "archived_by": row["archived_by"],
+            "archived_at": row["archived_at"].isoformat() if row["status"] == "archived" and row["archived_at"] else None,
+            "archived_by": row["archived_by"] if row["status"] == "archived" else None,
         },
     }
 
