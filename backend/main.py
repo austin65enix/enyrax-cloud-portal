@@ -70,6 +70,12 @@ class ServiceOpsTicketProgressUpdate(BaseModel):
     progress_note: Optional[str] = Field(default=None, max_length=2000)
 
 
+class ServiceOpsTicketSlaUpdate(BaseModel):
+    due_at: Optional[str] = None
+    sla_level: str = Field(default="normal", max_length=50)
+    blocked_reason: Optional[str] = Field(default=None, max_length=2000)
+
+
 class ServiceOpsTicketCommentCreate(BaseModel):
     comment: str = Field(..., min_length=1, max_length=2000)
     comment_type: Optional[str] = Field(default="worklog", max_length=50)
@@ -140,6 +146,11 @@ class LocalSyncEventCreate(BaseModel):
     status: str = Field(default="ok", max_length=50)
     message: Optional[str] = None
     payload: dict = Field(default_factory=dict)
+
+
+class SyncSourceMetadataUpdate(BaseModel):
+    status: str = Field(..., max_length=50)
+    note: Optional[str] = Field(default=None, max_length=2000)
 
 
 class AuthLoginRequest(BaseModel):
@@ -275,7 +286,12 @@ def sync_event_row_to_dict(row):
     }
 
 
+SYNC_SOURCE_STATUSES = {"active", "deprecated", "archived"}
+
+
 def sync_source_row_to_dict(row):
+    source_status = row.get("source_status") or "active"
+
     return {
         "source": row["source"],
         "health": row["health"],
@@ -287,6 +303,10 @@ def sync_source_row_to_dict(row):
         "warning_count": int(row["warning_count"] or 0),
         "error_count": int(row["error_count"] or 0),
         "latest_message": row["latest_message"],
+        "source_status": source_status if source_status in SYNC_SOURCE_STATUSES else "active",
+        "source_note": row.get("source_note"),
+        "archived_at": row["archived_at"].isoformat() if row.get("archived_at") else None,
+        "archived_by": row.get("archived_by"),
     }
 
 
@@ -322,10 +342,25 @@ def sync_incident_candidate_from_source(row):
     }
 
 
-def fetch_sync_source_rows(conn):
+def fetch_sync_source_rows(conn, include_metadata: bool = False):
+    metadata_select = ""
+    metadata_join = ""
+
+    if include_metadata:
+        metadata_select = """
+                COALESCE(metadata.status, 'active') AS source_status,
+                metadata.note AS source_note,
+                metadata.archived_at,
+                metadata.archived_by,
+        """
+        metadata_join = """
+            LEFT JOIN sync_source_metadata metadata
+              ON metadata.source = source_rollup.source
+        """
+
     return conn.execute(
         text(
-            """
+            f"""
             WITH source_rollup AS (
                 SELECT
                     source,
@@ -352,6 +387,7 @@ def fetch_sync_source_rows(conn):
                     WHEN source_rollup.latest_status = 'ok' THEN 'healthy'
                     ELSE 'unknown'
                 END AS health,
+                {metadata_select}
                 source_rollup.latest_event_at,
                 source_rollup.latest_heartbeat_at,
                 source_rollup.systems,
@@ -361,6 +397,7 @@ def fetch_sync_source_rows(conn):
                 source_rollup.error_count,
                 source_rollup.latest_message
             FROM source_rollup
+            {metadata_join}
             ORDER BY source_rollup.source ASC
             """
         )
@@ -411,12 +448,14 @@ SERVICEOPS_TICKET_COLUMNS = """
     estimate_hours, actual_hours, task,
     assignee, progress_status, progress_note,
     progress_updated_by, progress_updated_at,
+    due_at, sla_level, blocked_reason,
     display_order, created_at, updated_at,
     deleted_at, deleted_by, delete_reason
 """
 
 
 SERVICEOPS_PROGRESS_STATUSES = {"not_started", "in_progress", "waiting", "blocked", "done"}
+SERVICEOPS_SLA_LEVELS = {"low", "normal", "high", "urgent"}
 
 
 PROJECTOPS_PROJECT_COLUMNS = """
@@ -445,6 +484,9 @@ def ticket_row_to_dict(row):
         "progress_note": data.get("progress_note"),
         "progress_updated_by": data.get("progress_updated_by"),
         "progress_updated_at": data["progress_updated_at"].isoformat() if data.get("progress_updated_at") else None,
+        "due_at": data["due_at"].isoformat() if data.get("due_at") else None,
+        "sla_level": data.get("sla_level") or "normal",
+        "blocked_reason": data.get("blocked_reason"),
         "display_order": data["display_order"],
         "created_at": data["created_at"].isoformat() if data.get("created_at") else None,
         "updated_at": data["updated_at"].isoformat() if data.get("updated_at") else None,
@@ -557,7 +599,7 @@ def write_audit_log(
     conn,
     module: str,
     entity_type: str,
-    entity_id: Optional[int],
+    entity_id,
     action: str,
     summary: str,
     actor: str = "demo-user",
@@ -1045,6 +1087,9 @@ def serviceops_summary():
             "progress_note": None,
             "progress_updated_by": None,
             "progress_updated_at": None,
+            "due_at": None,
+            "sla_level": "normal",
+            "blocked_reason": None,
             "created_at": None,
         },
         {
@@ -1061,6 +1106,9 @@ def serviceops_summary():
             "progress_note": None,
             "progress_updated_by": None,
             "progress_updated_at": None,
+            "due_at": None,
+            "sla_level": "normal",
+            "blocked_reason": None,
             "created_at": None,
         },
         {
@@ -1077,6 +1125,9 @@ def serviceops_summary():
             "progress_note": None,
             "progress_updated_by": None,
             "progress_updated_at": None,
+            "due_at": None,
+            "sla_level": "normal",
+            "blocked_reason": None,
             "created_at": None,
         },
         {
@@ -1093,6 +1144,9 @@ def serviceops_summary():
             "progress_note": None,
             "progress_updated_by": None,
             "progress_updated_at": None,
+            "due_at": None,
+            "sla_level": "normal",
+            "blocked_reason": None,
             "created_at": None,
         },
     ]
@@ -1698,6 +1752,73 @@ def update_serviceops_ticket(
                 action="update",
                 summary=f"Updated ServiceOps ticket: {row['title']}",
                 actor=demo_actor or role,
+            )
+
+    if row is None:
+        raise HTTPException(status_code=404, detail="Ticket not found or archived")
+
+    return {
+        "status": "updated",
+        "ticket": ticket_row_to_dict(row),
+    }
+
+
+@app.put("/api/serviceops/tickets/{ticket_id}/sla")
+def update_serviceops_ticket_sla(
+    ticket_id: int,
+    payload: ServiceOpsTicketSlaUpdate,
+    demo_role: str = Header(default="admin", alias="X-Demo-Role"),
+    demo_actor: str = Header(default=None, alias="X-Demo-Actor"),
+):
+    role = require_role(demo_role, "operator")
+    actor = demo_actor or role
+    sla_level = (payload.sla_level or "normal").strip().lower()
+
+    if sla_level not in SERVICEOPS_SLA_LEVELS:
+        raise HTTPException(status_code=400, detail="Invalid sla_level")
+
+    blocked_reason = payload.blocked_reason.strip() if payload.blocked_reason else None
+    if payload.due_at is not None:
+        try:
+            datetime.fromisoformat(payload.due_at.replace("Z", "+00:00"))
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail="Invalid due_at") from exc
+
+    db = require_db()
+
+    with db.begin() as conn:
+        row = conn.execute(
+            text(
+                f"""
+                UPDATE serviceops_tickets
+                SET
+                    due_at = :due_at,
+                    sla_level = :sla_level,
+                    blocked_reason = :blocked_reason,
+                    updated_at = NOW()
+                WHERE id = :ticket_id
+                  AND deleted_at IS NULL
+                RETURNING
+                    {SERVICEOPS_TICKET_COLUMNS}
+                """
+            ),
+            {
+                "ticket_id": ticket_id,
+                "due_at": payload.due_at,
+                "sla_level": sla_level,
+                "blocked_reason": blocked_reason,
+            },
+        ).mappings().first()
+
+        if row is not None:
+            write_audit_log(
+                conn,
+                module="serviceops",
+                entity_type="ticket",
+                entity_id=row["id"],
+                action="sla_update",
+                summary=f"Updated ServiceOps SLA: {row['title']}",
+                actor=actor,
             )
 
     if row is None:
@@ -3066,7 +3187,7 @@ def list_local_sync_sources():
     db = require_db()
 
     with db.connect() as conn:
-        rows = fetch_sync_source_rows(conn)
+        rows = fetch_sync_source_rows(conn, include_metadata=True)
 
     sources = [sync_source_row_to_dict(row) for row in rows]
 
@@ -3074,6 +3195,97 @@ def list_local_sync_sources():
         "status": "ok",
         "count": len(sources),
         "sources": sources,
+    }
+
+
+@app.put("/api/sync/sources/{source}/metadata")
+def update_sync_source_metadata(
+    source: str,
+    payload: SyncSourceMetadataUpdate,
+    demo_role: str = Header(default="admin", alias="X-Demo-Role"),
+    demo_actor: str = Header(default=None, alias="X-Demo-Actor"),
+):
+    role = require_role(demo_role, "operator")
+    actor = demo_actor or role
+    normalized_source = source.strip()
+    normalized_status = (payload.status or "").strip().lower()
+    note = payload.note.strip() if payload.note else None
+
+    if not normalized_source or len(normalized_source) > 160:
+        raise HTTPException(status_code=400, detail="Invalid source")
+
+    if normalized_status not in SYNC_SOURCE_STATUSES:
+        raise HTTPException(status_code=400, detail="Invalid source status")
+
+    archived_by = actor if normalized_status == "archived" else None
+
+    db = require_db()
+
+    with db.begin() as conn:
+        row = conn.execute(
+            text(
+                """
+                INSERT INTO sync_source_metadata
+                    (source, status, note, archived_by, archived_at, updated_at)
+                VALUES
+                    (
+                        :source,
+                        :status,
+                        :note,
+                        :archived_by,
+                        CASE WHEN :status = 'archived' THEN NOW() ELSE NULL END,
+                        NOW()
+                    )
+                ON CONFLICT (source)
+                DO UPDATE SET
+                    status = EXCLUDED.status,
+                    note = EXCLUDED.note,
+                    archived_by = CASE
+                        WHEN EXCLUDED.status = 'archived' THEN EXCLUDED.archived_by
+                        WHEN EXCLUDED.status = 'active' THEN NULL
+                        ELSE sync_source_metadata.archived_by
+                    END,
+                    archived_at = CASE
+                        WHEN EXCLUDED.status = 'archived' THEN COALESCE(sync_source_metadata.archived_at, NOW())
+                        WHEN EXCLUDED.status = 'active' THEN NULL
+                        ELSE sync_source_metadata.archived_at
+                    END,
+                    updated_at = NOW()
+                RETURNING
+                    source, status, note, archived_by, archived_at, created_at, updated_at
+                """
+            ),
+            {
+                "source": normalized_source,
+                "status": normalized_status,
+                "note": note,
+                "archived_by": archived_by,
+            },
+        ).mappings().first()
+
+    try:
+        with db.begin() as conn:
+            write_audit_log(
+                conn,
+                module="sync",
+                entity_type="sync_source",
+                entity_id=None,
+                action="source_metadata_update",
+                summary=f"Updated Sync source metadata: {normalized_source}",
+                actor=actor,
+            )
+    except Exception as exc:
+        print(f"Warning: failed to write sync source metadata audit log: {exc}")
+
+    return {
+        "status": "updated",
+        "source": {
+            "source": row["source"],
+            "source_status": row["status"],
+            "source_note": row["note"],
+            "archived_at": row["archived_at"].isoformat() if row["archived_at"] else None,
+            "archived_by": row["archived_by"],
+        },
     }
 
 

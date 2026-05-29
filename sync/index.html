@@ -312,6 +312,46 @@
       background: var(--gold);
     }
 
+    .source-status-active {
+      color: #062014;
+      background: linear-gradient(135deg, var(--green), var(--cyan));
+    }
+
+    .source-status-deprecated {
+      color: #241203;
+      background: var(--orange);
+    }
+
+    .source-status-archived {
+      color: #071018;
+      background: var(--gray);
+    }
+
+    .source-filter {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+
+    .source-filter-chip {
+      min-height: 34px;
+      border: 1px solid rgba(245, 211, 122, .24);
+      background: rgba(245, 211, 122, .06);
+      color: var(--text);
+      border-radius: 999px;
+      padding: 7px 11px;
+      font-size: 12px;
+      font-weight: 950;
+      text-transform: uppercase;
+    }
+
+    .source-filter-chip.active {
+      border-color: rgba(115, 244, 223, .5);
+      background: rgba(115, 244, 223, .14);
+      color: var(--cyan);
+    }
+
     .candidate-grid,
     .source-health-grid {
       display: grid;
@@ -332,6 +372,12 @@
       border-color: rgba(255, 184, 107, .24);
     }
 
+    .source-card.archived {
+      opacity: .62;
+      border-color: rgba(170, 179, 197, .16);
+      background: rgba(255,255,255,.025);
+    }
+
     .source-card-top,
     .candidate-card-top {
       display: flex;
@@ -350,6 +396,7 @@
       overflow-wrap: anywhere;
     }
 
+    .source-badges,
     .candidate-badges {
       display: flex;
       flex-wrap: wrap;
@@ -426,6 +473,7 @@
       line-height: 1;
     }
 
+    .source-note,
     .source-message,
     .candidate-message,
     .candidate-action {
@@ -447,6 +495,7 @@
       color: var(--gold);
     }
 
+    .source-actions,
     .candidate-controls {
       display: flex;
       flex-wrap: wrap;
@@ -455,6 +504,7 @@
       align-items: center;
     }
 
+    .source-action,
     .candidate-create,
     .candidate-open-soc {
       display: inline-flex;
@@ -473,6 +523,29 @@
       color: #071018;
       background: linear-gradient(135deg, var(--gold), #fff0b8);
       cursor: pointer;
+    }
+
+    .source-action {
+      min-height: 36px;
+      border: 1px solid rgba(115, 244, 223, .24);
+      background: rgba(115, 244, 223, .07);
+      color: var(--cyan);
+      border-radius: 12px;
+      padding: 8px 10px;
+      font-size: 12px;
+      font-weight: 950;
+    }
+
+    .source-action.archive {
+      border-color: rgba(170, 179, 197, .25);
+      background: rgba(170, 179, 197, .08);
+      color: var(--gray);
+    }
+
+    .source-action.deprecated {
+      border-color: rgba(255, 184, 107, .3);
+      background: rgba(255, 184, 107, .09);
+      color: var(--orange);
     }
 
     .candidate-open-soc {
@@ -571,14 +644,18 @@
         text-align: left;
       }
 
+      .source-card-top,
       .candidate-card-top {
         flex-direction: column;
       }
 
-      .candidate-badges {
+      .source-badges,
+      .candidate-badges,
+      .source-filter {
         justify-content: flex-start;
       }
 
+      .source-action,
       .candidate-create,
       .candidate-open-soc {
         width: 100%;
@@ -660,6 +737,12 @@
       <div class="card-top">
         <h2>Source Health</h2>
         <div class="count" id="source-health-count">0 sources</div>
+      </div>
+      <div class="source-filter" id="source-filter" aria-label="Source metadata filter">
+        <button type="button" class="source-filter-chip active" data-source-filter="active">Active</button>
+        <button type="button" class="source-filter-chip" data-source-filter="deprecated">Deprecated</button>
+        <button type="button" class="source-filter-chip" data-source-filter="archived">Archived</button>
+        <button type="button" class="source-filter-chip" data-source-filter="all">All</button>
       </div>
       <div class="source-health-grid" id="source-health-list">
         <div class="empty">Loading source health...</div>
@@ -758,6 +841,15 @@
       return "unknown";
     }
 
+    function normalizeSourceStatus(status) {
+      const normalized = String(status || "active").toLowerCase();
+      if (["active", "deprecated", "archived"].includes(normalized)) return normalized;
+      return "active";
+    }
+
+    let currentSourceFilter = "active";
+    let latestSyncSources = [];
+
     function normalizeSeverity(severity) {
       const normalized = String(severity || "low").toLowerCase();
       if (["high", "medium", "low"].includes(normalized)) return normalized;
@@ -775,11 +867,19 @@
       return levels[String(role || "viewer").toLowerCase()] || 0;
     }
 
-    function canCreateSocIncident() {
+    function canWriteAsOperator() {
       if (!window.ENYRAXRole) return false;
       if (!window.ENYRAXRole.isLoggedIn || !window.ENYRAXRole.isLoggedIn()) return false;
       if (!window.ENYRAXRole.canWriteSession || !window.ENYRAXRole.canWriteSession()) return false;
       return roleLevel(window.ENYRAXRole.get ? window.ENYRAXRole.get() : "viewer") >= roleLevel("operator");
+    }
+
+    function canCreateSocIncident() {
+      return canWriteAsOperator();
+    }
+
+    function canManageSyncSources() {
+      return canWriteAsOperator();
     }
 
     function payloadSummary(payload) {
@@ -805,6 +905,11 @@
     function severityBadge(severity) {
       const normalized = normalizeSeverity(severity);
       return `<span class="status-badge severity-${normalized}">${escapeHtml(normalized)}</span>`;
+    }
+
+    function sourceStatusBadge(status) {
+      const normalized = normalizeSourceStatus(status);
+      return `<span class="status-badge source-status-${normalized}">${escapeHtml(normalized)}</span>`;
     }
 
     function renderChips(id, countId, values, noun) {
@@ -839,40 +944,91 @@
       document.getElementById("events-count").textContent = "0 events";
     }
 
+    function visibleSourceItems(sources) {
+      return sources.filter((item) => {
+        const status = normalizeSourceStatus(item.source_status);
+        if (currentSourceFilter === "all") return true;
+        if (currentSourceFilter === "archived") return status === "archived";
+        if (currentSourceFilter === "deprecated") return status === "deprecated";
+        return status !== "archived";
+      });
+    }
+
+    function syncSourceActions(item) {
+      if (!canManageSyncSources()) return "";
+
+      const source = escapeHtml(item.source || "");
+      const status = normalizeSourceStatus(item.source_status);
+      const actions = [];
+
+      if (status === "active") {
+        actions.push(`<button type="button" class="source-action deprecated" data-source-metadata="deprecated" data-source="${source}">Mark Deprecated</button>`);
+        actions.push(`<button type="button" class="source-action archive" data-source-metadata="archived" data-source="${source}">Archive Source</button>`);
+      } else if (status === "deprecated") {
+        actions.push(`<button type="button" class="source-action" data-source-metadata="active" data-source="${source}">Restore Active</button>`);
+        actions.push(`<button type="button" class="source-action archive" data-source-metadata="archived" data-source="${source}">Archive Source</button>`);
+      } else if (status === "archived") {
+        actions.push(`<button type="button" class="source-action" data-source-metadata="active" data-source="${source}">Restore Active</button>`);
+      }
+
+      if (!actions.length) return "";
+      return `<div class="source-actions">${actions.join("")}</div>`;
+    }
+
+    function renderSourceFilter() {
+      document.querySelectorAll("[data-source-filter]").forEach((button) => {
+        button.classList.toggle("active", button.dataset.sourceFilter === currentSourceFilter);
+      });
+    }
+
     function renderSourceHealth(sources) {
+      latestSyncSources = Array.isArray(sources) ? sources : [];
+      renderSourceFilter();
+
       const list = document.getElementById("source-health-list");
       const count = document.getElementById("source-health-count");
-      const label = sources.length === 1 ? "source" : "sources";
+      const visibleSources = visibleSourceItems(latestSyncSources);
+      const visibleNames = visibleSources.map((item) => item.source).filter(Boolean);
+      const label = visibleSources.length === 1 ? "source" : "sources";
 
-      count.textContent = `${sources.length} ${label}`;
+      count.textContent = `${visibleSources.length} ${label}`;
+      renderChips("sources-list", "sources-count", visibleNames, "source");
 
-      if (!sources.length) {
-        list.innerHTML = `<div class="empty">No sync sources detected yet.</div>`;
+      if (!visibleSources.length) {
+        list.innerHTML = `<div class="empty">No sync sources match this filter.</div>`;
         return;
       }
 
-      list.innerHTML = sources.map((item) => {
+      list.innerHTML = visibleSources.map((item) => {
         const systems = normalizeArray(item.systems);
         const systemsText = systems.length ? systems.join(", ") : "-";
+        const sourceStatus = normalizeSourceStatus(item.source_status);
+        const note = item.source_note ? `<div class="source-note"><strong>Note:</strong> ${escapeHtml(item.source_note)}</div>` : "";
 
         return `
-          <article class="source-card">
+          <article class="source-card ${sourceStatus === "archived" ? "archived" : ""}">
             <div class="source-card-top">
               <div class="source-name">${escapeHtml(item.source || "-")}</div>
-              ${healthBadge(item.health)}
+              <div class="source-badges">
+                ${sourceStatusBadge(sourceStatus)}
+                ${healthBadge(item.health)}
+              </div>
             </div>
             <div class="source-meta">
               <div class="source-row"><span class="source-key">Latest Heartbeat</span><span class="source-value">${escapeHtml(formatTime(item.latest_heartbeat_at))}</span></div>
               <div class="source-row"><span class="source-key">Latest Event</span><span class="source-value">${escapeHtml(formatTime(item.latest_event_at))}</span></div>
               <div class="source-row"><span class="source-key">Systems</span><span class="source-value">${escapeHtml(systemsText)}</span></div>
               <div class="source-row"><span class="source-key">Total Events</span><span class="source-value">${escapeHtml(item.total_events ?? 0)}</span></div>
+              ${sourceStatus === "archived" ? `<div class="source-row"><span class="source-key">Archived</span><span class="source-value">${escapeHtml(formatTime(item.archived_at))} · ${escapeHtml(item.archived_by || "-")}</span></div>` : ""}
             </div>
             <div class="source-counts">
               <div class="source-count"><span>OK</span><strong>${escapeHtml(item.ok_count ?? 0)}</strong></div>
               <div class="source-count"><span>Warning</span><strong>${escapeHtml(item.warning_count ?? 0)}</strong></div>
               <div class="source-count"><span>Error</span><strong>${escapeHtml(item.error_count ?? 0)}</strong></div>
             </div>
+            ${note}
             <div class="source-message">${escapeHtml(item.latest_message || "-")}</div>
+            ${syncSourceActions(item)}
           </article>
         `;
       }).join("");
@@ -1005,7 +1161,6 @@
         metric("metric-warning-count", counts.warning || 0);
         metric("metric-error-count", counts.error || 0);
 
-        renderChips("sources-list", "sources-count", sources, "source");
         renderChips("systems-list", "systems-count", systems, "system");
         renderEvents(events);
 
@@ -1070,6 +1225,36 @@
 
       el.textContent = message;
       el.className = `candidate-result ${state || ""}`.trim();
+    }
+
+    async function updateSyncSourceMetadata(source, status, button) {
+      if (!canManageSyncSources()) return;
+
+      button.disabled = true;
+
+      try {
+        const headers = window.ENYRAXRole && window.ENYRAXRole.header ? window.ENYRAXRole.header() : {};
+        headers["Content-Type"] = "application/json";
+
+        const res = await fetch(`/api/sync/sources/${encodeURIComponent(source)}/metadata`, {
+          method: "PUT",
+          headers: headers,
+          cache: "no-store",
+          body: JSON.stringify({ status: status })
+        });
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok) {
+          throw new Error(data.detail || ("HTTP " + res.status));
+        }
+
+        await loadSyncSources();
+      } catch (err) {
+        console.error("Failed to update sync source metadata:", err);
+        setError(err.message || "Unable to update sync source metadata.");
+      } finally {
+        button.disabled = false;
+      }
     }
 
     async function createSocIncidentFromCandidate(source, button) {
@@ -1137,14 +1322,33 @@
     }
 
     document.getElementById("refresh-button").addEventListener("click", refreshSyncGateway);
+    document.getElementById("source-filter").addEventListener("click", (event) => {
+      const button = event.target.closest("[data-source-filter]");
+      if (!button) return;
+
+      currentSourceFilter = button.dataset.sourceFilter || "active";
+      renderSourceHealth(latestSyncSources);
+    });
+    document.getElementById("source-health-list").addEventListener("click", (event) => {
+      const button = event.target.closest("[data-source-metadata]");
+      if (!button) return;
+
+      updateSyncSourceMetadata(button.dataset.source, button.dataset.sourceMetadata, button);
+    });
     document.getElementById("candidate-list").addEventListener("click", (event) => {
       const button = event.target.closest("[data-create-source]");
       if (!button) return;
 
       createSocIncidentFromCandidate(button.dataset.createSource, button);
     });
-    window.addEventListener("enyrax-role-changed", loadIncidentCandidates);
-    window.addEventListener("enyrax-auth-session-changed", loadIncidentCandidates);
+    window.addEventListener("enyrax-role-changed", () => {
+      renderSourceHealth(latestSyncSources);
+      loadIncidentCandidates();
+    });
+    window.addEventListener("enyrax-auth-session-changed", () => {
+      renderSourceHealth(latestSyncSources);
+      loadIncidentCandidates();
+    });
     refreshSyncGateway();
   </script>
 </body>
