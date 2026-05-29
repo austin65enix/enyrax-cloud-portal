@@ -72,6 +72,14 @@ class ServiceOpsTicketCreate(BaseModel):
     task: str = Field(..., min_length=1)
 
 
+class VulnerabilityServiceOpsTicketCreate(BaseModel):
+    cve_id: str = Field(..., min_length=1, max_length=80)
+    hostname: str = Field(..., min_length=1, max_length=160)
+    package_name: str = Field(..., min_length=1, max_length=160)
+    assignee: Optional[str] = Field(default=None, max_length=160)
+    note: Optional[str] = Field(default=None, max_length=2000)
+
+
 class ServiceOpsTicketUpdate(BaseModel):
     title: Optional[str] = Field(default=None, max_length=200)
     status: Optional[str] = Field(default=None, max_length=50)
@@ -824,6 +832,99 @@ def parse_vulnerability_limit(limit: Optional[str]) -> int:
     return min(parsed_limit, 500)
 
 
+
+VULNERABILITY_SLA_LEVELS = {
+    "critical": "urgent",
+    "high": "high",
+    "medium": "normal",
+    "low": "low",
+    "unknown": "normal",
+}
+
+
+def vulnerability_field(item, key: str, fallback: str = "unknown"):
+    value = item.get(key)
+    if value is None:
+        return fallback
+
+    text_value = str(value).strip()
+    return text_value or fallback
+
+
+def find_vulnerability_item(cve_id: str, hostname: str, package_name: str):
+    cve_filter = cve_id.strip().lower()
+    host_filter = hostname.strip().lower()
+    package_filter = package_name.strip().lower()
+
+    for item in load_normalized_vulnerabilities():
+        if str(item.get("cve_id") or "").strip().lower() != cve_filter:
+            continue
+        if str(item.get("hostname") or "").strip().lower() != host_filter:
+            continue
+        if str(item.get("package_name") or "").strip().lower() != package_filter:
+            continue
+        return item
+
+    return None
+
+
+def vulnerability_sla_level(severity: Optional[str]) -> str:
+    return VULNERABILITY_SLA_LEVELS[normalized_severity(severity)]
+
+
+def vulnerability_serviceops_task(item, note: Optional[str] = None) -> str:
+    os_parts = [
+        vulnerability_field(item, "os_name", ""),
+        vulnerability_field(item, "os_version", ""),
+    ]
+    os_text = " ".join(part for part in os_parts if part).strip() or "unknown"
+    severity = normalized_severity(item.get("severity"))
+    lines = [
+        "Vulnerability remediation request",
+        "",
+        f"CVE: {vulnerability_field(item, 'cve_id')}",
+        f"Severity: {severity}",
+        f"CVSS: {vulnerability_field(item, 'cvss_score')}",
+        f"ServiceOps SLA: {vulnerability_sla_level(severity)}",
+        f"Host: {vulnerability_field(item, 'hostname')}",
+        f"Agent ID: {vulnerability_field(item, 'agent_id')}",
+        f"OS: {os_text}",
+        f"Package: {vulnerability_field(item, 'package_name')}",
+        f"Installed Version: {vulnerability_field(item, 'installed_version')}",
+        f"Fixed Version: {vulnerability_field(item, 'fixed_version')}",
+        f"Remediation Hint: {vulnerability_field(item, 'remediation_hint')}",
+        f"Source: {vulnerability_field(item, 'source')}",
+        f"Source Index: {vulnerability_field(item, 'source_index')}",
+        f"Detected At: {vulnerability_field(item, 'detected_at')}",
+        f"Last Seen At: {vulnerability_field(item, 'last_seen_at')}",
+        "",
+        "Recommended action:",
+        "Patch package, verify service health, rerun Wazuh vulnerability scan, attach Recovery Evidence.",
+    ]
+
+    clean_note = note.strip() if note else ""
+    if clean_note:
+        lines.extend(["", "Operator note:", clean_note])
+
+    return "\n".join(lines)
+
+
+def write_vulnerability_ticket_audit(db, action: str, entity_id, summary: str, actor: str) -> None:
+    try:
+        with db.begin() as conn:
+            write_audit_log(
+                conn,
+                module="serviceops",
+                entity_type="ticket",
+                entity_id=entity_id,
+                action=action,
+                summary=summary,
+                actor=actor,
+            )
+    except Exception as exc:
+        print(f"Warning: failed to write vulnerability ServiceOps audit log: {exc}")
+
+
 @app.get("/api/vulnerabilities/summary")
 def vulnerabilities_summary():
     items = load_normalized_vulnerabilities()
@@ -900,6 +1001,127 @@ def vulnerabilities(
         response["warning"] = warning
 
     return response
+
+
+
+@app.post("/api/vulnerabilities/create-serviceops-ticket")
+def create_serviceops_ticket_from_vulnerability(
+    payload: VulnerabilityServiceOpsTicketCreate,
+    demo_role: str = Header(default="viewer", alias="X-Demo-Role"),
+    demo_actor: str = Header(default=None, alias="X-Demo-Actor"),
+):
+    role = require_role(demo_role, "operator")
+    actor = demo_actor or role
+    cve_id = payload.cve_id.strip()
+    hostname = payload.hostname.strip()
+    package_name = payload.package_name.strip()
+    assignee = payload.assignee.strip() if payload.assignee else actor
+    note = payload.note.strip() if payload.note else None
+
+    vulnerability = find_vulnerability_item(cve_id, hostname, package_name)
+    if vulnerability is None:
+        raise HTTPException(status_code=404, detail="Vulnerability item not found.")
+
+    db = require_db()
+    title = f"Remediate {vulnerability_field(vulnerability, 'cve_id')} on {vulnerability_field(vulnerability, 'hostname')} / {vulnerability_field(vulnerability, 'package_name')}"
+    task = vulnerability_serviceops_task(vulnerability, note)
+    sla_level = vulnerability_sla_level(vulnerability.get("severity"))
+    audit_summary = f"Created vulnerability remediation ticket for {vulnerability_field(vulnerability, 'cve_id')} on {vulnerability_field(vulnerability, 'hostname')}"
+
+    with db.begin() as conn:
+        existing = conn.execute(
+            text(
+                f"""
+                SELECT
+                    {SERVICEOPS_TICKET_COLUMNS}
+                FROM serviceops_tickets
+                WHERE deleted_at IS NULL
+                  AND lower(status) NOT IN ('done', 'archived', 'deleted')
+                  AND lower(task) LIKE :cve_marker
+                  AND lower(task) LIKE :host_marker
+                  AND lower(task) LIKE :package_marker
+                ORDER BY id ASC
+                LIMIT 1
+                """
+            ),
+            {
+                "cve_marker": f"%cve: {cve_id.lower()}%",
+                "host_marker": f"%host: {hostname.lower()}%",
+                "package_marker": f"%package: {package_name.lower()}%",
+            },
+        ).mappings().first()
+
+        if existing is not None:
+            ticket = ticket_row_to_dict(existing)
+        else:
+            max_order = conn.execute(
+                text("SELECT COALESCE(MAX(display_order), 0) FROM serviceops_tickets")
+            ).scalar_one()
+
+            row = conn.execute(
+                text(
+                    f"""
+                    INSERT INTO serviceops_tickets
+                        (
+                            title, status, owner, project,
+                            estimate_hours, actual_hours, task,
+                            assignee, progress_status, sla_level,
+                            display_order
+                        )
+                    VALUES
+                        (
+                            :title, :status, :owner, :project,
+                            :estimate_hours, :actual_hours, :task,
+                            :assignee, :progress_status, :sla_level,
+                            :display_order
+                        )
+                    RETURNING
+                        {SERVICEOPS_TICKET_COLUMNS}
+                    """
+                ),
+                {
+                    "title": title,
+                    "status": "pending",
+                    "owner": actor,
+                    "project": "Vulnerability Remediation",
+                    "estimate_hours": 0,
+                    "actual_hours": 0,
+                    "task": task,
+                    "assignee": assignee,
+                    "progress_status": "not_started",
+                    "sla_level": sla_level,
+                    "display_order": int(max_order) + 1,
+                },
+            ).mappings().first()
+            ticket = ticket_row_to_dict(row)
+
+    if existing is not None:
+        write_vulnerability_ticket_audit(
+            db,
+            action="vulnerability_ticket_existing",
+            entity_id=ticket["id"],
+            summary=f"Existing vulnerability remediation ticket found for {vulnerability_field(vulnerability, 'cve_id')} on {vulnerability_field(vulnerability, 'hostname')}",
+            actor=actor,
+        )
+        return {
+            "status": "existing",
+            "ticket": ticket,
+            "message": "Existing vulnerability remediation ticket found.",
+        }
+
+    write_vulnerability_ticket_audit(
+        db,
+        action="vulnerability_ticket_create",
+        entity_id=ticket["id"],
+        summary=audit_summary,
+        actor=actor,
+    )
+
+    return {
+        "status": "created",
+        "ticket": ticket,
+        "vulnerability": vulnerability,
+    }
 
 
 @app.get("/api/health")

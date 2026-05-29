@@ -285,7 +285,7 @@
 
     .vuln-table {
       width: 100%;
-      min-width: 860px;
+      min-width: 1020px;
       border-collapse: collapse;
       font-size: 13px;
     }
@@ -342,6 +342,83 @@
     .severity-badge.unknown {
       color: #071018;
       background: rgba(247, 242, 223, .72);
+    }
+
+    .vuln-action-cell {
+      min-width: 180px;
+    }
+
+    .vuln-ticket-actions {
+      display: grid;
+      gap: 7px;
+      min-width: 0;
+    }
+
+    .vuln-ticket-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: fit-content;
+      max-width: 100%;
+      min-height: 32px;
+      padding: 7px 10px;
+      border: 1px solid rgba(115, 244, 223, .34);
+      border-radius: 10px;
+      color: #071018;
+      background: linear-gradient(135deg, var(--cyan), #fff0b8 56%, var(--gold));
+      box-shadow: 0 0 18px rgba(115, 244, 223, .12);
+      cursor: pointer;
+      font: inherit;
+      font-size: 11px;
+      font-weight: 950;
+      line-height: 1.15;
+      text-align: center;
+      text-decoration: none;
+      white-space: normal;
+      transition: border-color .16s ease, box-shadow .16s ease, opacity .16s ease, transform .16s ease;
+    }
+
+    .vuln-ticket-button:hover,
+    .vuln-ticket-button:focus-visible {
+      border-color: rgba(245, 211, 122, .72);
+      box-shadow: 0 0 24px rgba(115, 244, 223, .18);
+      outline: none;
+      transform: translateY(-1px);
+    }
+
+    .vuln-ticket-button:disabled {
+      cursor: not-allowed;
+      opacity: .58;
+      transform: none;
+    }
+
+    .vuln-ticket-note {
+      max-width: 210px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+      line-height: 1.35;
+      overflow-wrap: anywhere;
+    }
+
+    .vuln-ticket-note.bad {
+      color: var(--red);
+    }
+
+    .vuln-ticket-pill {
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      max-width: 100%;
+      padding: 5px 8px;
+      border: 1px solid rgba(115, 244, 223, .24);
+      border-radius: 999px;
+      color: var(--cyan);
+      background: rgba(115, 244, 223, .08);
+      font-size: 11px;
+      font-weight: 900;
+      line-height: 1.2;
+      overflow-wrap: anywhere;
     }
 
     .vuln-links {
@@ -732,10 +809,11 @@
                 <th>Version</th>
                 <th>Status</th>
                 <th>Remediation Hint</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody id="vuln-preview-body">
-              <tr><td colspan="7">Loading vulnerability inventory...</td></tr>
+              <tr><td colspan="8">Loading vulnerability inventory...</td></tr>
             </tbody>
           </table>
         </div>
@@ -821,8 +899,12 @@
   </main>
 
   <script src="/shared/command-header.js?v=0522"></script>
+  <script src="/shared/role-switcher.js?v=0523dock"></script>
 
   <script>
+    const vulnerabilityTicketState = new Map();
+    let lastVulnerabilityPreviewPayload = null;
+
     async function loadApiHealth() {
       const statusEl = document.getElementById("api-status");
       const hostEl = document.getElementById("api-host");
@@ -1146,6 +1228,73 @@
       return `<span class="severity-badge ${severity}">${escapeHtml(severity)}</span>`;
     }
 
+    function roleLevel(role) {
+      const levels = { preview: 0, viewer: 0, operator: 1, supervisor: 2, admin: 3 };
+      return levels[String(role || "viewer").toLowerCase()] || 0;
+    }
+
+    function currentRole() {
+      return window.ENYRAXRole && window.ENYRAXRole.get ? window.ENYRAXRole.get() : "viewer";
+    }
+
+    function canCreateVulnerabilityTicket() {
+      return Boolean(
+        window.ENYRAXRole
+          && window.ENYRAXRole.isLoggedIn
+          && window.ENYRAXRole.isLoggedIn()
+          && window.ENYRAXRole.canWriteSession
+          && window.ENYRAXRole.canWriteSession()
+          && roleLevel(currentRole()) >= roleLevel("operator")
+      );
+    }
+
+    function vulnerabilityTicketKey(row) {
+      return [
+        row.cve_id || row.cve || "",
+        row.hostname || row.host || "",
+        row.package_name || row.package || ""
+      ].map((value) => String(value).trim().toLowerCase()).join("::");
+    }
+
+    function ticketIdFromResponse(data) {
+      const ticket = data && data.ticket && typeof data.ticket === "object" ? data.ticket : {};
+      return data?.ticket_id || data?.id || ticket.id || ticket.ticket_id || null;
+    }
+
+    function renderVulnerabilityTicketAction(row) {
+      const key = vulnerabilityTicketKey(row);
+      const state = vulnerabilityTicketState.get(key);
+
+      if (!canCreateVulnerabilityTicket()) {
+        return `
+          <div class="vuln-ticket-actions">
+            <div class="vuln-ticket-note">Login with Operator / Supervisor / Admin to create remediation tickets.</div>
+          </div>
+        `;
+      }
+
+      if (state && state.ticketId && (state.status === "created" || state.status === "existing")) {
+        const href = `/serviceops/ticket.html?id=${encodeURIComponent(state.ticketId)}`;
+        const label = state.status === "existing" ? "Existing ServiceOps ticket" : "Created ServiceOps ticket";
+        return `
+          <div class="vuln-ticket-actions" data-ticket-key="${escapeHtml(key)}">
+            <span class="vuln-ticket-pill">${escapeHtml(label)} #${escapeHtml(state.ticketId)}</span>
+            <a class="vuln-ticket-button" href="${escapeHtml(href)}">Open Ticket</a>
+          </div>
+        `;
+      }
+
+      const note = state && state.message ? state.message : "";
+      const noteClass = state && state.isError ? " bad" : "";
+
+      return `
+        <div class="vuln-ticket-actions" data-ticket-key="${escapeHtml(key)}">
+          <button class="vuln-ticket-button" type="button" data-vuln-ticket-key="${escapeHtml(key)}">Create ServiceOps Ticket</button>
+          ${note ? `<div class="vuln-ticket-note${noteClass}">${escapeHtml(note)}</div>` : ""}
+        </div>
+      `;
+    }
+
     function collectWarnings(...payloads) {
       return payloads.flatMap((payload) => {
         if (!payload || typeof payload !== "object") return [];
@@ -1277,16 +1426,17 @@
     }
 
     function renderVulnerabilityPreview(payload) {
+      lastVulnerabilityPreviewPayload = payload;
       const rows = vulnerabilityRows(payload).slice(0, 8);
       const body = document.getElementById("vuln-preview-body");
 
       if (!rows.length) {
-        body.innerHTML = `<tr><td colspan="7">No vulnerability inventory rows available.</td></tr>`;
+        body.innerHTML = `<tr><td colspan="8">No vulnerability inventory rows available.</td></tr>`;
         return;
       }
 
       body.innerHTML = rows.map((row) => `
-        <tr>
+        <tr data-vuln-ticket-key="${escapeHtml(vulnerabilityTicketKey(row))}">
           <td>${severityBadge(row.severity || row.highest_severity)}</td>
           <td>${escapeHtml(row.cve_id || row.cve || "-")}</td>
           <td>${escapeHtml(row.hostname || row.host || "-")}</td>
@@ -1294,8 +1444,89 @@
           <td>${escapeHtml(row.installed_version || "-")} → ${escapeHtml(row.fixed_version || "-")}</td>
           <td>${escapeHtml(row.remediation_status || "-")}</td>
           <td>${escapeHtml(row.remediation_hint || "-")}</td>
+          <td class="vuln-action-cell">${renderVulnerabilityTicketAction(row)}</td>
         </tr>
       `).join("");
+    }
+
+    function findVulnerabilityRowByKey(key) {
+      return vulnerabilityRows(lastVulnerabilityPreviewPayload).find((row) => vulnerabilityTicketKey(row) === key);
+    }
+
+    function updateVulnerabilityTicketCell(key, row) {
+      const target = document.querySelector(`[data-vuln-ticket-key="${CSS.escape(key)}"] .vuln-action-cell`);
+      if (!target) return;
+      target.innerHTML = renderVulnerabilityTicketAction(row);
+    }
+
+    function vulnerabilityTicketErrorMessage(status) {
+      if (status === 403) return "Permission denied. Write role required.";
+      if (status === 404) return "Vulnerability item not found.";
+      return "Unable to create ServiceOps ticket.";
+    }
+
+    async function createVulnerabilityTicket(key, button) {
+      const row = findVulnerabilityRowByKey(key);
+
+      if (!row || !canCreateVulnerabilityTicket()) {
+        vulnerabilityTicketState.set(key, {
+          status: "error",
+          message: !row ? "Vulnerability item not found." : "Permission denied. Write role required.",
+          isError: true
+        });
+        if (row) updateVulnerabilityTicketCell(key, row);
+        return;
+      }
+
+      const originalText = button.textContent;
+      button.disabled = true;
+      button.textContent = "Creating...";
+
+      try {
+        const res = await fetch("/api/vulnerabilities/create-serviceops-ticket", {
+          method: "POST",
+          headers: window.ENYRAXRole ? window.ENYRAXRole.jsonHeaders() : { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            cve_id: row.cve_id || row.cve,
+            hostname: row.hostname || row.host,
+            package_name: row.package_name || row.package,
+            note: "Created from Vulnerability Inventory panel."
+          })
+        });
+
+        let data = null;
+        try {
+          data = await res.json();
+        } catch (_error) {
+          data = null;
+        }
+
+        if (!res.ok) {
+          throw new Error(String(res.status));
+        }
+
+        const status = data?.status === "existing" ? "existing" : "created";
+        const ticketId = ticketIdFromResponse(data);
+        vulnerabilityTicketState.set(key, {
+          status: status,
+          ticketId: ticketId,
+          message: `${status === "existing" ? "Existing" : "Created"} ServiceOps ticket #${ticketId || "-"}`
+        });
+        updateVulnerabilityTicketCell(key, row);
+      } catch (err) {
+        const status = Number(err.message);
+        vulnerabilityTicketState.set(key, {
+          status: "error",
+          message: vulnerabilityTicketErrorMessage(status),
+          isError: true
+        });
+        updateVulnerabilityTicketCell(key, row);
+      } finally {
+        if (document.body.contains(button)) {
+          button.disabled = false;
+          button.textContent = originalText;
+        }
+      }
     }
 
     function setVulnerabilityUnavailable() {
@@ -1304,7 +1535,7 @@
       renderTopPackages([]);
       renderTopCves([]);
       renderTopHosts([]);
-      document.getElementById("vuln-preview-body").innerHTML = `<tr><td colspan="7">Vulnerability inventory unavailable</td></tr>`;
+      document.getElementById("vuln-preview-body").innerHTML = `<tr><td colspan="8">Vulnerability inventory unavailable</td></tr>`;
       setVulnMessage("Vulnerability inventory unavailable", true);
     }
 
@@ -1373,6 +1604,22 @@
         setSyncUnavailable();
       }
     }
+
+    document.getElementById("vuln-preview-body").addEventListener("click", (event) => {
+      const button = event.target.closest("[data-vuln-ticket-key]");
+      if (!button || button.tagName !== "BUTTON") return;
+      createVulnerabilityTicket(button.dataset.vulnTicketKey, button);
+    });
+
+    window.addEventListener("enyrax-auth-session-changed", () => {
+      if (lastVulnerabilityPreviewPayload) renderVulnerabilityPreview(lastVulnerabilityPreviewPayload);
+    });
+
+    window.addEventListener("storage", (event) => {
+      if (["enyrax_auth_token", "enyrax_auth_user", "enyrax_auth_login_at"].includes(event.key) && lastVulnerabilityPreviewPayload) {
+        renderVulnerabilityPreview(lastVulnerabilityPreviewPayload);
+      }
+    });
 
     loadSystemHealthPanel();
     loadVulnerabilityInventory();
