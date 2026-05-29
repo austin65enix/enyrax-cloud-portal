@@ -1,5 +1,74 @@
 # ENYRAX Cloud Portal Release Notes
 
+## v0.6.18-portal-enterprise-ops-architecture
+
+Release date: 2026-05-29
+
+## Summary
+
+This release upgrades the Portal homepage from a module launcher into an enterprise operations architecture landing page.
+
+The new architecture section positions ENYRAX as a ServiceOps-centered enterprise operations control center that connects event sources, workflow automation, AI-assisted judgment, automated execution and management outputs.
+
+## Completed
+
+- Added Enterprise Ops Control Center architecture section to Portal homepage
+- Positioned ENYRAX ServiceOps Core as the central governance layer
+- Added future expansion map for Wazuh, n8n, Open Source HRM, MES, ERP, AI Agent and Ansible
+- Added source layer for SOC / Wazuh, ERP, HRM, MES and external systems
+- Added n8n Workflow Engine layer for orchestration and data routing
+- Added AI Agent and AI Summary decision-support layer
+- Added Ansible Automation execution layer
+- Added management output layer for Dashboard, Report, Audit Log, Recovery Evidence and Closure Statistics
+- Added ENYRAX Value rail: centralized, automated, standardized, visualized, intelligent and closed-loop operations
+- Added positioning sentence explaining each platform responsibility
+
+## Architecture
+
+```text
+Event / Data Sources
+  → n8n Workflow Engine
+  → ENYRAX ServiceOps Core
+  → AI Agent / AI Summary
+  → Ansible Automation
+  → Management Output
+```
+
+## Product Positioning
+
+ENYRAX is positioned as a ServiceOps-centered enterprise operations governance platform.
+
+Wazuh detects.
+n8n orchestrates.
+ServiceOps owns responsibility.
+AI Agent supports judgment.
+Ansible executes.
+Dashboard and reports provide management visibility.
+
+## Current Product Status
+
+```text
+Portal Homepage        Enterprise architecture section added
+ServiceOps Core        Positioned as central governance platform
+Sync / SOC / Wazuh     Positioned as event and security source layer
+n8n                    Positioned as workflow orchestration layer
+AI Agent               Positioned as judgment and recommendation layer
+Ansible                Positioned as automation execution layer
+Management Output      Dashboard / Report / Audit / Evidence / Closure view
+```
+
+## Next Phase
+
+- Add visual links from architecture cards to related modules
+- Add ServiceOps Core product explanation section
+- Add n8n integration demo workflow
+- Add Open Source HRM / MES placeholder module pages
+- Add Ansible automation evidence workflow
+- Add architecture diagram export for demo deck
+- Add bilingual architecture copy
+
+---
+
 ## v0.6.17-wazuh-local-sync-recovery
 
 Release date: 2026-05-29
