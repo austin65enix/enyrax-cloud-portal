@@ -64,6 +64,16 @@ AgentOps Dashboard Preview provides operational visibility into AI agent / Codex
 
 The current overall risk level is Low, but it is not no risk.
 
+## AgentOps Historical Snapshots Schema Design
+
+Task #130 defines the historical snapshot schema for future real Trend Chart data.
+
+Snapshot v1 stores aggregate dashboard-level operational metrics. Snapshot v1 does not store prompt / response, shell output, command text, diff, file contents, raw JSONL, credentials, or full home paths.
+
+Recommended MVP storage is JSON files under `data/agentops/snapshots/`. Token values remain operational estimates, not billing-grade cost data. Project / task values may remain pipeline-level metadata classifications.
+
+Future work should implement snapshot generation in Task #131.
+
 ## Review Result
 
 * review status: passed

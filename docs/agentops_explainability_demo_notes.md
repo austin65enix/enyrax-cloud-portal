@@ -83,6 +83,16 @@ Task #129 packages Tasks #123-#128 as AgentOps Dashboard Preview.
 
 Suggested tag: `v0.6.22-agentops-dashboard-preview`. Preview review remains passed. This release preserves safety boundaries and semantic warnings. Future work should focus on historical snapshots and schema split design.
 
+## AgentOps Historical Snapshots Schema Design
+
+Task #130 defines the historical snapshot schema for future real Trend Chart data.
+
+Snapshot v1 stores aggregate dashboard-level operational metrics. Snapshot v1 does not store prompt / response, shell output, command text, diff, file contents, raw JSONL, credentials, or full home paths.
+
+Recommended MVP storage is JSON files under `data/agentops/snapshots/`. Token values remain operational estimates, not billing-grade cost data. Project / task values may remain pipeline-level metadata classifications.
+
+Future work should implement snapshot generation in Task #131.
+
 ## AgentOps Risk & Anomaly Detection
 
 Task #128 adds a first Risk & Anomaly Detection section to the AgentOps Preview Dashboard.
