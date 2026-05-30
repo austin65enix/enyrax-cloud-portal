@@ -1,9 +1,11 @@
 (function () {
   const AUTH_TOKEN_KEY = "enyrax_auth_token";
   const AUTH_USER_KEY = "enyrax_auth_user";
+  const AUTH_LOGIN_AT_KEY = "enyrax_auth_login_at";
   const DISMISS_KEY = "enyrax_auth_guard_dismissed";
   const ROOT_ID = "enyrax-auth-guard";
   const SESSION_EVENT = "enyrax-auth-session-changed";
+  const SESSION_TIMEOUT_MINUTES = 120;
 
   function getAuthUser() {
     const storedUser = localStorage.getItem(AUTH_USER_KEY);
@@ -38,7 +40,18 @@
   function clearAuthSession() {
     localStorage.removeItem(AUTH_TOKEN_KEY);
     localStorage.removeItem(AUTH_USER_KEY);
+    localStorage.removeItem(AUTH_LOGIN_AT_KEY);
     dispatchSessionChange(false, null);
+  }
+
+  function isSessionTimedOut() {
+    const token = localStorage.getItem(AUTH_TOKEN_KEY);
+    const loginAt = Number(localStorage.getItem(AUTH_LOGIN_AT_KEY));
+
+    if (!token) return false;
+    if (!Number.isFinite(loginAt) || loginAt <= 0) return true;
+
+    return Date.now() - loginAt > SESSION_TIMEOUT_MINUTES * 60 * 1000;
   }
 
   function createLinkButton(text, href, primary) {
@@ -259,6 +272,12 @@
 
     if (!token) {
       createGuard();
+      return;
+    }
+
+    if (isSessionTimedOut()) {
+      clearAuthSession();
+      createGuard("Session expired or timed out. Please sign in again.", true);
       return;
     }
 

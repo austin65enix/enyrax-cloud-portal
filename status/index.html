@@ -1400,7 +1400,8 @@
       const list = Array.isArray(items) ? items.slice(0, 5) : [];
       document.getElementById("vuln-top-cves").innerHTML = list.length ? list.map((item) => {
         const cveId = item.cve_id || item.cve || "-";
-        const detailHref = `/api/vulnerabilities/cves/${encodeURIComponent(cveId)}`;
+        const detailHref = `/vulnerabilities/cve.html?cve_id=${encodeURIComponent(cveId)}`;
+        const apiHref = `/api/vulnerabilities/cves/${encodeURIComponent(cveId)}`;
 
         return `
           <div class="vuln-list-item">
@@ -1411,7 +1412,8 @@
             <div class="vuln-counts">
               <span>${severityBadge(item.highest_severity || item.severity)}</span>
               <span>Affected hosts: ${escapeHtml(formatCount(countValue(item.affected_hosts ?? item.affected_host_count)))}</span>
-              <a class="vuln-ticket-button" href="${escapeHtml(detailHref)}" target="_blank" rel="noopener">View CVE</a>
+              <a class="vuln-ticket-button" href="${escapeHtml(detailHref)}">View CVE</a>
+              <a class="vuln-link" href="${escapeHtml(apiHref)}" target="_blank" rel="noopener">API JSON</a>
             </div>
           </div>
         `;

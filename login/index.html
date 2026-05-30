@@ -298,6 +298,29 @@
       line-height: 1.45;
     }
 
+    .policy {
+      margin: 16px 0 0;
+      border: 1px solid rgba(115,244,223,.22);
+      border-radius: 16px;
+      background: rgba(115,244,223,.055);
+      padding: 14px;
+    }
+
+    .policy h3 {
+      margin: 0 0 8px;
+      color: var(--cyan);
+      font-size: 13px;
+      letter-spacing: .02em;
+    }
+
+    .policy ul {
+      margin: 0;
+      padding-left: 18px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.55;
+    }
+
     label {
       display: grid;
       gap: 7px;
@@ -422,15 +445,15 @@
     <section class="shell">
       <aside class="hero">
         <div>
-          <span class="badge">Auth Demo API</span>
+          <span class="badge">Demo Gateway</span>
           <h1>Secure demo access</h1>
-          <p class="subtitle">Use a seeded local account to receive a demo token and unlock portal navigation for the current browser session.</p>
+          <p class="subtitle">Choose a demo role to continue. Demo credentials are provided during guided sessions.</p>
         </div>
         <div class="mini-grid" aria-label="Demo account summary">
           <div class="mini"><span>Preview</span><strong>Read-only before login</strong></div>
           <div class="mini"><span>Operator</span><strong>Operations</strong></div>
           <div class="mini"><span>Supervisor</span><strong>Approvals</strong></div>
-          <div class="mini"><span>Admin</span><strong>Full demo</strong></div>
+          <div class="mini"><span>Admin</span><strong>Restricted demo role</strong></div>
         </div>
       </aside>
 
@@ -441,25 +464,34 @@
         </div>
 
         <div class="quick" aria-label="Demo account shortcuts">
-          <p class="quick-note">Preview mode covers read-only access before login.</p>
+          <p class="quick-note">Preview mode provides read-only product access before login.</p>
           <button type="button" data-email="operator@enyrax.local" data-label="Operator">Operator</button>
           <button type="button" data-email="supervisor@enyrax.local" data-label="Supervisor">Supervisor</button>
           <button type="button" data-email="admin@enyrax.local" data-label="Admin">Admin</button>
         </div>
 
-        <form id="loginForm" class="form">
-          <p id="demoAccountHint" class="demo-account-hint">Default demo account: Operator</p>
+        <form id="loginForm" class="form" autocomplete="off">
+          <p id="demoAccountHint" class="demo-account-hint">Choose a demo role to continue. Demo credentials are provided during guided sessions.</p>
           <label>
             Email
             <input id="email" name="email" type="email" autocomplete="username" required placeholder="admin@enyrax.local" />
           </label>
           <label>
             Password
-            <input id="password" name="password" type="password" autocomplete="current-password" required placeholder="demo1234" />
+            <input id="password" name="password" type="password" autocomplete="new-password" required placeholder="Enter demo password" />
           </label>
           <button id="loginButton" class="primary" type="submit">Login</button>
           <div id="message" class="message" role="status" aria-live="polite"></div>
         </form>
+
+        <section class="policy" aria-label="Public demo policy">
+          <h3>Public demo policy</h3>
+          <ul>
+            <li>Product pages can be previewed in read-only mode.</li>
+            <li>Write actions require a guided demo login.</li>
+            <li>Demo data is synthetic and does not contain customer data.</li>
+          </ul>
+        </section>
 
         <section id="userCard" class="user-card" aria-label="Authenticated user">
           <h3>Current user</h3>
@@ -483,7 +515,6 @@
   </main>
 
   <script>
-    const DEMO_PASSWORD = 'demo1234';
     const DEFAULT_DEMO_EMAIL = 'operator@enyrax.local';
     const TOKEN_KEY = 'enyrax_auth_token';
     const USER_KEY = 'enyrax_auth_user';
@@ -564,20 +595,20 @@
       if (!button) return;
 
       emailInput.value = button.dataset.email;
-      passwordInput.value = DEMO_PASSWORD;
+      passwordInput.value = "";
       quickButtons.forEach((item) => {
         item.classList.toggle("is-selected", item === button);
         item.setAttribute("aria-pressed", item === button ? "true" : "false");
       });
 
-      demoAccountHint.textContent = (isDefault ? "Default" : "Selected") + " demo account: " + button.dataset.label;
+      demoAccountHint.textContent = (isDefault ? "Default" : "Selected") + " demo role: " + button.dataset.label + ". Demo credentials are provided during guided sessions.";
     }
 
     quickButtons.forEach((button) => {
       button.setAttribute("aria-pressed", "false");
       button.addEventListener("click", () => {
         selectDemoAccount(button);
-        setMessage("Demo credentials filled.", true);
+        setMessage("Enter the demo password provided for the guided session.", true);
       });
     });
 
