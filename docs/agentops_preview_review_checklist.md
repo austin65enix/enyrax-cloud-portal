@@ -320,3 +320,19 @@ Snapshot Trend Integration review items:
 * Trend UI must preserve pipeline-level classification warning.
 * Fetch failure must not break the dashboard.
 * Trend UI must remain mobile readable.
+
+
+## AgentOps Snapshot Index Publish Path
+
+Task #133 documents how `/data/agentops/snapshots/index.json` should be served by nginx.
+
+Only `/data/agentops/snapshots/` should be exposed, not the entire `/data/` tree. Snapshot files contain aggregate operational metrics only. Use `Cache-Control: no-store` for preview dashboard freshness. Trend UI must fall back to clearly labeled sample data if the snapshot index is unavailable.
+
+Snapshot Index Publish Path review items:
+
+* Confirm nginx uses `root /var/www/enyrax-portal`.
+* Confirm `/data/agentops/snapshots/index.json` returns `200`.
+* Confirm `/data/agentops/snapshots/` uses `Cache-Control: no-store`.
+* Confirm other `/data/` paths return `404`.
+* Confirm snapshot files contain aggregate operational metrics only.
+* Confirm Trend UI fallback remains labeled as sample data.

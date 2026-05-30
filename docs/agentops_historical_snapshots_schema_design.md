@@ -345,3 +345,27 @@ Token values are not billing-grade cost data.
 Project / task coverage does not imply content-level classification accuracy.
 
 No prompt / response content is used.
+
+
+## AgentOps Snapshot Index Publish Path
+
+Task #133 documents how `/data/agentops/snapshots/index.json` should be served by nginx.
+
+Only `/data/agentops/snapshots/` should be exposed, not the entire `/data/` tree. Snapshot files contain aggregate operational metrics only. They do not contain prompt / response content, command output, raw JSONL, credentials, secrets, or full home paths.
+
+The production nginx site uses `root /var/www/enyrax-portal`, so the publish rule should use `root` consistently. Add a narrow snapshot location and block the remaining `/data/` tree:
+
+```nginx
+location ^~ /data/agentops/snapshots/ {
+    root /var/www/enyrax-portal;
+    default_type application/json;
+    add_header Cache-Control "no-store";
+    try_files $uri =404;
+}
+
+location ^~ /data/ {
+    return 404;
+}
+```
+
+`Cache-Control: no-store` is preferred for preview dashboard freshness. If the snapshot index is unavailable, Trend UI falls back to clearly labeled sample data.

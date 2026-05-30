@@ -39,3 +39,34 @@ sudo systemctl status enyrax-api
 Nginx
   ├── Static files from /var/www/enyrax-portal
   └── /api/ proxy to FastAPI on 127.0.0.1:8000
+
+
+## AgentOps Snapshot Index Publish Path
+
+Task #133 publishes the AgentOps Trend UI snapshot index without exposing the entire `/data/` tree.
+
+Add these locations before the general `location /` block in `/etc/nginx/sites-available/enyrax-portal`:
+
+```nginx
+location ^~ /data/agentops/snapshots/ {
+    root /var/www/enyrax-portal;
+    default_type application/json;
+    add_header Cache-Control "no-store";
+    try_files $uri =404;
+}
+
+location ^~ /data/ {
+    return 404;
+}
+```
+
+Snapshot files contain aggregate operational metrics only. Trend UI falls back to clearly labeled sample data if the index is unavailable.
+
+Validate and apply the server-side change manually:
+
+```bash
+sudo nginx -t
+sudo systemctl reload nginx
+curl -I https://portal.soc-monitoring.dev/data/agentops/snapshots/index.json
+curl -s https://portal.soc-monitoring.dev/data/agentops/snapshots/index.json | python3 -m json.tool >/tmp/agentops_snapshot_index_remote_check.json
+```

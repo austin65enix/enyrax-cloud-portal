@@ -136,3 +136,12 @@ Token values are not billing-grade cost data.
 Project / task coverage does not imply content-level classification accuracy.
 
 No prompt / response content is used.
+
+
+## AgentOps Snapshot Index Publish Path
+
+Task #133 documents how `/data/agentops/snapshots/index.json` should be served by nginx.
+
+Only `/data/agentops/snapshots/` should be exposed, not the entire `/data/` tree. Snapshot files contain aggregate operational metrics only. The restricted publish path must not expose preview fixtures or other present or future files under `/data/`.
+
+The nginx rule should use `root /var/www/enyrax-portal`, add `Cache-Control: no-store` for preview dashboard freshness, and return `404` for the remaining `/data/` tree. Trend UI falls back to clearly labeled sample data if the snapshot index is unavailable.
