@@ -301,7 +301,6 @@ This task does not implement that split.
 * no backend changes
 * no UI changes
 * no API changes
-* no actual snapshot generation
 * no preview JSON regeneration
 * no billing-grade cost reporting
 * no content-based inference
@@ -311,3 +310,38 @@ This task does not implement that split.
 ## Task #131 Handoff
 
 Task #131 should implement snapshot generation using the schema defined here. The first implementation should generate JSON snapshots under `data/agentops/snapshots/` from `review_agentops_preview.py --json` and safe aggregate preview metrics only.
+
+## AgentOps Snapshot Generation
+
+Task #131 implements the first snapshot generator.
+
+Generator reads `review_agentops_preview.py --json` aggregate review output.
+
+Generator does not read raw session files or prompt / response content.
+
+Generated snapshots are stored under `data/agentops/snapshots/`.
+
+First generated snapshots:
+
+* `data/agentops/snapshots/daily/2026-05-31.json`
+* `data/agentops/snapshots/releases/v0.6.22-agentops-dashboard-preview.json`
+
+Snapshot values remain operational estimates and dashboard-level indicators.
+
+## AgentOps Snapshot Trend Integration
+
+Task #132 connects Trend Snapshot UI to historical snapshot index data.
+
+Trend UI uses `data/agentops/snapshots/index.json` when available.
+
+If snapshot index is unavailable, UI falls back to static sample data.
+
+Snapshot index contains aggregate dashboard-level metrics only.
+
+Snapshot trend values remain operational indicators.
+
+Token values are not billing-grade cost data.
+
+Project / task coverage does not imply content-level classification accuracy.
+
+No prompt / response content is used.

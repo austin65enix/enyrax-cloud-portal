@@ -264,3 +264,59 @@ After Task #121:
 * top_projects: AgentOps: 50
 * review status: passed
 `AgentOps: 50` is based on safe preview output basename mapping from `agent_runs_preview.json`. This is a conservative pipeline-level classification. Future work may separate `pipeline_project` from `session_project` if schema changes are approved.
+
+## AgentOps Snapshot Generation
+
+Task #131 implements the first snapshot generator.
+
+Generator reads `review_agentops_preview.py --json` aggregate review output.
+
+Generator does not read raw session files or prompt / response content.
+
+Generated snapshots are stored under `data/agentops/snapshots/`.
+
+First generated snapshots:
+
+* `data/agentops/snapshots/daily/2026-05-31.json`
+* `data/agentops/snapshots/releases/v0.6.22-agentops-dashboard-preview.json`
+
+Snapshot values remain operational estimates and dashboard-level indicators.
+
+Snapshot Generation review items:
+
+* Generator must only read aggregate review JSON.
+* Generator must not read raw session files.
+* Generator must not read prompt / response content.
+* Generator must not copy arbitrary review JSON fields.
+* Snapshot `preview_file` must be basename only.
+* Snapshot output must use `schema_version: agentops_snapshot_v1`.
+* Snapshot JSON must be valid and pretty-printed.
+* Snapshot values must preserve operational-estimate and pipeline-level warnings.
+
+## AgentOps Snapshot Trend Integration
+
+Task #132 connects Trend Snapshot UI to historical snapshot index data.
+
+Trend UI uses `data/agentops/snapshots/index.json` when available.
+
+If snapshot index is unavailable, UI falls back to static sample data.
+
+Snapshot index contains aggregate dashboard-level metrics only.
+
+Snapshot trend values remain operational indicators.
+
+Token values are not billing-grade cost data.
+
+Project / task coverage does not imply content-level classification accuracy.
+
+No prompt / response content is used.
+
+Snapshot Trend Integration review items:
+
+* Snapshot index must not contain raw prompt / response / command output.
+* Snapshot index paths must be relative safe paths.
+* Trend UI must clearly label snapshot-backed data vs sample fallback.
+* Trend UI must preserve token operational estimate warning.
+* Trend UI must preserve pipeline-level classification warning.
+* Fetch failure must not break the dashboard.
+* Trend UI must remain mobile readable.

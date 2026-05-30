@@ -1,0 +1,70 @@
+{
+  "blocking_risks": 0,
+  "cached_tokens": 0,
+  "caution_items": 3,
+  "commands_run": 1,
+  "error_count": 0,
+  "extra_fields_count": 0,
+  "files_modified": 1354,
+  "forbidden_hits_count": 0,
+  "generated_at": "2026-05-31T23:00:00+08:00",
+  "invalid_numeric_field_count": 0,
+  "invalid_status_count": 0,
+  "invalid_timestamp_field_count": 0,
+  "original_total_tokens_before_normalization": 1058156153,
+  "output_tokens": 571892,
+  "overall_risk_level": "low",
+  "preview_file": "agent_runs_preview.json",
+  "project_coverage_ratio": 1.0,
+  "reasoning_tokens": 0,
+  "records": 50,
+  "records_with_unknown_model": 0,
+  "records_with_zero_tokens": 0,
+  "release_quality_score": 98,
+  "review_status": "passed",
+  "review_summary": {
+    "extra_fields_count": 0,
+    "forbidden_hits_count": 0,
+    "records": 50,
+    "records_with_unknown_model": 0,
+    "records_with_zero_tokens": 0,
+    "review_status": "passed",
+    "unknown_project_count": 0,
+    "unknown_task_count": 0
+  },
+  "schema_version": "agentops_snapshot_v1",
+  "semantic_warnings": [
+    "token_values_are_operational_estimates",
+    "project_task_values_may_be_pipeline_level",
+    "not_billing_grade_cost_data",
+    "not_ai_answer_quality",
+    "not_session_content_level_correctness",
+    "content_based_inference_prohibited"
+  ],
+  "snapshot_date": "2026-05-31",
+  "snapshot_id": "agentops-daily-2026-05-31",
+  "snapshot_type": "daily",
+  "source": "agentops_preview_review",
+  "source_mismatch_count": 0,
+  "task_coverage_ratio": 1.0,
+  "token_normalization_reduction_ratio": 0.952674,
+  "tool_calls": 1355,
+  "top_projects": [
+    {
+      "count": 50,
+      "name": "AgentOps"
+    }
+  ],
+  "top_tasks": [
+    {
+      "count": 50,
+      "name": "AgentOps Preview Generation"
+    }
+  ],
+  "total_tokens": 50078459,
+  "unknown_project_count": 0,
+  "unknown_task_count": 0,
+  "unsafe_result_count": 0,
+  "unsafe_session_id_count": 0,
+  "warning_count": 0
+}

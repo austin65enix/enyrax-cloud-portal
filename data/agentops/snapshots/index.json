@@ -1,0 +1,26 @@
+{
+  "generated_at": "2026-05-31T23:15:00+08:00",
+  "schema_version": "agentops_snapshot_index_v1",
+  "semantic_warnings": [
+    "token_values_are_operational_estimates",
+    "project_task_values_may_be_pipeline_level",
+    "not_session_content_level_classification"
+  ],
+  "snapshots": [
+    {
+      "blocking_risks": 0,
+      "caution_items": 3,
+      "overall_risk_level": "low",
+      "path": "daily/2026-05-31.json",
+      "project_coverage_ratio": 1.0,
+      "records": 50,
+      "release_quality_score": 98,
+      "review_status": "passed",
+      "snapshot_date": "2026-05-31",
+      "snapshot_type": "daily",
+      "task_coverage_ratio": 1.0,
+      "total_tokens": 50078459
+    }
+  ],
+  "source": "agentops_snapshot_generation"
+}

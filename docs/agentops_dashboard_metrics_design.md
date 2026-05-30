@@ -262,3 +262,38 @@ Potential risk signals:
 ## Task #124 Handoff
 
 Task #124 should implement a simple AgentOps Preview Dashboard UI using the metrics and copy defined in this document. The first UI version should focus on readability, clear warnings, KPI cards, and simple chart sections. It should not introduce schema changes or content-based inference.
+
+## AgentOps Snapshot Generation
+
+Task #131 implements the first snapshot generator.
+
+Generator reads `review_agentops_preview.py --json` aggregate review output.
+
+Generator does not read raw session files or prompt / response content.
+
+Generated snapshots are stored under `data/agentops/snapshots/`.
+
+First generated snapshots:
+
+* `data/agentops/snapshots/daily/2026-05-31.json`
+* `data/agentops/snapshots/releases/v0.6.22-agentops-dashboard-preview.json`
+
+Snapshot values remain operational estimates and dashboard-level indicators.
+
+## AgentOps Snapshot Trend Integration
+
+Task #132 connects Trend Snapshot UI to historical snapshot index data.
+
+Trend UI uses `data/agentops/snapshots/index.json` when available.
+
+If snapshot index is unavailable, UI falls back to static sample data.
+
+Snapshot index contains aggregate dashboard-level metrics only.
+
+Snapshot trend values remain operational indicators.
+
+Token values are not billing-grade cost data.
+
+Project / task coverage does not imply content-level classification accuracy.
+
+No prompt / response content is used.

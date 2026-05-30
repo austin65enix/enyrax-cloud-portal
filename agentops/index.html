@@ -1026,6 +1026,13 @@
       line-height: 1.45;
     }
 
+    .trend-source-label {
+      color: var(--cyan);
+      font-size: 12px;
+      font-weight: 950;
+      line-height: 1.3;
+    }
+
     .trend-grid {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1062,7 +1069,7 @@
 
     .trend-row {
       display: grid;
-      grid-template-columns: 54px minmax(0, 1fr) auto;
+      grid-template-columns: 86px minmax(0, 1fr) auto;
       gap: 9px;
       align-items: center;
       color: var(--muted-strong);
@@ -1132,7 +1139,7 @@
 
     @media (max-width: 760px) {
       .trend-grid { grid-template-columns: 1fr; }
-      .trend-row { grid-template-columns: 48px minmax(0, 1fr) auto; }
+      .trend-row { grid-template-columns: 80px minmax(0, 1fr) auto; }
     }
 
     @media (max-width: 520px) {
@@ -1570,7 +1577,7 @@
             <article class="risk-item"><div><div class="risk-item-title">Zero Token Records Risk</div><div class="risk-item-meta">Zero Token Records: 0. Zero token records may indicate missing usage metadata.</div></div><span class="risk-badge">low</span></article>
             <article class="risk-item"><div><div class="risk-item-title">Token Overcounting / Estimate Risk</div><div class="risk-item-meta">Token Normalization: approx. 95.3% reduction. Normalization reduced cumulative overcounting risk, but token values remain operational estimates and not billing-grade cost detection.</div></div><span class="risk-badge caution">caution</span></article>
             <article class="risk-item"><div><div class="risk-item-title">Classification Semantics Risk</div><div class="risk-item-meta">Project Coverage: 100%. Task Coverage: 100%. Classification is pipeline-level operational metadata, not authoritative session-content-level labeling.</div></div><span class="risk-badge caution">caution</span></article>
-            <article class="risk-item"><div><div class="risk-item-title">Trend Sample Data Risk</div><div class="risk-item-meta">Trend Data: dashboard preview sample. Trend snapshot is not full historical telemetry.</div></div><span class="risk-badge caution">caution</span></article>
+            <article class="risk-item"><div><div class="risk-item-title">Trend Source Risk</div><div class="risk-item-meta">Trend Data: safe historical snapshot index when available, with dashboard preview sample fallback. Snapshot trend is not session-content-level telemetry.</div></div><span class="risk-badge caution">caution</span></article>
           </div>
         </div>
         <p class="risk-note">Risk &amp; anomaly indicators are dashboard-level operational checks. They are rule-based, explainable, and derived from preview review metrics, schema health, token sanity, metadata coverage, and dashboard sample status. They are not AI answer quality, not session-content-level correctness, not billing-grade cost detection, and content-based inference remains prohibited.</p>
@@ -1579,15 +1586,17 @@
       <section class="trend-snapshot" aria-labelledby="trend-snapshot-title">
         <div class="trend-head">
           <h3 id="trend-snapshot-title">AgentOps Trend Snapshot</h3>
-          <p>Sample trend for dashboard preview. Not a full historical dataset. Token values are operational estimates, not billing-grade cost data.</p>
-          <p>Trend metrics are dashboard-level operational indicators. This first version uses static preview trend data to show how AgentOps can present work volume, token usage estimates, review health, and classification coverage over time.</p>
+          <strong class="trend-source-label" id="trend-source-label">Sample trend fallback</strong>
+          <p id="trend-source-note">Snapshot index unavailable; showing dashboard preview sample data.</p>
+          <p>Token values are operational estimates, not billing-grade cost data. Project / task coverage does not imply content-level classification accuracy.</p>
+          <p>Snapshot trend uses aggregate dashboard metrics only. No prompt / response content is used.</p>
         </div>
 
         <div class="trend-grid">
           <article class="trend-card">
             <h4>Daily Records</h4>
             <p>Shows the growth of AI agent work records included in preview observations.</p>
-            <div class="trend-rows">
+            <div class="trend-rows" id="trend-records-rows">
               <div class="trend-row"><span>Day 1</span><div class="trend-track"><div class="trend-fill" style="width:24%"></div></div><span class="trend-value">12</span></div>
               <div class="trend-row"><span>Day 2</span><div class="trend-track"><div class="trend-fill" style="width:36%"></div></div><span class="trend-value">18</span></div>
               <div class="trend-row"><span>Day 3</span><div class="trend-track"><div class="trend-fill" style="width:48%"></div></div><span class="trend-value">24</span></div>
@@ -1599,7 +1608,7 @@
           <article class="trend-card">
             <h4>Daily Normalized Tokens</h4>
             <p>Shows normalized operational token estimates over time.</p>
-            <div class="trend-rows">
+            <div class="trend-rows" id="trend-tokens-rows">
               <div class="trend-row"><span>Day 1</span><div class="trend-track"><div class="trend-fill" style="width:16%"></div></div><span class="trend-value">8.2M</span></div>
               <div class="trend-row"><span>Day 2</span><div class="trend-track"><div class="trend-fill" style="width:27%"></div></div><span class="trend-value">13.5M</span></div>
               <div class="trend-row"><span>Day 3</span><div class="trend-track"><div class="trend-fill" style="width:45%"></div></div><span class="trend-value">22.4M</span></div>
@@ -1611,7 +1620,7 @@
           <article class="trend-card">
             <h4>Review Health</h4>
             <p>Shows whether preview review remained safe to present.</p>
-            <div class="trend-status-list">
+            <div class="trend-status-list" id="trend-review-rows">
               <div class="trend-status-item"><span>Day 1</span><strong>passed</strong></div>
               <div class="trend-status-item"><span>Day 2</span><strong>passed</strong></div>
               <div class="trend-status-item"><span>Day 3</span><strong>passed</strong></div>
@@ -1623,11 +1632,11 @@
           <article class="trend-card">
             <h4>Classification Coverage</h4>
             <p>Shows safe metadata classification coverage, not content-level classification accuracy.</p>
-            <div class="coverage-list">
+            <div class="coverage-list" id="trend-coverage-rows">
               <div class="coverage-item"><span>Project Coverage</span><strong>100%</strong></div>
               <div class="coverage-item"><span>Task Coverage</span><strong>100%</strong></div>
             </div>
-            <div class="trend-note">Trend data is for dashboard preview. It is not full historical telemetry. Token trend values are operational estimates. Project / task coverage trend does not imply content-level classification accuracy and may still be pipeline-level metadata classification.</div>
+            <div class="trend-note">Trend data uses safe historical snapshots when available and dashboard preview sample fallback otherwise. It is not session-content-level telemetry. Token trend values are operational estimates. Project / task coverage trend does not imply content-level classification accuracy and may still be pipeline-level metadata classification.</div>
           </article>
         </div>
       </section>
@@ -2000,6 +2009,71 @@
       return res.json();
     }
 
+    const SNAPSHOT_INDEX_PATH = "/data/agentops/snapshots/index.json";
+
+    function safeSnapshotPath(path) {
+      return typeof path === "string"
+        && path.length > 0
+        && !path.startsWith("/")
+        && !path.includes(String.fromCharCode(92))
+        && !path.split("/").includes("..");
+    }
+
+    function snapshotDateLabel(snapshot) {
+      return escapeHtml(String(snapshot.snapshot_date || "Snapshot"));
+    }
+
+    function trendWidth(value, maximum) {
+      const number = Number(value);
+      if (!Number.isFinite(number) || number < 0 || maximum <= 0) return 0;
+      return Math.max(4, Math.round((number / maximum) * 100));
+    }
+
+    function validateSnapshotIndex(index) {
+      if (!index || index.schema_version !== "agentops_snapshot_index_v1" || !Array.isArray(index.snapshots) || !index.snapshots.length) {
+        throw new Error("Invalid AgentOps snapshot index");
+      }
+
+      index.snapshots.forEach((snapshot) => {
+        if (!snapshot || snapshot.snapshot_type !== "daily" || !safeSnapshotPath(snapshot.path)) {
+          throw new Error("Invalid AgentOps snapshot index path");
+        }
+      });
+    }
+
+    function renderSnapshotTrend(index) {
+      const snapshots = [...index.snapshots].sort((left, right) => String(left.snapshot_date).localeCompare(String(right.snapshot_date)));
+      const maximumRecords = Math.max(...snapshots.map((snapshot) => Number(snapshot.records) || 0));
+      const maximumTokens = Math.max(...snapshots.map((snapshot) => Number(snapshot.total_tokens) || 0));
+
+      document.getElementById("trend-source-label").textContent = "Snapshot-backed trend";
+      document.getElementById("trend-source-note").textContent = "Trend data is generated from safe historical snapshots.";
+      document.getElementById("trend-records-rows").innerHTML = snapshots.map((snapshot) => `
+        <div class="trend-row"><span>${snapshotDateLabel(snapshot)}</span><div class="trend-track"><div class="trend-fill" style="width:${trendWidth(snapshot.records, maximumRecords)}%"></div></div><span class="trend-value">${escapeHtml(compactNumber(snapshot.records))}</span></div>
+      `).join("");
+      document.getElementById("trend-tokens-rows").innerHTML = snapshots.map((snapshot) => `
+        <div class="trend-row"><span>${snapshotDateLabel(snapshot)}</span><div class="trend-track"><div class="trend-fill" style="width:${trendWidth(snapshot.total_tokens, maximumTokens)}%"></div></div><span class="trend-value">${escapeHtml(compactNumber(snapshot.total_tokens))}</span></div>
+      `).join("");
+      document.getElementById("trend-review-rows").innerHTML = snapshots.map((snapshot) => `
+        <div class="trend-status-item"><span>${snapshotDateLabel(snapshot)}</span><strong>${escapeHtml(snapshot.review_status || "unknown")}</strong></div>
+      `).join("");
+      document.getElementById("trend-coverage-rows").innerHTML = snapshots.map((snapshot) => `
+        <div class="coverage-item"><span>${snapshotDateLabel(snapshot)}</span><strong>Project ${escapeHtml(percentValue(snapshot.project_coverage_ratio))} / Task ${escapeHtml(percentValue(snapshot.task_coverage_ratio))}</strong></div>
+      `).join("");
+    }
+
+    async function loadSnapshotTrend() {
+      try {
+        const index = await fetchJson(SNAPSHOT_INDEX_PATH);
+        validateSnapshotIndex(index);
+        renderSnapshotTrend(index);
+      } catch (err) {
+        console.warn("Snapshot index unavailable; showing dashboard preview sample data:", err);
+        document.getElementById("trend-source-label").textContent = "Sample trend fallback";
+        document.getElementById("trend-source-note").textContent = "Snapshot index unavailable; showing dashboard preview sample data.";
+      }
+    }
+
     function extractList(data, key) {
       if (Array.isArray(data)) return data;
       if (Array.isArray(data && data[key])) return data[key];
@@ -2327,6 +2401,7 @@
     renderFilters();
     loadSummary();
     loadRuns();
+    loadSnapshotTrend();
   </script>
 </body>
 </html>
