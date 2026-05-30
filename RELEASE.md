@@ -1,5 +1,148 @@
 # ENYRAX Cloud Portal Release Notes
 
+## v0.6.20-agentops-codex-preview-telemetry
+
+Release date: 2026-05-30
+
+## Summary
+
+This release extends AgentOps from demo telemetry into safety-reviewed Codex local session telemetry preview.
+
+AgentOps can now parse local Codex session metadata through a dry-run safety flow, generate preview run records, review the preview output, expose preview data through an explicit API source toggle, and display preview telemetry in the AgentOps dashboard with clear quality warnings.
+
+The preview path is intentionally opt-in and does not replace the default demo data source.
+
+## Completed
+
+- Added Codex Session Parser Safe Metadata Plan
+- Added dry-run only Codex session parser skeleton
+- Added text / JSON dry-run validation report format
+- Added parser safety fixtures for safe and unsafe JSONL samples
+- Added parser self-test for allowlist extraction and safety scan
+- Added AgentOps preview output generation
+- Added data/agentops/agent_runs_preview.json
+- Added AgentOps preview review script
+- Added AgentOps preview review checklist
+- Added API source toggle for AgentOps demo / preview data
+- Added preview warning and quality metadata to AgentOps API responses
+- Added AgentOps UI data source toggle
+- Added Safety-reviewed Preview mode in /agentops/
+- Added preview quality guard for unknown metadata, zero duration and large token totals
+
+## Architecture
+
+```text
+Local Codex Sessions
+  → Safe Metadata Parser
+  → Dry-run Validation Report
+  → Safety Fixtures / Self-test
+  → Preview Output
+  → Preview Review
+  → AgentOps API source=preview
+  → AgentOps UI Preview Toggle
+  → Preview Quality Guard
+```
+
+## Safety Boundary
+
+```text
+The Codex preview telemetry path uses allowlist metadata extraction.
+
+It does not store:
+- full prompts
+- full assistant responses
+- shell output
+- command text
+- file contents
+- diffs
+- raw JSONL lines
+- credentials
+- API keys
+- passwords
+- .env values
+- private notes
+- full home directory paths
+
+Preview data is safety-reviewed metadata only.
+```
+
+## Preview Data Policy
+
+```text
+Demo Data remains the default AgentOps data source.
+
+Preview data is only used when explicitly requested:
+
+GET /api/agentops/summary?source=preview
+GET /api/agentops/runs?source=preview
+
+The /agentops/ UI also requires explicit selection of Safety-reviewed Preview.
+
+Preview data is not production telemetry.
+Preview token totals may be estimated, cumulative or inflated depending on Codex session format.
+Preview token totals are not billing-grade cost data.
+```
+
+## Preview Quality Guard
+
+```text
+Preview quality metadata now tracks:
+
+- unknown project count
+- unknown task count
+- unknown model count
+- zero duration run count
+- large token run count
+- large token threshold
+- token estimate warning
+
+Recent runs in preview mode can display:
+
+- Estimated / cumulative token usage
+- Conservative inference
+```
+
+## Current Product Status
+
+```text
+Codex Parser Plan             Documented
+Dry-run Parser Skeleton       Added
+Dry-run Validation Report     Added
+Safety Fixtures               Added
+Parser Self-test              Added
+Preview Output                Added
+Preview Review Script         Added
+AgentOps API source=preview   Added
+AgentOps UI Source Toggle     Added
+Preview Quality Guard         Added
+Default Data Source           Demo Data
+Preview Data Source           Explicit opt-in only
+```
+
+## Product Positioning
+
+```text
+AgentOps now supports a safe bridge between local AI agent execution and ENYRAX operational visibility.
+
+The goal is not to archive conversations.
+The goal is to measure AI agent workload, token usage, tool activity, delivery metadata and preview quality without exposing sensitive session content.
+```
+
+## Next Phase
+
+- Improve task / project / model inference quality
+- Add safer model detection mapping
+- Add duration inference from session event timestamps
+- Add token usage normalization for cumulative session formats
+- Add AgentOps run detail page
+- Add AgentOps cost estimation with explicit non-billing warning
+- Link AgentOps runs to ServiceOps tickets
+- Link AgentOps runs to ProjectOps tasks
+- Add daily AgentOps preview report
+- Add weekly AI delivery report
+
+---
+
 ## v0.6.19-agentops-telemetry-dashboard
 
 Release date: 2026-05-30
