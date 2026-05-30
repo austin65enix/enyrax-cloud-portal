@@ -3,3 +3,12 @@ backend/venv/
 backups/
 __pycache__/
 *.pyc
+
+# Local secrets and backup snapshots
+.env
+*.bak
+*.before-*
+*.before-v*
+**/*.bak
+**/*.before-*
+backend/udo systemctl restart enyrax-api
