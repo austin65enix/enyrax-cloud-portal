@@ -1,0 +1,732 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ENYRAX CVE Detail</title>
+  <style>
+    :root {
+      --bg: #070a18;
+      --panel: rgba(13, 17, 38, .86);
+      --card: rgba(255, 255, 255, .055);
+      --line: rgba(255, 215, 130, .18);
+      --gold: #f5d37a;
+      --cyan: #73f4df;
+      --green: #8ff7b2;
+      --orange: #ff9b54;
+      --amber: #ffd166;
+      --red: #ff6b86;
+      --text: #f7f2df;
+      --muted: rgba(247, 242, 223, .68);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at 16% 8%, rgba(115, 244, 223, .16), transparent 30%),
+        radial-gradient(circle at 78% 12%, rgba(245, 211, 122, .13), transparent 28%),
+        linear-gradient(135deg, #070a18 0%, #10163a 52%, #060711 100%);
+      background-attachment: fixed;
+    }
+
+    .wrap {
+      width: min(1160px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 36px 0 54px;
+    }
+
+    .back-link,
+    .link-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: fit-content;
+      min-height: 36px;
+      border: 1px solid rgba(115, 244, 223, .28);
+      border-radius: 999px;
+      padding: 8px 12px;
+      color: var(--cyan);
+      background: rgba(115, 244, 223, .08);
+      text-decoration: none;
+      font-size: 12px;
+      font-weight: 950;
+    }
+
+    .hero-card,
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      background:
+        linear-gradient(135deg, rgba(13, 17, 38, .9), rgba(7, 10, 24, .94)),
+        rgba(255, 255, 255, .04);
+      box-shadow: 0 24px 80px rgba(0, 0, 0, .24), inset 0 1px 0 rgba(255, 255, 255, .04);
+    }
+
+    .hero-card {
+      display: grid;
+      gap: 18px;
+      margin-top: 18px;
+      padding: 24px;
+      border-color: rgba(245, 211, 122, .28);
+    }
+
+    .hero-top,
+    .panel-title,
+    .host-head,
+    .ticket-actions,
+    .reference-list,
+    .package-list {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .hero-top,
+    .panel-title,
+    .host-head {
+      justify-content: space-between;
+    }
+
+    .eyebrow {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 950;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 8px 0 0;
+      font-size: clamp(32px, 5vw, 58px);
+      line-height: 1;
+      letter-spacing: 0;
+      overflow-wrap: anywhere;
+    }
+
+    .title {
+      margin: 10px 0 0;
+      max-width: 880px;
+      color: rgba(247, 242, 223, .86);
+      font-size: 18px;
+      font-weight: 800;
+      line-height: 1.5;
+      overflow-wrap: anywhere;
+    }
+
+    .severity-badge,
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 12px;
+      font-weight: 950;
+      line-height: 1;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .severity-badge.critical { color: #2a050d; background: var(--red); }
+    .severity-badge.high { color: #241003; background: var(--orange); }
+    .severity-badge.medium { color: #251903; background: var(--amber); }
+    .severity-badge.low { color: #061c1b; background: var(--cyan); }
+    .severity-badge.unknown { color: #071018; background: rgba(247, 242, 223, .72); }
+
+    .meta-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .meta-card,
+    .host-field {
+      min-width: 0;
+      padding: 12px;
+      border: 1px solid rgba(255, 255, 255, .095);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, .045);
+    }
+
+    .label {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 950;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+
+    .value {
+      margin-top: 7px;
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 850;
+      line-height: 1.45;
+      overflow-wrap: anywhere;
+    }
+
+    .wide { grid-column: span 2; }
+
+    .package-list,
+    .reference-list {
+      justify-content: flex-start;
+      margin-top: 8px;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      max-width: 100%;
+      border: 1px solid rgba(245, 211, 122, .2);
+      border-radius: 999px;
+      padding: 6px 9px;
+      color: var(--gold);
+      background: rgba(245, 211, 122, .07);
+      font-size: 12px;
+      font-weight: 900;
+      line-height: 1.2;
+      overflow-wrap: anywhere;
+    }
+
+    .reference-list a {
+      color: var(--cyan);
+      border-color: rgba(115, 244, 223, .24);
+      background: rgba(115, 244, 223, .07);
+      text-decoration: none;
+    }
+
+    .panel {
+      margin-top: 16px;
+      padding: 20px;
+    }
+
+    .panel-title {
+      margin-bottom: 12px;
+    }
+
+    h2 {
+      margin: 0;
+      color: var(--gold);
+      font-size: 22px;
+      letter-spacing: 0;
+    }
+
+    .summary-copy {
+      margin: 0;
+      color: rgba(247, 242, 223, .84);
+      font-size: 15px;
+      font-weight: 850;
+      line-height: 1.55;
+    }
+
+    .action-list {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 8px;
+      margin: 14px 0 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .action-list li {
+      min-height: 44px;
+      border: 1px solid rgba(115, 244, 223, .18);
+      border-radius: 12px;
+      padding: 9px 10px;
+      color: var(--cyan);
+      background: rgba(115, 244, 223, .055);
+      font-size: 12px;
+      font-weight: 900;
+      line-height: 1.25;
+    }
+
+    .host-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .host-card {
+      display: grid;
+      gap: 12px;
+      border: 1px solid rgba(255, 255, 255, .11);
+      border-radius: 16px;
+      padding: 14px;
+      background: rgba(255, 255, 255, .04);
+    }
+
+    .host-title {
+      min-width: 0;
+      font-size: 18px;
+      font-weight: 950;
+      overflow-wrap: anywhere;
+    }
+
+    .host-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .status-pill {
+      color: rgba(247, 242, 223, .86);
+      border: 1px solid rgba(255, 255, 255, .14);
+      background: rgba(255, 255, 255, .08);
+    }
+
+    .status-pill.open,
+    .status-pill.detected,
+    .status-pill.pending { color: #241003; background: var(--amber); }
+    .status-pill.fixed,
+    .status-pill.closed,
+    .status-pill.resolved { color: #062014; background: var(--green); }
+
+    .ticket-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: fit-content;
+      max-width: 100%;
+      min-height: 38px;
+      border: 1px solid rgba(115, 244, 223, .34);
+      border-radius: 12px;
+      padding: 9px 12px;
+      color: #071018;
+      background: linear-gradient(135deg, var(--cyan), #fff0b8 58%, var(--gold));
+      cursor: pointer;
+      font: inherit;
+      font-size: 12px;
+      font-weight: 950;
+      text-decoration: none;
+    }
+
+    .ticket-button:disabled {
+      cursor: not-allowed;
+      opacity: .58;
+    }
+
+    .ticket-note {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 850;
+      line-height: 1.4;
+      overflow-wrap: anywhere;
+    }
+
+    .ticket-note.bad { color: var(--red); }
+    .ticket-note.good { color: var(--green); }
+
+    .message {
+      margin-top: 18px;
+      border: 1px solid rgba(245, 211, 122, .24);
+      border-radius: 16px;
+      padding: 16px;
+      color: var(--gold);
+      background: rgba(245, 211, 122, .08);
+      font-weight: 900;
+      line-height: 1.5;
+    }
+
+    .message.bad {
+      border-color: rgba(255, 107, 134, .28);
+      color: var(--red);
+      background: rgba(255, 107, 134, .08);
+    }
+
+    .hidden { display: none; }
+
+    @media (max-width: 920px) {
+      .meta-grid,
+      .host-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .action-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .wide { grid-column: span 1; }
+    }
+
+    @media (max-width: 560px) {
+      .wrap { width: min(100% - 24px, 1160px); padding-top: 24px; }
+      .hero-card,
+      .panel { border-radius: 16px; padding: 16px; }
+      .meta-grid,
+      .host-grid,
+      .action-list { grid-template-columns: 1fr; }
+      .hero-top,
+      .panel-title,
+      .host-head { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <a class="back-link" href="/status/">Back to Status</a>
+
+    <div id="message" class="message hidden" role="status"></div>
+
+    <section id="detail" class="hidden" aria-labelledby="cve-title">
+      <article class="hero-card">
+        <div class="hero-top">
+          <div>
+            <div class="eyebrow">Vulnerability Detail</div>
+            <h1 id="cve-title">-</h1>
+            <p class="title" id="cve-name">-</p>
+          </div>
+          <div id="severity-badge"></div>
+        </div>
+
+        <div class="meta-grid" id="meta-grid"></div>
+      </article>
+
+      <section class="panel" aria-labelledby="remediation-title">
+        <div class="panel-title">
+          <h2 id="remediation-title">Remediation Summary</h2>
+        </div>
+        <p class="summary-copy" id="remediation-copy"></p>
+        <div class="label" style="margin-top: 14px;">Recommended action</div>
+        <ul class="action-list">
+          <li>Patch affected package</li>
+          <li>Verify service health</li>
+          <li>Rerun Wazuh vulnerability scan</li>
+          <li>Attach Recovery Evidence</li>
+          <li>Close related ServiceOps ticket</li>
+        </ul>
+      </section>
+
+      <section class="panel" aria-labelledby="affected-hosts-title">
+        <div class="panel-title">
+          <h2 id="affected-hosts-title">Affected Hosts</h2>
+          <div class="ticket-note" id="role-note"></div>
+        </div>
+        <div class="host-list" id="affected-hosts"></div>
+      </section>
+    </section>
+  </main>
+
+  <script src="/shared/command-header.js?v=0523dock"></script>
+  <script src="/shared/auth-guard.js?v=0311"></script>
+  <script src="/shared/role-switcher.js?v=0523dock"></script>
+
+  <script>
+    const ticketState = new Map();
+    let currentCve = null;
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll(String.fromCharCode(34), "&quot;")
+        .replaceAll(String.fromCharCode(39), "&#039;");
+    }
+
+    function normalizeSeverity(value) {
+      const severity = String(value || "unknown").toLowerCase();
+      return ["critical", "high", "medium", "low"].includes(severity) ? severity : "unknown";
+    }
+
+    function severityBadge(value) {
+      const severity = normalizeSeverity(value);
+      return `<span class="severity-badge ${severity}">${escapeHtml(severity)}</span>`;
+    }
+
+    function statusPill(value) {
+      const normalized = String(value || "unknown").toLowerCase().replaceAll(" ", "_");
+      return `<span class="status-pill ${escapeHtml(normalized)}">${escapeHtml(value || "-")}</span>`;
+    }
+
+    function formatDate(value) {
+      if (!value) return "-";
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return String(value);
+      return date.toLocaleString(undefined, {
+        year: "numeric",
+        month: "short",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit"
+      });
+    }
+
+    function formatCount(value) {
+      const number = Number(value || 0);
+      return Number.isFinite(number) ? number.toLocaleString("en-US") : "0";
+    }
+
+    function arrayFrom(value) {
+      if (Array.isArray(value)) return value.filter(Boolean);
+      if (!value) return [];
+      return [value];
+    }
+
+    function roleLevel(role) {
+      const levels = { preview: 0, viewer: 0, operator: 1, supervisor: 2, admin: 3 };
+      return levels[String(role || "viewer").toLowerCase()] || 0;
+    }
+
+    function currentRole() {
+      return window.ENYRAXRole && window.ENYRAXRole.get ? window.ENYRAXRole.get() : "viewer";
+    }
+
+    function canCreateTicket() {
+      return Boolean(
+        window.ENYRAXRole
+          && window.ENYRAXRole.isLoggedIn
+          && window.ENYRAXRole.isLoggedIn()
+          && window.ENYRAXRole.canWriteSession
+          && window.ENYRAXRole.canWriteSession()
+          && roleLevel(currentRole()) >= roleLevel("operator")
+      );
+    }
+
+    function showMessage(text, isError) {
+      const message = document.getElementById("message");
+      message.textContent = text;
+      message.className = isError ? "message bad" : "message";
+      document.getElementById("detail").classList.add("hidden");
+    }
+
+    function showDetail() {
+      document.getElementById("message").classList.add("hidden");
+      document.getElementById("detail").classList.remove("hidden");
+    }
+
+    function hostKey(host) {
+      return [
+        currentCve?.cve_id || "",
+        host.hostname || "",
+        host.package_name || ""
+      ].map((value) => String(value).trim().toLowerCase()).join("::");
+    }
+
+    function ticketIdFromResponse(data) {
+      const ticket = data && data.ticket && typeof data.ticket === "object" ? data.ticket : {};
+      return data?.ticket_id || data?.id || ticket.id || ticket.ticket_id || null;
+    }
+
+    function remediationSummary(severity) {
+      const summaries = {
+        critical: "Critical vulnerability. Immediate remediation planning is required.",
+        high: "High risk vulnerability. Prioritize remediation and validation.",
+        medium: "Medium risk vulnerability. Track and remediate through planned maintenance.",
+        low: "Low risk vulnerability. Monitor and remediate during regular update cycle."
+      };
+      return summaries[normalizeSeverity(severity)] || summaries.low;
+    }
+
+    function renderMeta(cve) {
+      const packages = arrayFrom(cve.packages || cve.affected_packages || cve.package_names);
+      const references = arrayFrom(cve.reference_urls || cve.references || cve.urls);
+      const packageMarkup = packages.length
+        ? packages.map((item) => `<span class="chip">${escapeHtml(item)}</span>`).join("")
+        : `<span class="value">-</span>`;
+      const referenceMarkup = references.length
+        ? references.map((url, index) => `<a class="chip" href="${escapeHtml(url)}" target="_blank" rel="noopener">Reference ${escapeHtml(index + 1)}</a>`).join("")
+        : `<span class="value">-</span>`;
+      const fields = [
+        ["CVSS Score", cve.cvss_score ?? "-"],
+        ["Published", formatDate(cve.published_at)],
+        ["Modified", formatDate(cve.modified_at)],
+        ["Affected Hosts", formatCount(cve.affected_host_count)],
+        ["Affected Packages", formatCount(cve.affected_package_count)],
+        ["Remediation Hint", cve.remediation_hint || "-", "wide"],
+        ["Packages", `<div class="package-list">${packageMarkup}</div>`, "wide", true],
+        ["Reference URLs", `<div class="reference-list">${referenceMarkup}</div>`, "wide", true]
+      ];
+
+      document.getElementById("meta-grid").innerHTML = fields.map(([label, value, className, isHtml]) => `
+        <div class="meta-card ${escapeHtml(className || "")}">
+          <div class="label">${escapeHtml(label)}</div>
+          <div class="value">${isHtml ? value : escapeHtml(value)}</div>
+        </div>
+      `).join("");
+    }
+
+    function renderTicketAction(host) {
+      const key = hostKey(host);
+      const state = ticketState.get(key);
+
+      if (!canCreateTicket()) {
+        return `<div class="ticket-note">Login with Operator / Supervisor / Admin to create remediation tickets.</div>`;
+      }
+
+      if (state && state.ticketId && (state.status === "created" || state.status === "existing")) {
+        const label = state.status === "existing" ? "Existing ServiceOps ticket" : "Created ServiceOps ticket";
+        const href = `/serviceops/ticket.html?id=${encodeURIComponent(state.ticketId)}`;
+        return `
+          <div class="ticket-actions">
+            <span class="ticket-note good">${escapeHtml(label)} #${escapeHtml(state.ticketId)}</span>
+            <a class="ticket-button" href="${escapeHtml(href)}">Open Ticket</a>
+          </div>
+        `;
+      }
+
+      const note = state && state.message ? state.message : "";
+      const noteClass = state && state.isError ? " bad" : "";
+      return `
+        <div class="ticket-actions">
+          <button class="ticket-button" type="button" data-ticket-key="${escapeHtml(key)}">Create ServiceOps Ticket</button>
+          ${note ? `<span class="ticket-note${noteClass}">${escapeHtml(note)}</span>` : ""}
+        </div>
+      `;
+    }
+
+    function renderHosts(cve) {
+      const hosts = arrayFrom(cve.affected_hosts);
+      const roleNote = document.getElementById("role-note");
+      roleNote.textContent = canCreateTicket() ? "" : "Login with Operator / Supervisor / Admin to create remediation tickets.";
+
+      if (!hosts.length) {
+        document.getElementById("affected-hosts").innerHTML = `<div class="ticket-note">No affected host rows available.</div>`;
+        return;
+      }
+
+      document.getElementById("affected-hosts").innerHTML = hosts.map((host) => {
+        const hostObject = typeof host === "object" ? host : { hostname: host };
+        const key = hostKey(hostObject);
+        return `
+          <article class="host-card" data-host-key="${escapeHtml(key)}">
+            <div class="host-head">
+              <div>
+                <div class="label">Hostname</div>
+                <div class="host-title">${escapeHtml(hostObject.hostname || "-")}</div>
+              </div>
+              <div>${statusPill(hostObject.status)}</div>
+            </div>
+            <div class="host-grid">
+              <div class="host-field"><div class="label">Agent ID</div><div class="value">${escapeHtml(hostObject.agent_id || "-")}</div></div>
+              <div class="host-field"><div class="label">OS</div><div class="value">${escapeHtml([hostObject.os_name, hostObject.os_version].filter(Boolean).join(" ") || "-")}</div></div>
+              <div class="host-field"><div class="label">Package</div><div class="value">${escapeHtml(hostObject.package_name || "-")}</div></div>
+              <div class="host-field"><div class="label">Version</div><div class="value">${escapeHtml(hostObject.installed_version || "-")} -> ${escapeHtml(hostObject.fixed_version || "-")}</div></div>
+              <div class="host-field"><div class="label">Detected</div><div class="value">${escapeHtml(formatDate(hostObject.detected_at))}</div></div>
+              <div class="host-field"><div class="label">Last Seen</div><div class="value">${escapeHtml(formatDate(hostObject.last_seen_at))}</div></div>
+              <div class="host-field"><div class="label">Remediation Status</div><div class="value">${escapeHtml(hostObject.remediation_status || "-")}</div></div>
+              <div class="host-field"><div class="label">Action</div><div class="value">${renderTicketAction(hostObject)}</div></div>
+            </div>
+          </article>
+        `;
+      }).join("");
+    }
+
+    function renderCve(cve) {
+      currentCve = cve;
+      document.getElementById("cve-title").textContent = cve.cve_id || "-";
+      document.getElementById("cve-name").textContent = cve.title || "-";
+      document.getElementById("severity-badge").innerHTML = severityBadge(cve.highest_severity || cve.severity);
+      document.getElementById("remediation-copy").textContent = remediationSummary(cve.highest_severity || cve.severity);
+      renderMeta(cve);
+      renderHosts(cve);
+      showDetail();
+    }
+
+    function errorMessageForStatus(status) {
+      if (status === 403) return "Permission denied. Write role required.";
+      if (status === 404) return "Vulnerability item not found.";
+      return "Unable to create ServiceOps ticket.";
+    }
+
+    async function createTicket(key, button) {
+      const host = arrayFrom(currentCve?.affected_hosts)
+        .map((item) => (typeof item === "object" ? item : { hostname: item }))
+        .find((item) => hostKey(item) === key);
+
+      if (!currentCve || !host || !canCreateTicket()) {
+        ticketState.set(key, {
+          status: "error",
+          message: !host ? "Vulnerability item not found." : "Permission denied. Write role required.",
+          isError: true
+        });
+        if (currentCve) renderHosts(currentCve);
+        return;
+      }
+
+      const originalText = button.textContent;
+      button.disabled = true;
+      button.textContent = "Creating...";
+
+      try {
+        const response = await fetch("/api/vulnerabilities/create-serviceops-ticket", {
+          method: "POST",
+          headers: window.ENYRAXRole ? window.ENYRAXRole.jsonHeaders() : { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            cve_id: currentCve.cve_id,
+            hostname: host.hostname,
+            package_name: host.package_name,
+            note: "Created from CVE detail page."
+          })
+        });
+
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(String(response.status));
+
+        const status = data.status === "existing" ? "existing" : "created";
+        const ticketId = ticketIdFromResponse(data);
+        ticketState.set(key, {
+          status: status,
+          ticketId: ticketId,
+          message: `${status === "existing" ? "Existing" : "Created"} ServiceOps ticket #${ticketId || "-"}`
+        });
+      } catch (error) {
+        const status = Number(error.message);
+        ticketState.set(key, {
+          status: "error",
+          message: errorMessageForStatus(status),
+          isError: true
+        });
+      } finally {
+        renderHosts(currentCve);
+        if (document.body.contains(button)) {
+          button.disabled = false;
+          button.textContent = originalText;
+        }
+      }
+    }
+
+    async function loadCve() {
+      const params = new URLSearchParams(window.location.search);
+      const cveId = params.get("cve_id");
+
+      if (!cveId) {
+        showMessage("Open this page with /vulnerabilities/cve.html?cve_id=<CVE_ID>.", false);
+        return;
+      }
+
+      showMessage("Loading CVE detail...", false);
+
+      try {
+        const response = await fetch(`/api/vulnerabilities/cves/${encodeURIComponent(cveId)}`, { cache: "no-store" });
+        if (response.status === 404) {
+          showMessage("CVE not found.", true);
+          return;
+        }
+        if (!response.ok) throw new Error(String(response.status));
+        const cve = await response.json();
+        renderCve(cve);
+      } catch (error) {
+        console.error("CVE detail load failed:", error);
+        showMessage("Unable to load CVE detail.", true);
+      }
+    }
+
+    document.getElementById("affected-hosts").addEventListener("click", (event) => {
+      const button = event.target.closest("[data-ticket-key]");
+      if (!button || button.tagName !== "BUTTON") return;
+      createTicket(button.dataset.ticketKey, button);
+    });
+
+    window.addEventListener("enyrax-auth-session-changed", () => {
+      if (currentCve) renderHosts(currentCve);
+    });
+
+    window.addEventListener("storage", (event) => {
+      if (["enyrax_auth_token", "enyrax_auth_user", "enyrax_auth_login_at"].includes(event.key) && currentCve) {
+        renderHosts(currentCve);
+      }
+    });
+
+    loadCve();
+  </script>
+</body>
+</html>
