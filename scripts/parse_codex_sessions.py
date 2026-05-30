@@ -12,8 +12,8 @@ import hashlib
 import json
 import re
 import sys
-from datetime import datetime
-from pathlib import Path
+from datetime import datetime, timezone
+from pathlib import Path, PurePath
 from typing import Any
 
 
@@ -55,8 +55,15 @@ FILE_EVENT_KEYS = {"file"}
 EDIT_EVENT_KEYS = {"edit", "patch"}
 
 SESSION_ID_KEYS = {"session_id", "sessionId", "conversation_id"}
+TIMESTAMP_KEYS = {"timestamp", "created_at", "started_at", "ended_at", "time", "ts"}
 STARTED_AT_KEYS = {"started_at", "startedAt", "created_at", "timestamp", "time"}
-MODEL_KEYS = {"model", "model_name", "model_slug"}
+MODEL_KEYS = {
+    "model",
+    "model_name",
+    "selected_model",
+    "provider_model",
+    "engine",
+}
 ENDED_AT_KEYS = {"ended_at", "endedAt", "completed_at", "completedAt", "finished_at", "finishedAt"}
 STATUS_KEYS = {"status", "state", "outcome"}
 SAFE_TEXT_KEYS = {
@@ -67,20 +74,183 @@ SAFE_TEXT_KEYS = {
     "task",
     "name",
     "subject",
+    "repo_name",
+    "project_name",
 }
-TASK_NUMBER_PATTERN = re.compile(r"Task\s+#\d+")
-PROJECT_KEYWORDS = (
-    "AgentOps",
-    "Vulnerability Inventory",
-    "ServiceOps",
-    "Sync Gateway",
-    "Portal Architecture",
-    "SOC",
-    "ProjectOps",
-    "Backup",
-    "Release Docs",
+PATH_BASENAME_KEYS = {
+    "file",
+    "file_name",
+    "filename",
+    "file_path",
+    "path",
+    "cwd",
+    "working_directory",
+    "repo",
+    "repo_name",
+    "repository",
+}
+UNSAFE_TEXT_PARENT_KEYS = {
+    "prompt",
+    "response",
+    "message",
+    "messages",
+    "content",
+    "output",
+    "stdout",
+    "stderr",
+    "command",
+    "cmd",
+    "diff",
+    "patch",
+    "file_content",
+}
+TASK_NUMBER_PATTERN = re.compile(r"Task\s+#\d+", re.IGNORECASE)
+PROJECT_MINIMUM_SCORE = 3
+PROJECT_FILENAME_BASENAME_MAP = {
+    "parse_codex_sessions.py": "AgentOps",
+    "review_agentops_preview.py": "AgentOps",
+    "agent_runs_preview.json": "AgentOps",
+    "agentops_preview_quality_release_note.md": "AgentOps",
+    "agentops_preview_full_limit_review.md": "AgentOps",
+    "agentops_preview_review_checklist.md": "AgentOps",
+    "agentops_safe_metadata_project_signals.md": "AgentOps",
+    "codex_session_parser_safe_metadata_plan.md": "AgentOps",
+}
+
+TASK_MINIMUM_SCORE = 3
+TASK_ALLOWLIST_MARKER = "safe_allowlist"
+TASK_FILENAME_BASENAME_MAP = {
+    "agentops_preview_quality_release_note.md": "AgentOps Preview Quality Release Note",
+    "agentops_safe_metadata_project_signals.md": "Safe Metadata Project Signals Design",
+    "agentops_preview_full_limit_review.md": "AgentOps Preview Full Limit Review",
+    "agentops_preview_review_checklist.md": "AgentOps Preview Review Checklist",
+    "codex_session_parser_safe_metadata_plan.md": "Codex Session Parser Safe Metadata Plan",
+    "parse_codex_sessions.py": "Codex Session Parser Maintenance",
+    "review_agentops_preview.py": "AgentOps Preview Review",
+    "agent_runs_preview.json": "AgentOps Preview Generation",
+}
+
+PROJECT_KEYWORD_MAP = (
+    (
+        "AgentOps",
+        (
+            "agentops",
+            "agent ops",
+            "codex",
+            "telemetry",
+            "parser",
+            "preview",
+            "token",
+            "model inference",
+            "safety scan",
+            "self-test",
+            "agent_runs",
+            "source=preview",
+        ),
+    ),
+    (
+        "Vulnerability Inventory",
+        (
+            "vulnerability",
+            "cve",
+            "remediation",
+            "wazuh vulnerability",
+            "affected hosts",
+            "fixed_version",
+            "cvss",
+            "openssl",
+        ),
+    ),
+    (
+        "ServiceOps",
+        (
+            "serviceops",
+            "service ops",
+            "ticket",
+            "worklog",
+            "sla",
+            "assignee",
+            "ownership",
+            "remediation ticket",
+        ),
+    ),
+    (
+        "Sync Gateway",
+        (
+            "sync gateway",
+            "local sync",
+            "wazuh local sync",
+            "sync source",
+            "source metadata",
+            "atn-local-lab",
+            "local-wazuh-lab",
+        ),
+    ),
+    (
+        "SOC",
+        (
+            "soc",
+            "incident",
+            "mitre",
+            "severity",
+            "infra confirm",
+            "close incident",
+        ),
+    ),
+    (
+        "ProjectOps",
+        (
+            "projectops",
+            "project ops",
+            "remediation project",
+            "wave",
+            "gantt",
+        ),
+    ),
+    (
+        "Backup",
+        (
+            "backup",
+            "r2",
+            "cloudflare r2",
+            "rclone",
+            "backup script",
+        ),
+    ),
+    (
+        "Release Docs",
+        (
+            "release",
+            "release note",
+            "tag",
+            "v0.6",
+            "document v0",
+        ),
+    ),
+    (
+        "Portal Architecture",
+        (
+            "portal architecture",
+            "enterprise ops architecture",
+            "homepage architecture",
+            "module card",
+            "orbit portal",
+        ),
+    ),
 )
 PREVIEW_OUTPUT_DIR = Path("data/agentops")
+TASK_LABELS = {
+    "AgentOps": "AgentOps telemetry update",
+    "Vulnerability Inventory": "Vulnerability inventory update",
+    "ServiceOps": "ServiceOps workflow update",
+    "Sync Gateway": "Sync Gateway update",
+    "Portal Architecture": "Portal architecture update",
+    "SOC": "SOC workflow update",
+    "ProjectOps": "ProjectOps workflow update",
+    "Backup": "Backup workflow update",
+    "Release Docs": "Release documentation update",
+    "unknown": "Codex local session preview",
+}
 
 
 def parse_args() -> argparse.Namespace:
@@ -154,11 +324,21 @@ def safe_string(value: Any, max_length: int = 96) -> str | None:
     if not isinstance(value, str):
         return None
     value = value.strip()
-    if not value:
+    if not value or len(value) > max_length:
         return None
     if any(pattern.lower() in value.lower() for pattern in FORBIDDEN_PATTERNS):
         return None
-    return value[:max_length]
+    return value
+
+
+def safe_basename(value: Any) -> str | None:
+    if not isinstance(value, str):
+        return None
+    raw_value = value.strip()
+    if not raw_value:
+        return None
+    basename = PurePath(raw_value).name or raw_value.rstrip("/").split("/")[-1]
+    return safe_string(basename, max_length=120)
 
 
 def first_safe_value(obj: dict[str, Any], keys: set[str]) -> str | None:
@@ -167,15 +347,6 @@ def first_safe_value(obj: dict[str, Any], keys: set[str]) -> str | None:
             value = safe_string(obj[key])
             if value:
                 return value
-    return None
-
-
-def first_safe_text_value(obj: dict[str, Any], keys: set[str]) -> str | None:
-    for key, value in walk_json(obj):
-        if key in keys:
-            safe_value = safe_string(value, max_length=160)
-            if safe_value:
-                return safe_value
     return None
 
 
@@ -189,6 +360,51 @@ def walk_json(value: Any) -> Any:
             yield from walk_json(child)
 
 
+def collect_safe_text_candidates(obj: dict[str, Any], file_path: Path) -> list[str]:
+    candidates: list[str] = []
+
+    file_name = safe_basename(file_path.name)
+    if file_name:
+        candidates.append(file_name)
+
+    def collect(value: Any, parent_keys: tuple[str, ...] = ()) -> None:
+        if isinstance(value, dict):
+            for key, child in value.items():
+                key_lower = key.lower()
+                next_parents = parent_keys + (key_lower,)
+                unsafe_parent = any(parent in UNSAFE_TEXT_PARENT_KEYS for parent in parent_keys)
+
+                if not unsafe_parent and key in SESSION_ID_KEYS:
+                    safe_value = safe_string(child, max_length=120)
+                    if safe_value:
+                        candidates.append(safe_value)
+                if not unsafe_parent and key in SAFE_TEXT_KEYS:
+                    safe_value = safe_string(child, max_length=120)
+                    if safe_value:
+                        candidates.append(safe_value)
+                if not unsafe_parent and key_lower in PATH_BASENAME_KEYS:
+                    basename = safe_basename(child)
+                    if basename:
+                        candidates.append(basename)
+
+                collect(child, next_parents)
+        elif isinstance(value, list):
+            for child in value:
+                collect(child, parent_keys)
+
+    collect(obj)
+    return candidates
+
+
+def first_inferred_model(obj: dict[str, Any]) -> str | None:
+    for key, value in walk_json(obj):
+        if key in MODEL_KEYS:
+            safe_value = safe_string(value, max_length=120)
+            if safe_value:
+                return safe_value
+    return None
+
+
 def numeric_value(value: Any) -> int:
     if isinstance(value, bool):
         return 0
@@ -199,24 +415,139 @@ def numeric_value(value: Any) -> int:
     return 0
 
 
-def extract_token_usage(obj: dict[str, Any]) -> dict[str, int]:
-    totals = {key: 0 for key in TOKEN_KEYS}
+def parse_timestamp(value: Any) -> datetime | None:
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, (int, float)):
+        try:
+            return datetime.fromtimestamp(float(value), tz=timezone.utc)
+        except (OverflowError, OSError, ValueError):
+            return None
+    safe_value = safe_string(value, max_length=80)
+    if not safe_value:
+        return None
+    if re.fullmatch(r"\d+(?:\.\d+)?", safe_value):
+        try:
+            return datetime.fromtimestamp(float(safe_value), tz=timezone.utc)
+        except (OverflowError, OSError, ValueError):
+            return None
+    normalized = safe_value.replace("Z", "+00:00")
+    try:
+        parsed = datetime.fromisoformat(normalized)
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        return parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc)
+
+
+def collect_timestamps(obj: dict[str, Any]) -> list[datetime]:
+    timestamps: list[datetime] = []
+    for key, value in walk_json(obj):
+        if key in TIMESTAMP_KEYS:
+            parsed = parse_timestamp(value)
+            if parsed is not None:
+                timestamps.append(parsed)
+    return timestamps
+
+
+def format_timestamp(value: datetime | None) -> str | None:
+    if value is None:
+        return None
+    return value.astimezone(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
+
+
+def extract_token_usage(obj: dict[str, Any]) -> dict[str, list[int]]:
+    snapshots = {key: [] for key in TOKEN_KEYS}
 
     for key, value in walk_json(obj):
         if key in TOKEN_KEYS:
             number = numeric_value(value)
             if number:
-                totals[key] += number
+                snapshots[key].append(number)
         elif key in TOKEN_CONTAINER_KEYS and isinstance(value, dict):
             # Container keys are recognized metadata, but child token keys are
             # counted by walk_json to avoid double-counting nested usage blocks.
             continue
 
-    return totals
+    return snapshots
 
 
-def token_usage_found(token_usage: dict[str, int]) -> bool:
-    return any(value > 0 for value in token_usage.values())
+def token_values_are_cumulative(values: list[int]) -> bool:
+    if len(values) < 2:
+        return False
+    pairs = list(zip(values, values[1:]))
+    if all(previous <= current for previous, current in pairs):
+        return True
+    increases = sum(1 for previous, current in pairs if current > previous)
+    if increases > len(pairs) / 2:
+        return True
+
+    # Token Normalization: some Codex logs interleave cumulative snapshots
+    # with smaller delta-like component values. Detect that numeric-only shape
+    # without reading or saving prompt, response, command, or file content.
+    max_value = max(values)
+    for offset in (0, 1):
+        subsequence = values[offset::2]
+        if len(subsequence) < 3 or max(subsequence) != max_value:
+            continue
+        subsequence_pairs = list(zip(subsequence, subsequence[1:]))
+        if all(previous <= current for previous, current in subsequence_pairs):
+            return True
+
+    return False
+
+
+def normalize_token_values(values: list[int]) -> dict[str, int | str | bool]:
+    original_sum = sum(values)
+    cumulative_detected = token_values_are_cumulative(values)
+    if cumulative_detected:
+        normalized_value = max(values)
+        token_normalization_mode = "cumulative_max"
+    else:
+        normalized_value = original_sum
+        token_normalization_mode = "delta_sum"
+    return {
+        "token_normalization_mode": token_normalization_mode,
+        "cumulative_detected": cumulative_detected,
+        "original_sum": original_sum,
+        "normalized_value": normalized_value,
+    }
+
+
+def normalize_token_usage(token_snapshots: dict[str, list[int]]) -> tuple[dict[str, int], dict[str, dict[str, int | str | bool]]]:
+    normalized = {key: 0 for key in TOKEN_KEYS}
+    debug: dict[str, dict[str, int | str | bool]] = {}
+
+    for token_key in TOKEN_KEYS:
+        values = token_snapshots.get(token_key, [])
+        debug[token_key] = normalize_token_values(values)
+        normalized[token_key] = int(debug[token_key]["normalized_value"])
+
+    if not token_snapshots.get("total_tokens"):
+        normalized["total_tokens"] = (
+            normalized.get("input_tokens", 0)
+            + normalized.get("output_tokens", 0)
+            + normalized.get("reasoning_tokens", 0)
+        )
+        debug["total_tokens"] = {
+            "token_normalization_mode": "component_estimate",
+            "cumulative_detected": False,
+            "original_sum": 0,
+            "normalized_value": normalized["total_tokens"],
+        }
+
+    return normalized, debug
+
+
+def token_usage_found(token_usage: dict[str, int] | dict[str, list[int]]) -> bool:
+    for value in token_usage.values():
+        if isinstance(value, list):
+            if any(item > 0 for item in value):
+                return True
+        elif value > 0:
+            return True
+    return False
 
 
 def classify_events(obj: dict[str, Any]) -> tuple[int, int, int, int]:
@@ -252,12 +583,11 @@ def summarize_file(file_path: Path, file_index: int) -> dict[str, Any]:
     possible_file_event_count = 0
     possible_edit_event_count = 0
     detected_session_id = None
-    detected_started_at = None
-    detected_ended_at = None
     detected_model = None
     detected_status = None
-    detected_safe_text = None
-    token_totals = {key: 0 for key in TOKEN_KEYS}
+    safe_text_candidates: list[str] = []
+    timestamp_values: list[datetime] = []
+    token_snapshots = {key: [] for key in TOKEN_KEYS}
 
     with file_path.open("r", encoding="utf-8", errors="replace") as handle:
         for line in handle:
@@ -273,20 +603,17 @@ def summarize_file(file_path: Path, file_index: int) -> dict[str, Any]:
 
             if detected_session_id is None:
                 detected_session_id = first_safe_value(obj, SESSION_ID_KEYS)
-            if detected_started_at is None:
-                detected_started_at = first_safe_value(obj, STARTED_AT_KEYS)
-            if detected_ended_at is None:
-                detected_ended_at = first_safe_value(obj, ENDED_AT_KEYS)
             if detected_model is None:
-                detected_model = first_safe_value(obj, MODEL_KEYS)
+                detected_model = first_inferred_model(obj)
             if detected_status is None:
                 detected_status = first_safe_value(obj, STATUS_KEYS)
-            if detected_safe_text is None:
-                detected_safe_text = first_safe_text_value(obj, SAFE_TEXT_KEYS)
+
+            timestamp_values.extend(collect_timestamps(obj))
+            safe_text_candidates.extend(collect_safe_text_candidates(obj, file_path))
 
             extracted_tokens = extract_token_usage(obj)
-            for token_key, token_value in extracted_tokens.items():
-                token_totals[token_key] += token_value
+            for token_key, token_values in extracted_tokens.items():
+                token_snapshots[token_key].extend(token_values)
             if token_usage_found(extracted_tokens):
                 found_token_usage = True
 
@@ -296,19 +623,24 @@ def summarize_file(file_path: Path, file_index: int) -> dict[str, Any]:
             possible_file_event_count += file_events
             possible_edit_event_count += edit_events
 
+    started_at, ended_at = infer_time_bounds(timestamp_values)
+    project_name = infer_project_name(safe_text_candidates)
+    task_number = infer_task_number(safe_text_candidates)
+    token_totals, _token_normalization_debug = normalize_token_usage(token_snapshots)
+
     return {
         "file_index": file_index,
         "file_name": file_path.name,
         "file_size_bytes": file_path.stat().st_size,
         "line_count": line_count,
         "detected_session_id": detected_session_id,
-        "detected_started_at": detected_started_at,
-        "detected_ended_at": detected_ended_at,
+        "detected_started_at": started_at,
+        "detected_ended_at": ended_at,
         "detected_model": detected_model,
         "detected_status": detected_status,
-        "inferred_project_name": infer_project_name(detected_safe_text),
-        "inferred_task_number": infer_task_number(detected_safe_text),
-        "inferred_task_name": infer_task_name(detected_safe_text),
+        "inferred_project_name": project_name,
+        "inferred_task_number": task_number,
+        "inferred_task_name": infer_task_name(project_name, task_number, safe_text_candidates),
         "token_totals": token_totals,
         "token_usage_found": found_token_usage,
         "tool_event_count": tool_event_count,
@@ -355,13 +687,7 @@ def preview_run_id(session_id: str, file_index: int) -> str:
 
 
 def parse_datetime(value: str | None) -> datetime | None:
-    if value is None:
-        return None
-    normalized = value.replace("Z", "+00:00")
-    try:
-        return datetime.fromisoformat(normalized)
-    except ValueError:
-        return None
+    return parse_timestamp(value)
 
 
 def duration_seconds(started_at: str | None, ended_at: str | None) -> int:
@@ -373,32 +699,112 @@ def duration_seconds(started_at: str | None, ended_at: str | None) -> int:
     return max(duration, 0)
 
 
-def infer_project_name(safe_text: str | None) -> str:
-    if not safe_text:
+def infer_time_bounds(timestamps: list[datetime]) -> tuple[str | None, str | None]:
+    if not timestamps:
+        return None, None
+    started = min(timestamps)
+    ended = max(timestamps)
+    return format_timestamp(started), format_timestamp(ended)
+
+
+def project_keyword_score(keyword: str) -> int:
+    if re.fullmatch(r"[a-z0-9]+", keyword):
+        return 0
+    return 3
+
+
+def infer_project_name(safe_text_candidates: list[str]) -> str:
+    # Project Inference Recall Improvement: score safe metadata only.
+    scores = {project_name: 0 for project_name, _keywords in PROJECT_KEYWORD_MAP}
+    seen_matches: set[tuple[str, str, str]] = set()
+
+    for candidate in safe_text_candidates:
+        safe_candidate = safe_basename(candidate) or safe_string(candidate, max_length=120)
+        if not safe_candidate:
+            continue
+
+        candidate_basename = safe_basename(safe_candidate)
+        if candidate_basename in PROJECT_FILENAME_BASENAME_MAP:
+            project_name = PROJECT_FILENAME_BASENAME_MAP[candidate_basename]
+            match_key = (project_name, "filename_basename", candidate_basename)
+            if match_key not in seen_matches:
+                seen_matches.add(match_key)
+                scores[project_name] += 3
+
+        text_lower = safe_candidate.lower()
+        for project_name, keywords in PROJECT_KEYWORD_MAP:
+            for keyword in keywords:
+                keyword_score = project_keyword_score(keyword)
+                if keyword_score == 0 or keyword not in text_lower:
+                    continue
+                match_key = (project_name, keyword, text_lower)
+                if match_key in seen_matches:
+                    continue
+                seen_matches.add(match_key)
+                scores[project_name] += keyword_score
+
+    highest_score = max(scores.values()) if scores else 0
+    if highest_score < PROJECT_MINIMUM_SCORE:
         return "unknown"
-    text_lower = safe_text.lower()
-    for keyword in PROJECT_KEYWORDS:
-        if keyword.lower() in text_lower:
-            return keyword
+
+    top_projects = [project_name for project_name, score in scores.items() if score == highest_score]
+    if len(top_projects) != 1:
+        return "unknown"
+    return top_projects[0]
+
+
+def infer_task_name_from_safe_metadata(safe_text_candidates: list[str]) -> str:
+    # Task Inference Safe Allowlist: score safe metadata only.
+    scores = {task_name: 0 for task_name in TASK_FILENAME_BASENAME_MAP.values()}
+    seen_matches: set[tuple[str, str]] = set()
+
+    for candidate in safe_text_candidates:
+        candidate_basename = safe_basename(candidate)
+        if not candidate_basename:
+            continue
+        task_name = TASK_FILENAME_BASENAME_MAP.get(candidate_basename)
+        if not task_name:
+            continue
+        match_key = (task_name, candidate_basename)
+        if match_key in seen_matches:
+            continue
+        seen_matches.add(match_key)
+        scores[task_name] += 3
+
+    highest_score = max(scores.values()) if scores else 0
+    if highest_score < TASK_MINIMUM_SCORE:
+        return "unknown"
+
+    top_tasks = [task_name for task_name, score in scores.items() if score == highest_score]
+    if len(top_tasks) != 1:
+        return "unknown"
+    return top_tasks[0]
+
+
+
+def infer_task_number(safe_text_candidates: list[str]) -> str:
+    for candidate in safe_text_candidates:
+        match = TASK_NUMBER_PATTERN.search(candidate)
+        if match:
+            value = match.group(0)
+            return f"Task #{value.split('#', 1)[1]}"
     return "unknown"
 
 
-def infer_task_number(safe_text: str | None) -> str:
-    if not safe_text:
-        return "unknown"
-    match = TASK_NUMBER_PATTERN.search(safe_text)
-    if not match:
-        return "unknown"
-    return match.group(0)
-
-
-def infer_task_name(safe_text: str | None, task_number: str = "unknown") -> str:
-    if not safe_text:
+def infer_task_name(
+    project_name: str,
+    task_number: str = "unknown",
+    safe_text_candidates: list[str] | None = None,
+) -> str:
+    inferred_task = infer_task_name_from_safe_metadata(safe_text_candidates or [])
+    if inferred_task != "unknown":
+        return inferred_task
+    if task_number == "unknown":
         return "Codex local session preview"
-    task_name = TASK_NUMBER_PATTERN.sub("", safe_text).strip(" :-")
-    if not task_name or task_name.lower() in {"none", "null", "unknown"}:
-        return "Codex local session preview"
-    return task_name[:96]
+    label = TASK_LABELS.get(project_name, TASK_LABELS["unknown"])
+    if label == TASK_LABELS["unknown"]:
+        return label
+    return f"{task_number} · {label}"
 
 
 def normalize_status(value: str | None) -> str:
@@ -414,22 +820,34 @@ def normalize_status(value: str | None) -> str:
     return "unknown"
 
 
-def build_preview_records(summaries: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def build_preview_records(
+    summaries: list[dict[str, Any]], preview_output_basename: str | None = None
+) -> list[dict[str, Any]]:
     created_at = datetime.now().astimezone().isoformat(timespec="seconds")
     records: list[dict[str, Any]] = []
+    preview_output_project = infer_project_name([preview_output_basename]) if preview_output_basename else "unknown"
+    preview_output_task = infer_task_name_from_safe_metadata([preview_output_basename]) if preview_output_basename else "unknown"
     for summary in summaries:
         session_id = summary["detected_session_id"] or fallback_session_id(summary["file_name"])
         task_number = summary.get("inferred_task_number") or "unknown"
         started_at = summary.get("detected_started_at")
         ended_at = summary.get("detected_ended_at") or started_at
         token_totals = summary.get("token_totals", {})
+        project_name = summary.get("inferred_project_name") or "unknown"
+        if project_name == "unknown" and preview_output_project != "unknown":
+            project_name = preview_output_project
+        task_name = summary.get("inferred_task_name") or "Codex local session preview"
+        if task_name == "Codex local session preview" and preview_output_task != "unknown":
+            task_name = preview_output_task
+        if task_number == "unknown" and task_name != "Codex local session preview":
+            task_number = TASK_ALLOWLIST_MARKER
         records.append(
             {
                 "id": preview_run_id(session_id, summary["file_index"]),
                 "session_id": session_id,
                 "source": "codex_local_preview",
-                "project_name": summary.get("inferred_project_name") or "unknown",
-                "task_name": summary.get("inferred_task_name") or "Codex local session preview",
+                "project_name": project_name,
+                "task_name": task_name,
                 "task_number": task_number,
                 "started_at": started_at,
                 "ended_at": ended_at,
@@ -454,7 +872,7 @@ def build_preview_records(summaries: list[dict[str, Any]]) -> list[dict[str, Any
 
 
 def write_preview_output(output_path: Path, summaries: list[dict[str, Any]]) -> None:
-    records = build_preview_records(summaries)
+    records = build_preview_records(summaries, safe_basename(output_path.name))
     output_text = json.dumps(records, indent=2, sort_keys=True)
     preview_safety_scan(output_text)
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -616,6 +1034,163 @@ def run_self_test() -> int:
             results.append(("Simulated unsafe output rejection", True, "passed"))
         else:
             results.append(("Simulated unsafe output rejection", False, str(exc)))
+
+    project_priority_cases = [
+        (["parse_codex_sessions.py"], "AgentOps"),
+        (["review_agentops_preview.py"], "AgentOps"),
+        (["agent_runs_preview.json"], "AgentOps"),
+        (["agentops_preview_quality_release_note.md"], "AgentOps"),
+        (["portal"], "unknown"),
+        (["architecture"], "unknown"),
+        (["docs"], "unknown"),
+        (["scripts"], "unknown"),
+        (["unrelated_filename.md"], "unknown"),
+        (["project"], "unknown"),
+        (["portal architecture", "agent ops"], "unknown"),
+        (["portal architecture"], "Portal Architecture"),
+    ]
+    failed_priority_cases = [
+        f"{candidates!r} -> {infer_project_name(candidates)!r}, expected {expected!r}"
+        for candidates, expected in project_priority_cases
+        if infer_project_name(candidates) != expected
+    ]
+    content_candidate_obj = {
+        "prompt": "parse_codex_sessions.py",
+        "response": "review_agentops_preview.py",
+        "command": "cat agent_runs_preview.json",
+    }
+    content_candidates = collect_safe_text_candidates(content_candidate_obj, Path("unrelated.jsonl"))
+    content_project = infer_project_name(content_candidates)
+    if content_project != "unknown":
+        failed_priority_cases.append(
+            f"content-based fields -> {content_project!r}, expected 'unknown'"
+        )
+
+    preview_records = build_preview_records(
+        [
+            {
+                "detected_session_id": None,
+                "file_name": "rollout-test.jsonl",
+                "file_index": 1,
+                "inferred_task_number": "unknown",
+                "detected_started_at": None,
+                "detected_ended_at": None,
+                "token_totals": {},
+                "inferred_project_name": "unknown",
+                "inferred_task_name": "Codex local session preview",
+                "detected_status": None,
+                "detected_model": "gpt-5.5",
+                "tool_event_count": 0,
+                "possible_file_event_count": 0,
+                "possible_edit_event_count": 0,
+                "possible_shell_event_count": 0,
+                "warning_count": 0,
+            }
+        ],
+        "agent_runs_preview.json",
+    )
+    if preview_records[0]["project_name"] != "AgentOps":
+        failed_priority_cases.append("preview output basename did not infer AgentOps")
+
+    if failed_priority_cases:
+        results.append(("Project keyword priority", False, "; ".join(failed_priority_cases)))
+    else:
+        results.append(("Project keyword priority", True, "passed"))
+
+    task_allowlist_cases = [
+        (["agentops_preview_quality_release_note.md"], "AgentOps Preview Quality Release Note"),
+        (["agentops_safe_metadata_project_signals.md"], "Safe Metadata Project Signals Design"),
+        (["agentops_preview_full_limit_review.md"], "AgentOps Preview Full Limit Review"),
+        (["parse_codex_sessions.py"], "Codex Session Parser Maintenance"),
+        (["review_agentops_preview.py"], "AgentOps Preview Review"),
+        (["agent_runs_preview.json"], "AgentOps Preview Generation"),
+        (["preview"], "unknown"),
+        (["review"], "unknown"),
+        (["docs"], "unknown"),
+        (["scripts"], "unknown"),
+        (["parser"], "unknown"),
+        (["preview", "review"], "unknown"),
+        (["parse_codex_sessions.py", "review_agentops_preview.py"], "unknown"),
+    ]
+    failed_task_cases = [
+        f"{candidates!r} -> {infer_task_name_from_safe_metadata(candidates)!r}, expected {expected!r}"
+        for candidates, expected in task_allowlist_cases
+        if infer_task_name_from_safe_metadata(candidates) != expected
+    ]
+    content_task_candidate_obj = {
+        "prompt": "AgentOps Preview Quality Release Note",
+        "response": "AgentOps Preview Review",
+        "command": "cat agent_runs_preview.json",
+        "diff": "agentops_safe_metadata_project_signals.md",
+        "file_content": "parse_codex_sessions.py",
+    }
+    content_task_candidates = collect_safe_text_candidates(content_task_candidate_obj, Path("unrelated.jsonl"))
+    content_task = infer_task_name_from_safe_metadata(content_task_candidates)
+    if content_task != "unknown":
+        failed_task_cases.append(
+            f"content-based fields -> {content_task!r}, expected unknown"
+        )
+    preview_task_records = build_preview_records(
+        [
+            {
+                "detected_session_id": None,
+                "file_name": "rollout-test.jsonl",
+                "file_index": 1,
+                "inferred_task_number": "unknown",
+                "detected_started_at": None,
+                "detected_ended_at": None,
+                "token_totals": {},
+                "inferred_project_name": "unknown",
+                "inferred_task_name": "Codex local session preview",
+                "detected_status": None,
+                "detected_model": "gpt-5.5",
+                "tool_event_count": 0,
+                "possible_file_event_count": 0,
+                "possible_edit_event_count": 0,
+                "possible_shell_event_count": 0,
+                "warning_count": 0,
+            }
+        ],
+        "agent_runs_preview.json",
+    )
+    if preview_task_records[0]["task_name"] != "AgentOps Preview Generation":
+        failed_task_cases.append("preview output basename did not infer AgentOps Preview Generation")
+    if preview_task_records[0]["task_number"] != TASK_ALLOWLIST_MARKER:
+        failed_task_cases.append("safe allowlist task did not set task review marker")
+
+    if failed_task_cases:
+        results.append(("Task Inference Safe Allowlist", False, "; ".join(failed_task_cases)))
+    else:
+        results.append(("Task Inference Safe Allowlist", True, "passed"))
+
+
+    token_normalization_cases = [
+        ([10, 20, 20, 30], 30),
+        ([5, 3, 7], 15),
+        ([4], 4),
+    ]
+    failed_token_cases = [
+        f"{values!r} -> {normalize_token_values(values)['normalized_value']!r}, expected {expected!r}"
+        for values, expected in token_normalization_cases
+        if normalize_token_values(values)["normalized_value"] != expected
+    ]
+    missing_total, _missing_total_debug = normalize_token_usage(
+        {
+            "input_tokens": [10, 15],
+            "cached_tokens": [],
+            "output_tokens": [4],
+            "reasoning_tokens": [1],
+            "total_tokens": [],
+        }
+    )
+    if missing_total["total_tokens"] != 20:
+        failed_token_cases.append(
+            f"missing total -> {missing_total['total_tokens']!r}, expected 20"
+        )
+    if failed_token_cases:
+        results.append(("Token Normalization", False, "; ".join(failed_token_cases)))
+    else:
+        results.append(("Token Normalization", True, "passed"))
 
     print("AgentOps parser self-test")
     for name, passed, message in results:

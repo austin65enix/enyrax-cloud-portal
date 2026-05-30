@@ -378,6 +378,99 @@ Preview output can only be written under `data/agentops/`.
 
 This mode does not overwrite `data/agentops/demo_agent_runs.json`.
 
+## Inference Improvement Policy
+
+The parser uses allowlist safe metadata only to infer `project_name`, `task_number`, `model`, and `duration_seconds`. Allowed inference inputs are JSON key names, safe metadata field values, session ids, model fields, timestamps, token usage numbers, tool event types or key names, file basenames, safe working directory or repo basenames, and existing allowlist keywords.
+
+The parser does not use full prompts, assistant responses, shell output, command text, file contents, diffs, patch contents, raw JSONL lines, full home paths, secrets, or secret-like values for inference or output.
+
+`task_name` is a parser-generated short label based on the inferred task number and project. It is not copied from an original task title, prompt, response, or long free-form text.
+
+`unknown` is an acceptable result when safe inference is not possible. Safety takes priority over inference completeness.
+
+
+
+## Token Normalization Policy
+
+Codex session token usage may be cumulative.
+
+Parser logic should avoid naive summation of cumulative snapshots across a session file.
+
+Numeric token fields are normalized using safe numeric-only logic. Cumulative-looking snapshots use the maximum observed value, while delta-like snapshots may be summed conservatively.
+
+`total_tokens` is estimated from component tokens only when the `total_tokens` field is missing.
+
+Prompt / response content is never used for token estimation.
+
+Preview token totals remain estimates and must not be treated as billing-grade cost data.
+
+## Project Keyword Priority
+
+Project inference uses scoring-based allowlist keyword matching.
+
+Generic words such as `portal` and `architecture` are not enough to infer Portal Architecture. Portal Architecture requires more specific phrases such as `portal architecture`, `homepage architecture`, `enterprise ops architecture`, `module card`, or `orbit portal`.
+
+Higher-specificity keywords should win over generic keywords. Explicit phrases score higher than single-word keywords, and higher-priority projects win ties.
+
+The parser applies a minimum score threshold before assigning a project. `unknown` remains acceptable when confidence is low.
+
+
+## Project Inference Recall Improvement
+
+Task #121 implemented safe metadata scoring for project inference.
+
+The parser uses explicit AgentOps filename basename mapping and conservative scoring. Generic words do not receive score, content-based inference remains prohibited, and tie or ambiguous matches return `unknown`. Unknown remains preferred over unsafe inference.
+
+Current scoring uses `PROJECT_MINIMUM_SCORE = 3`. Explicit AgentOps filename basename matches score 3.
+
+Before Task #121:
+
+* unknown_project_count: 50
+* top_projects: unknown: 50
+
+After Task #121:
+
+* unknown_project_count: 0
+* top_projects: AgentOps: 50
+* review status: passed
+
+## Project Inference Semantics
+
+Project inference currently uses safety-first metadata signals.
+
+`agent_runs_preview.json` is a safe filename basename signal. When the preview output basename maps to AgentOps, the classification means the preview telemetry output is associated with the AgentOps pipeline.
+
+This does not imply that the parser inspected session prompt, response, shell output, command text, diff, file contents, or raw JSONL content. It also does not guarantee that every underlying session's work content was AgentOps.
+
+The current result should be interpreted as pipeline-level operational classification. Preview project values are operational metadata, not authoritative content-level labels.
+
+## Task Inference Safe Allowlist
+
+Task inference uses a safe metadata allowlist only. Explicit filename basename mapping can infer AgentOps task names when the basename is allowlisted. Generic words do not receive score, content-based inference remains prohibited, tie or ambiguous matches return `unknown`, and `unknown` remains preferred over unsafe inference.
+
+Allowed task signals are allowlisted filename basenames, the safe preview output basename, allowlisted document basenames, explicit safe metadata fields if already available, and known safe module basenames if already extracted safely. The parser must not use prompt, response, shell output, command text, diff, file contents, raw JSONL line, credentials, full home path, secret values, arbitrary source code content, or arbitrary log content.
+
+Task scoring uses `TASK_MINIMUM_SCORE = 3`. Strong allowlisted filename basename matches score 3. Safe document basename matches score 3. The preview output basename `agent_runs_preview.json` scores 3 and maps to `AgentOps Preview Generation`. Weak generic words score 0. Ambiguous matches and ties return `unknown`; there is no first-match-wins task inference.
+
+If `agent_runs_preview.json` is used as a task signal, the task classification means the preview telemetry output is associated with AgentOps Preview Generation. This is pipeline-level operational task classification, not authoritative session-content-level task classification.
+
+Future schema may separate:
+
+* `pipeline_project`
+* `session_project`
+* `pipeline_task`
+* `session_task`
+
+Before Task #122:
+
+* unknown_task_count: 50
+
+After Task #122:
+
+* unknown_task_count: 0
+* top_tasks: AgentOps Preview Generation: 50
+* review status: passed
+
 ## Preview Review Gate
 
 After `agent_runs_preview.json` is generated, it must pass `scripts/review_agentops_preview.py` before any API source toggle is considered.
