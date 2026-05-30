@@ -110,6 +110,91 @@
       line-height: 1.5;
     }
 
+    .source-panel {
+      margin-top: 14px;
+      border-top: 1px solid rgba(255, 255, 255, .1);
+      padding-top: 14px;
+    }
+
+    .source-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .source-title {
+      color: var(--text);
+      font-size: 12px;
+      font-weight: 950;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+
+    .source-toggle {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .source-chip {
+      min-height: 34px;
+      border: 1px solid rgba(255, 255, 255, .14);
+      border-radius: 999px;
+      color: var(--text);
+      background: rgba(255, 255, 255, .045);
+      padding: 8px 12px;
+      font: inherit;
+      font-size: 12px;
+      font-weight: 950;
+      line-height: 1;
+      cursor: pointer;
+    }
+
+    .source-chip.demo.active {
+      color: #061317;
+      border-color: rgba(115, 244, 223, .58);
+      background: linear-gradient(135deg, var(--cyan), #d8fff8);
+      box-shadow: 0 0 22px rgba(115, 244, 223, .14);
+    }
+
+    .source-chip.preview {
+      border-color: rgba(255, 209, 102, .32);
+      color: var(--amber);
+      background: rgba(255, 209, 102, .07);
+    }
+
+    .source-chip.preview.active {
+      color: #1c1300;
+      border-color: rgba(255, 209, 102, .7);
+      background: linear-gradient(135deg, var(--amber), #fff1b8);
+      box-shadow: 0 0 22px rgba(255, 209, 102, .14);
+    }
+
+    .source-badge {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      width: fit-content;
+      border: 1px solid rgba(115, 244, 223, .28);
+      border-radius: 999px;
+      color: var(--cyan);
+      background: rgba(115, 244, 223, .07);
+      padding: 7px 10px;
+      font-size: 11px;
+      font-weight: 950;
+      line-height: 1;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .source-badge.preview {
+      border-color: rgba(255, 209, 102, .42);
+      color: var(--amber);
+      background: rgba(255, 209, 102, .08);
+    }
+
     .notice {
       display: none;
       margin: 0 0 18px;
@@ -129,6 +214,35 @@
       border-color: rgba(255, 107, 134, .36);
       background: rgba(255, 107, 134, .08);
       color: #ffd5dc;
+    }
+
+    .quality-notes {
+      display: none;
+      margin: 0 0 18px;
+      border-radius: 16px;
+      border: 1px solid rgba(255, 209, 102, .32);
+      background: rgba(255, 209, 102, .055);
+      padding: 13px 15px;
+    }
+
+    .quality-notes.active { display: block; }
+
+    .quality-notes strong {
+      display: block;
+      color: var(--amber);
+      font-size: 12px;
+      font-weight: 950;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .quality-notes ul {
+      margin: 8px 0 0;
+      padding-left: 18px;
+      color: var(--muted-strong);
+      font-size: 13px;
+      font-weight: 750;
+      line-height: 1.5;
     }
 
     .summary-grid {
@@ -454,6 +568,7 @@
       .row-stats,
       .row-stats.three,
       .mini-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .source-head { align-items: flex-start; flex-direction: column; }
     }
 
     @media (max-width: 520px) {
@@ -481,10 +596,21 @@
       <aside class="privacy">
         <strong>Privacy boundary</strong>
         <p>AgentOps displays normalized metadata only. It does not store full prompts, responses, shell output, file contents, credentials, API keys or .env values.</p>
+        <div class="source-panel" aria-label="AgentOps data source">
+          <div class="source-head">
+            <div class="source-title">Data Source</div>
+            <span class="source-badge" id="source-label">Demo Data</span>
+          </div>
+          <div class="source-toggle" id="source-toggle">
+            <button class="source-chip demo active" type="button" data-source="demo">Demo Data</button>
+            <button class="source-chip preview" type="button" data-source="preview">Safety-reviewed Preview</button>
+          </div>
+        </div>
       </aside>
     </section>
 
     <div class="notice" id="warning-message" role="status"></div>
+    <div class="quality-notes" id="quality-notes" aria-live="polite"></div>
     <div class="notice error" id="error-message" role="alert"></div>
 
     <section class="summary-grid" id="summary-cards" aria-label="AgentOps summary cards"></section>
@@ -555,8 +681,16 @@
       { label: "AgentOps", query: "project=AgentOps" }
     ];
 
+    const PREVIEW_WARNING = "Preview telemetry is safety-reviewed metadata. Token totals may be estimated or cumulative. This is not production telemetry.";
+    const PREVIEW_UNAVAILABLE = "Preview telemetry unavailable. Returning to Demo Data is recommended.";
+
     const state = {
-      activeFilter: "All"
+      activeFilter: "All",
+      sourceMode: "demo",
+      previewWarning: "",
+      qualityNotes: [],
+      summaryRequestId: 0,
+      runsRequestId: 0
     };
 
     function getPathValue(source, path, fallback) {
@@ -675,6 +809,75 @@
 
       el.textContent = message || "";
       el.classList.toggle("active", Boolean(active && message));
+    }
+
+    function sourceLabel() {
+      return state.sourceMode === "preview" ? "Safety-reviewed Preview" : "Demo Data";
+    }
+
+    function renderSourceToggle() {
+      document.querySelectorAll("#source-toggle button").forEach((button) => {
+        const active = button.dataset.source === state.sourceMode;
+        button.classList.toggle("active", active);
+        button.setAttribute("aria-pressed", String(active));
+      });
+
+      const label = document.getElementById("source-label");
+      if (label) {
+        label.textContent = sourceLabel();
+        label.classList.toggle("preview", state.sourceMode === "preview");
+      }
+    }
+
+    function bindSourceToggle() {
+      document.querySelectorAll("#source-toggle button").forEach((button) => {
+        button.addEventListener("click", () => {
+          const nextSource = button.dataset.source === "preview" ? "preview" : "demo";
+          if (nextSource === state.sourceMode) return;
+
+          state.sourceMode = nextSource;
+          state.previewWarning = "";
+          state.qualityNotes = [];
+          setNotice("error-message", "", false);
+          renderSourceToggle();
+          renderSourceMessages();
+          loadSummary();
+          loadRuns();
+        });
+      });
+    }
+
+    function renderSourceMessages() {
+      if (state.sourceMode !== "preview") {
+        setNotice("warning-message", "", false);
+        renderQualityNotes([]);
+        return;
+      }
+
+      const warning = [PREVIEW_WARNING, state.previewWarning].filter(Boolean).join(" ");
+      setNotice("warning-message", warning, true);
+      renderQualityNotes(state.qualityNotes);
+    }
+
+    function renderQualityNotes(notes) {
+      const el = document.getElementById("quality-notes");
+      if (!el) return;
+
+      if (state.sourceMode !== "preview" || !Array.isArray(notes) || !notes.length) {
+        el.innerHTML = "";
+        el.classList.remove("active");
+        return;
+      }
+
+      el.innerHTML = `
+        <strong>Quality Notes</strong>
+        <ul>${notes.map((note) => `<li>${escapeHtml(note)}</li>`).join("")}</ul>
+      `;
+      el.classList.add("active");
+    }
+
+    function summaryPath() {
+      return state.sourceMode === "preview" ? "/api/agentops/summary?source=preview" : "/api/agentops/summary";
     }
 
     async function fetchJson(path) {
@@ -844,6 +1047,10 @@
       const filter = filters.find((item) => item.label === state.activeFilter) || filters[0];
       const params = new URLSearchParams();
 
+      if (state.sourceMode === "preview") {
+        params.set("source", "preview");
+      }
+
       if (filter.query) {
         const [key, value] = filter.query.split("=");
         params.set(key, value);
@@ -891,24 +1098,36 @@
       }).join("");
     }
 
+    function setSummaryLoading() {
+      document.getElementById("top-tasks-state").textContent = "Loading";
+      document.getElementById("top-projects-state").textContent = "Loading";
+      document.getElementById("top-models-state").textContent = "Loading";
+    }
+
     async function loadSummary() {
+      const requestId = ++state.summaryRequestId;
+      setSummaryLoading();
+
       try {
-        const summary = await fetchJson("/api/agentops/summary");
+        const summary = await fetchJson(summaryPath());
+        if (requestId !== state.summaryRequestId) return;
+
         setNotice("error-message", "", false);
-
-        if (summary && summary.warning) {
-          setNotice("warning-message", String(summary.warning), true);
-        } else {
-          setNotice("warning-message", "", false);
-        }
-
+        state.previewWarning = state.sourceMode === "preview" && summary && summary.warning ? String(summary.warning) : "";
+        state.qualityNotes = state.sourceMode === "preview" ? extractList(getPathValue(summary, "quality.notes", []), "notes") : [];
+        renderSourceMessages();
         renderSummaryCards(summary || {});
         renderTopTasks(extractList(summary, "top_tasks"));
         renderTopProjects(extractList(summary, "top_projects"));
         renderTopModels(extractList(summary, "top_models"));
       } catch (err) {
+        if (requestId !== state.summaryRequestId) return;
+
         console.error("Failed to load AgentOps summary:", err);
-        setNotice("error-message", "AgentOps telemetry unavailable", true);
+        state.previewWarning = "";
+        state.qualityNotes = [];
+        renderSourceMessages();
+        setNotice("error-message", state.sourceMode === "preview" ? PREVIEW_UNAVAILABLE : "AgentOps telemetry unavailable", true);
         renderSummaryCards({});
         renderTopTasks([]);
         renderTopProjects([]);
@@ -917,18 +1136,34 @@
     }
 
     async function loadRuns() {
+      const requestId = ++state.runsRequestId;
       document.getElementById("runs-state").textContent = "Loading";
 
       try {
         const data = await fetchJson(runsPath());
+        if (requestId !== state.runsRequestId) return;
+
+        if (state.sourceMode === "preview" && data && data.warning && !state.previewWarning) {
+          state.previewWarning = String(data.warning);
+          renderSourceMessages();
+        }
+
         renderRuns(extractList(data, "runs"));
       } catch (err) {
+        if (requestId !== state.runsRequestId) return;
+
         console.error("Failed to load AgentOps runs:", err);
         document.getElementById("runs-state").textContent = "Unavailable";
-        document.getElementById("recent-runs").innerHTML = '<div class="empty">AgentOps telemetry unavailable</div>';
+        document.getElementById("recent-runs").innerHTML = `<div class="empty">${escapeHtml(state.sourceMode === "preview" ? PREVIEW_UNAVAILABLE : "AgentOps telemetry unavailable")}</div>`;
+        if (state.sourceMode === "preview") {
+          setNotice("error-message", PREVIEW_UNAVAILABLE, true);
+        }
       }
     }
 
+    bindSourceToggle();
+    renderSourceToggle();
+    renderSourceMessages();
     renderFilters();
     loadSummary();
     loadRuns();

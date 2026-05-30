@@ -50,6 +50,20 @@ NORMALIZED_VULNERABILITIES_PATH = (
     PROJECT_ROOT / "data" / "vulnerabilities" / "normalized_vulnerabilities.json"
 )
 AGENT_RUNS_PATH = PROJECT_ROOT / "data" / "agentops" / "demo_agent_runs.json"
+AGENT_RUNS_PREVIEW_PATH = PROJECT_ROOT / "data" / "agentops" / "agent_runs_preview.json"
+AGENTOPS_PREVIEW_WARNING = (
+    "Preview telemetry is safety-reviewed metadata and may contain estimated or cumulative token counts."
+)
+AGENTOPS_PREVIEW_QUALITY = {
+    "preview": True,
+    "review_required": True,
+    "review_status": "external",
+    "notes": [
+        "Preview data is generated from safety-reviewed metadata only.",
+        "Token totals may be estimated or cumulative.",
+        "Unknown task/project/model values indicate conservative inference.",
+    ],
+}
 SEVERITY_ORDER = {
     "critical": 0,
     "high": 1,
@@ -683,29 +697,57 @@ def load_normalized_vulnerabilities():
 load_normalized_vulnerabilities.warning = None
 
 
-def load_agent_runs():
+def agentops_source_config(source: Optional[str] = "demo"):
+    source_mode = (source or "demo").strip().lower() or "demo"
+    if source_mode == "demo":
+        return {
+            "mode": "demo",
+            "path": AGENT_RUNS_PATH,
+            "source": "demo_agent_runs",
+            "missing_warning": "agentops demo data not found",
+            "parse_warning": "agentops demo data parse error",
+            "unavailable_warning": "agentops demo data unavailable",
+        }
+    if source_mode == "preview":
+        return {
+            "mode": "preview",
+            "path": AGENT_RUNS_PREVIEW_PATH,
+            "source": "agent_runs_preview",
+            "missing_warning": "agentops preview data not found",
+            "parse_warning": "agentops preview data parse error",
+            "unavailable_warning": "agentops preview data unavailable",
+        }
+    raise HTTPException(status_code=400, detail="Unsupported AgentOps source. Use demo or preview.")
+
+
+def load_agent_runs(source: Optional[str] = "demo"):
+    config = agentops_source_config(source)
     load_agent_runs.warning = None
+    load_agent_runs.source = config["source"]
+    load_agent_runs.source_mode = config["mode"]
 
     try:
-        data = json.loads(AGENT_RUNS_PATH.read_text())
+        data = json.loads(config["path"].read_text())
     except FileNotFoundError:
-        load_agent_runs.warning = "agentops demo data not found"
+        load_agent_runs.warning = config["missing_warning"]
         return []
     except json.JSONDecodeError:
-        load_agent_runs.warning = "agentops demo data parse error"
+        load_agent_runs.warning = config["parse_warning"]
         return []
     except OSError:
-        load_agent_runs.warning = "agentops demo data unavailable"
+        load_agent_runs.warning = config["unavailable_warning"]
         return []
 
     if not isinstance(data, list):
-        load_agent_runs.warning = "agentops demo data parse error"
+        load_agent_runs.warning = config["parse_warning"]
         return []
 
     return [item for item in data if isinstance(item, dict)]
 
 
 load_agent_runs.warning = None
+load_agent_runs.source = "demo_agent_runs"
+load_agent_runs.source_mode = "demo"
 
 
 def agentops_int(item, field: str) -> int:
@@ -748,6 +790,23 @@ def agentops_group_status(status_counts):
 
 # AgentOps API only exposes normalized metadata. It must not expose prompt,
 # response, shell output, file contents, credentials or .env values.
+def agentops_response_metadata() -> dict:
+    metadata = {
+        "source": load_agent_runs.source,
+        "source_mode": load_agent_runs.source_mode,
+    }
+    if load_agent_runs.source_mode == "preview":
+        metadata["warning"] = AGENTOPS_PREVIEW_WARNING
+        metadata["quality"] = AGENTOPS_PREVIEW_QUALITY
+        if load_agent_runs.warning:
+            metadata["data_warning"] = load_agent_runs.warning
+    else:
+        metadata["quality"] = {"preview": False}
+        if load_agent_runs.warning:
+            metadata["warning"] = load_agent_runs.warning
+    return metadata
+
+
 def agentops_summary_response(runs):
     totals = {
         "agent_runs": len(runs),
@@ -917,7 +976,6 @@ def agentops_summary_response(runs):
 
     response = {
         "status": "ok",
-        "source": "demo_agent_runs",
         "generated_at": now_utc(),
         "totals": totals,
         "success_rate": success_rate,
@@ -932,9 +990,7 @@ def agentops_summary_response(runs):
         "top_models": top_models[:5],
         "recent_runs": recent_runs,
     }
-    warning = load_agent_runs.warning
-    if warning:
-        response["warning"] = warning
+    response.update(agentops_response_metadata())
     return response
 
 
@@ -1287,8 +1343,8 @@ def write_vulnerability_ticket_audit(db, action: str, entity_id, summary: str, a
 
 
 @app.get("/api/agentops/summary")
-def agentops_summary():
-    runs = load_agent_runs()
+def agentops_summary(source: Optional[str] = None):
+    runs = load_agent_runs(source)
     return agentops_summary_response(runs)
 
 
@@ -1299,8 +1355,9 @@ def list_agentops_runs(
     task: Optional[str] = None,
     model: Optional[str] = None,
     limit: int = 100,
+    source: Optional[str] = None,
 ):
-    runs = load_agent_runs()
+    runs = load_agent_runs(source)
 
     if limit < 1:
         limit = 100
@@ -1358,14 +1415,11 @@ def list_agentops_runs(
 
     response = {
         "status": "ok",
-        "source": "demo_agent_runs",
         "count": len(filtered),
         "limit": limit,
         "items": items,
     }
-    warning = load_agent_runs.warning
-    if warning:
-        response["warning"] = warning
+    response.update(agentops_response_metadata())
     return response
 
 
