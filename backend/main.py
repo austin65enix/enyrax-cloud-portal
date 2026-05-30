@@ -51,19 +51,16 @@ NORMALIZED_VULNERABILITIES_PATH = (
 )
 AGENT_RUNS_PATH = PROJECT_ROOT / "data" / "agentops" / "demo_agent_runs.json"
 AGENT_RUNS_PREVIEW_PATH = PROJECT_ROOT / "data" / "agentops" / "agent_runs_preview.json"
+AGENTOPS_LARGE_TOKEN_THRESHOLD = 10000000
 AGENTOPS_PREVIEW_WARNING = (
-    "Preview telemetry is safety-reviewed metadata and may contain estimated or cumulative token counts."
+    "Preview telemetry is safety-reviewed metadata. Token totals may be estimated, "
+    "cumulative, or inflated depending on Codex session format."
 )
-AGENTOPS_PREVIEW_QUALITY = {
-    "preview": True,
-    "review_required": True,
-    "review_status": "external",
-    "notes": [
-        "Preview data is generated from safety-reviewed metadata only.",
-        "Token totals may be estimated or cumulative.",
-        "Unknown task/project/model values indicate conservative inference.",
-    ],
-}
+AGENTOPS_PREVIEW_QUALITY_NOTES = [
+    "Large token totals may indicate cumulative session usage.",
+    "Unknown task/project/model values indicate conservative inference.",
+    "Preview data should not be used as billing-grade cost data.",
+]
 SEVERITY_ORDER = {
     "critical": 0,
     "high": 1,
@@ -771,8 +768,11 @@ def normalize_agentops_status(value) -> str:
     return "unknown"
 
 
-def agentops_public_run(item, fields):
-    return {field: item.get(field) for field in fields}
+def agentops_public_run(item, fields, include_preview_quality: bool = False):
+    public_item = {field: item.get(field) for field in fields}
+    if include_preview_quality:
+        public_item["preview_quality"] = agentops_preview_quality_flags(item)
+    return public_item
 
 
 def agentops_sort_started_at(item):
@@ -788,16 +788,67 @@ def agentops_group_status(status_counts):
     return "mixed"
 
 
+def agentops_is_unknown(item, field: str) -> bool:
+    value = item.get(field)
+    if value is None:
+        return True
+
+    normalized = str(value).strip().lower()
+    return normalized in {"", "unknown", "unknown task", "unknown project", "unknown model"}
+
+
+def agentops_preview_quality_flags(item) -> dict:
+    return {
+        "unknown_project": agentops_is_unknown(item, "project_name"),
+        "unknown_task": agentops_is_unknown(item, "task_number"),
+        "unknown_model": agentops_is_unknown(item, "model"),
+        "zero_duration": agentops_int(item, "duration_seconds") == 0,
+        "large_token_total": agentops_int(item, "total_tokens") >= AGENTOPS_LARGE_TOKEN_THRESHOLD,
+    }
+
+
+def agentops_preview_quality(runs) -> dict:
+    quality = {
+        "preview": True,
+        "review_required": True,
+        "review_status": "external",
+        "unknown_project_count": 0,
+        "unknown_task_count": 0,
+        "unknown_model_count": 0,
+        "zero_duration_count": 0,
+        "large_token_run_count": 0,
+        "large_token_threshold": AGENTOPS_LARGE_TOKEN_THRESHOLD,
+        "token_estimate_warning": False,
+        "notes": AGENTOPS_PREVIEW_QUALITY_NOTES,
+    }
+
+    for item in runs:
+        flags = agentops_preview_quality_flags(item)
+        if flags["unknown_project"]:
+            quality["unknown_project_count"] += 1
+        if flags["unknown_task"]:
+            quality["unknown_task_count"] += 1
+        if flags["unknown_model"]:
+            quality["unknown_model_count"] += 1
+        if flags["zero_duration"]:
+            quality["zero_duration_count"] += 1
+        if flags["large_token_total"]:
+            quality["large_token_run_count"] += 1
+
+    quality["token_estimate_warning"] = quality["large_token_run_count"] > 0
+    return quality
+
+
 # AgentOps API only exposes normalized metadata. It must not expose prompt,
 # response, shell output, file contents, credentials or .env values.
-def agentops_response_metadata() -> dict:
+def agentops_response_metadata(runs=None) -> dict:
     metadata = {
         "source": load_agent_runs.source,
         "source_mode": load_agent_runs.source_mode,
     }
     if load_agent_runs.source_mode == "preview":
         metadata["warning"] = AGENTOPS_PREVIEW_WARNING
-        metadata["quality"] = AGENTOPS_PREVIEW_QUALITY
+        metadata["quality"] = agentops_preview_quality(runs or [])
         if load_agent_runs.warning:
             metadata["data_warning"] = load_agent_runs.warning
     else:
@@ -990,7 +1041,7 @@ def agentops_summary_response(runs):
         "top_models": top_models[:5],
         "recent_runs": recent_runs,
     }
-    response.update(agentops_response_metadata())
+    response.update(agentops_response_metadata(runs))
     return response
 
 
@@ -1409,7 +1460,11 @@ def list_agentops_runs(
         "created_at",
     ]
     items = [
-        agentops_public_run(item, public_fields)
+        agentops_public_run(
+            item,
+            public_fields,
+            include_preview_quality=load_agent_runs.source_mode == "preview",
+        )
         for item in sorted(filtered, key=agentops_sort_started_at, reverse=True)[:limit]
     ]
 
@@ -1419,7 +1474,7 @@ def list_agentops_runs(
         "limit": limit,
         "items": items,
     }
-    response.update(agentops_response_metadata())
+    response.update(agentops_response_metadata(runs))
     return response
 
 

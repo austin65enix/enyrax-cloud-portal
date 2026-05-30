@@ -245,6 +245,60 @@
       line-height: 1.5;
     }
 
+    .quality-grid {
+      display: none;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 10px;
+      margin: -8px 0 22px;
+    }
+
+    .quality-grid.active { display: grid; }
+
+    .quality-card {
+      min-height: 82px;
+      border: 1px solid rgba(255, 209, 102, .24);
+      border-radius: 14px;
+      background: rgba(255, 209, 102, .055);
+      padding: 12px;
+    }
+
+    .quality-card .metric-label { font-size: 10px; }
+
+    .quality-card .metric-value {
+      margin-top: 10px;
+      color: var(--amber);
+      font-size: 24px;
+    }
+
+    .quality-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 10px;
+    }
+
+    .quality-badge {
+      display: inline-flex;
+      align-items: center;
+      min-height: 24px;
+      width: fit-content;
+      border: 1px solid rgba(255, 209, 102, .3);
+      border-radius: 999px;
+      color: var(--amber);
+      background: rgba(255, 209, 102, .08);
+      padding: 5px 8px;
+      font-size: 10px;
+      font-weight: 950;
+      line-height: 1.1;
+      text-transform: uppercase;
+    }
+
+    .quality-badge.muted {
+      border-color: rgba(247, 242, 223, .18);
+      color: var(--muted-strong);
+      background: rgba(255, 255, 255, .045);
+    }
+
     .summary-grid {
       display: grid;
       grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -553,7 +607,8 @@
     }
 
     @media (max-width: 1100px) {
-      .summary-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .summary-grid,
+      .quality-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
       .dashboard-grid { grid-template-columns: 1fr; }
     }
 
@@ -564,7 +619,8 @@
       }
 
       .hero { grid-template-columns: 1fr; }
-      .summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .summary-grid,
+      .quality-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .row-stats,
       .row-stats.three,
       .mini-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -573,6 +629,7 @@
 
     @media (max-width: 520px) {
       .summary-grid,
+      .quality-grid,
       .row-stats,
       .row-stats.three,
       .mini-grid { grid-template-columns: 1fr; }
@@ -614,6 +671,7 @@
     <div class="notice error" id="error-message" role="alert"></div>
 
     <section class="summary-grid" id="summary-cards" aria-label="AgentOps summary cards"></section>
+    <section class="quality-grid" id="preview-quality-cards" aria-label="Preview Quality Guard"></section>
 
     <section class="dashboard-grid">
       <div>
@@ -681,7 +739,7 @@
       { label: "AgentOps", query: "project=AgentOps" }
     ];
 
-    const PREVIEW_WARNING = "Preview telemetry is safety-reviewed metadata. Token totals may be estimated or cumulative. This is not production telemetry.";
+    const PREVIEW_WARNING = "Preview telemetry is safety-reviewed metadata. Token totals may be estimated, cumulative, or inflated depending on Codex session format.";
     const PREVIEW_UNAVAILABLE = "Preview telemetry unavailable. Returning to Demo Data is recommended.";
 
     const state = {
@@ -689,6 +747,7 @@
       sourceMode: "demo",
       previewWarning: "",
       qualityNotes: [],
+      previewQuality: null,
       summaryRequestId: 0,
       runsRequestId: 0
     };
@@ -838,6 +897,7 @@
           state.sourceMode = nextSource;
           state.previewWarning = "";
           state.qualityNotes = [];
+          state.previewQuality = null;
           setNotice("error-message", "", false);
           renderSourceToggle();
           renderSourceMessages();
@@ -851,12 +911,14 @@
       if (state.sourceMode !== "preview") {
         setNotice("warning-message", "", false);
         renderQualityNotes([]);
+        renderPreviewQualityCards(null);
         return;
       }
 
       const warning = [PREVIEW_WARNING, state.previewWarning].filter(Boolean).join(" ");
       setNotice("warning-message", warning, true);
       renderQualityNotes(state.qualityNotes);
+      renderPreviewQualityCards(state.previewQuality);
     }
 
     function renderQualityNotes(notes) {
@@ -873,6 +935,33 @@
         <strong>Quality Notes</strong>
         <ul>${notes.map((note) => `<li>${escapeHtml(note)}</li>`).join("")}</ul>
       `;
+      el.classList.add("active");
+    }
+
+    function renderPreviewQualityCards(quality) {
+      const el = document.getElementById("preview-quality-cards");
+      if (!el) return;
+
+      if (state.sourceMode !== "preview" || !quality || quality.preview !== true) {
+        el.innerHTML = "";
+        el.classList.remove("active");
+        return;
+      }
+
+      const cards = [
+        { label: "Unknown Projects", value: numberValue(quality, ["unknown_project_count"]) },
+        { label: "Unknown Tasks", value: numberValue(quality, ["unknown_task_count"]) },
+        { label: "Unknown Models", value: numberValue(quality, ["unknown_model_count"]) },
+        { label: "Zero Duration Runs", value: numberValue(quality, ["zero_duration_count"]) },
+        { label: "Large Token Runs", value: numberValue(quality, ["large_token_run_count"]) }
+      ];
+
+      el.innerHTML = cards.map((card) => `
+        <article class="quality-card">
+          <p class="metric-label">${escapeHtml(card.label)}</p>
+          <div class="metric-value">${escapeHtml(compactNumber(card.value))}</div>
+        </article>
+      `).join("");
       el.classList.add("active");
     }
 
@@ -1060,6 +1149,25 @@
       return "/api/agentops/runs?" + params.toString();
     }
 
+    function renderPreviewRunBadges(item) {
+      if (state.sourceMode !== "preview") return "";
+
+      const quality = item && item.preview_quality;
+      if (!quality || typeof quality !== "object") return "";
+
+      const badges = [];
+      if (quality.large_token_total === true) {
+        badges.push({ label: "Estimated / cumulative token usage", muted: false });
+      }
+      if (quality.unknown_project === true || quality.unknown_task === true || quality.unknown_model === true) {
+        badges.push({ label: "Conservative inference", muted: true });
+      }
+
+      if (!badges.length) return "";
+
+      return `<div class="quality-badges">${badges.map((badge) => `<span class="quality-badge${badge.muted ? " muted" : ""}">${escapeHtml(badge.label)}</span>`).join("")}</div>`;
+    }
+
     function renderRuns(items) {
       const el = document.getElementById("recent-runs");
       document.getElementById("runs-state").textContent = items.length ? `${items.length} runs` : "No data";
@@ -1075,6 +1183,7 @@
         const projectName = textValue(item, ["project_name", "project"], "Unassigned project");
         const status = textValue(item, ["status"], "unknown");
         const result = textValue(item, ["result", "summary", "message"], "No result recorded.");
+        const qualityBadges = renderPreviewRunBadges(item);
 
         return `
           <article class="run-card">
@@ -1085,6 +1194,7 @@
               </div>
               ${statusBadge(status)}
             </div>
+            ${qualityBadges}
             <div class="row-stats">
               ${renderStat("Duration", durationValue(numberValue(item, ["duration_seconds"])))}
               ${renderStat("Total Tokens", compactNumber(numberValue(item, ["total_tokens"])))}
@@ -1115,6 +1225,7 @@
         setNotice("error-message", "", false);
         state.previewWarning = state.sourceMode === "preview" && summary && summary.warning ? String(summary.warning) : "";
         state.qualityNotes = state.sourceMode === "preview" ? extractList(getPathValue(summary, "quality.notes", []), "notes") : [];
+        state.previewQuality = state.sourceMode === "preview" ? getPathValue(summary, "quality", null) : null;
         renderSourceMessages();
         renderSummaryCards(summary || {});
         renderTopTasks(extractList(summary, "top_tasks"));
@@ -1126,6 +1237,7 @@
         console.error("Failed to load AgentOps summary:", err);
         state.previewWarning = "";
         state.qualityNotes = [];
+        state.previewQuality = null;
         renderSourceMessages();
         setNotice("error-message", state.sourceMode === "preview" ? PREVIEW_UNAVAILABLE : "AgentOps telemetry unavailable", true);
         renderSummaryCards({});
