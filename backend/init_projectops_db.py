@@ -38,6 +38,8 @@ projects = [
         "linked_tickets": 11,
         "scope": "VM build, network policy, backup baseline, UAT support.",
         "progress": 63,
+        "start_date": "2026-05-18",
+        "end_date": "2026-06-30",
         "display_order": 1,
     },
     {
@@ -49,6 +51,8 @@ projects = [
         "linked_tickets": 7,
         "scope": "Firewall rule cleanup, expiry date, owner mapping and audit evidence.",
         "progress": 76,
+        "start_date": "2026-05-20",
+        "end_date": "2026-06-20",
         "display_order": 2,
     },
     {
@@ -60,6 +64,8 @@ projects = [
         "linked_tickets": 9,
         "scope": "Capacity review, retention cleanup, expansion planning and recovery test.",
         "progress": 94,
+        "start_date": "2026-05-25",
+        "end_date": "2026-07-05",
         "display_order": 3,
     },
 ]
@@ -76,10 +82,22 @@ with engine.begin() as conn:
             linked_tickets INTEGER NOT NULL DEFAULT 0,
             scope TEXT NOT NULL,
             progress INTEGER NOT NULL DEFAULT 0,
+            start_date DATE,
+            end_date DATE,
             display_order INTEGER NOT NULL DEFAULT 0,
             created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
             updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
         )
+    """))
+
+    conn.execute(text("""
+        ALTER TABLE projectops_projects
+        ADD COLUMN IF NOT EXISTS start_date DATE
+    """))
+
+    conn.execute(text("""
+        ALTER TABLE projectops_projects
+        ADD COLUMN IF NOT EXISTS end_date DATE
     """))
 
     conn.execute(text("TRUNCATE TABLE projectops_projects RESTART IDENTITY"))
@@ -88,9 +106,33 @@ with engine.begin() as conn:
         conn.execute(
             text("""
                 INSERT INTO projectops_projects
-                    (title, status, owner, budget_hours, actual_hours, linked_tickets, scope, progress, display_order)
+                    (
+                        title,
+                        status,
+                        owner,
+                        budget_hours,
+                        actual_hours,
+                        linked_tickets,
+                        scope,
+                        progress,
+                        start_date,
+                        end_date,
+                        display_order
+                    )
                 VALUES
-                    (:title, :status, :owner, :budget_hours, :actual_hours, :linked_tickets, :scope, :progress, :display_order)
+                    (
+                        :title,
+                        :status,
+                        :owner,
+                        :budget_hours,
+                        :actual_hours,
+                        :linked_tickets,
+                        :scope,
+                        :progress,
+                        :start_date,
+                        :end_date,
+                        :display_order
+                    )
             """),
             project,
         )
