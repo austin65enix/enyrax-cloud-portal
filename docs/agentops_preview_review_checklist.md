@@ -45,3 +45,15 @@ Preview data must pass review before use.
 Preview responses include a warning and quality notes.
 
 Preview is not production telemetry.
+
+## Preview Quality Guard
+
+Preview telemetry may include cumulative token totals.
+
+Unknown project/task/model values are expected when the parser cannot infer safely.
+
+Large token totals are flagged but not blocked.
+
+Preview data is not billing-grade cost data.
+
+Preview data is for operational insight only.
