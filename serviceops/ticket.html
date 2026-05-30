@@ -16,6 +16,7 @@
       --green: #8ff7b2;
       --orange: #ffb86b;
       --red: #ff6b86;
+      --purple: #b894ff;
     }
 
     * { box-sizing: border-box; }
@@ -186,6 +187,71 @@
     .waiting { color: #241203; background: var(--gold); }
     .blocked, .risk { color: #26060c; background: var(--red); }
     .archived, .deleted { color: #241203; background: var(--orange); }
+    .sla-low, .sla-normal { color: rgba(247,242,223,.78); background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.12); }
+    .sla-high { color: #241203; background: var(--gold); border: 1px solid rgba(245, 211, 122, .44); }
+    .sla-urgent { color: #26060c; background: var(--red); border: 1px solid rgba(255, 107, 134, .52); }
+    .sla-overdue { color: #26060c; background: var(--red); border: 1px solid rgba(255, 107, 134, .54); box-shadow: 0 0 20px rgba(255, 107, 134, .22); }
+    .sla-not-overdue { color: #062014; background: var(--green); border: 1px solid rgba(143, 247, 178, .38); }
+    .sla-blocked { color: #160a2b; background: var(--purple); border: 1px solid rgba(184, 148, 255, .5); }
+
+    .sla-panel {
+      border-color: rgba(245, 211, 122, .22);
+      background:
+        linear-gradient(180deg, rgba(245, 211, 122, .055), rgba(0,0,0,.12)),
+        rgba(0,0,0,.12);
+    }
+
+    .sla-display {
+      display: grid;
+      gap: 9px;
+    }
+
+    .sla-badge-row {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      flex-wrap: wrap;
+    }
+
+    .sla-fields {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .sla-field {
+      min-width: 0;
+      padding: 9px 10px;
+      border: 1px solid rgba(255,255,255,.095);
+      border-radius: 12px;
+      background: rgba(255,255,255,.04);
+    }
+
+    .sla-field .label { font-size: 10px; letter-spacing: .06em; }
+    .sla-field .value { margin-top: 5px; font-size: 12px; }
+
+    .sla-form {
+      display: grid;
+      gap: 10px;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(255,255,255,.08);
+    }
+
+    .sla-form.is-disabled select,
+    .sla-form.is-disabled input,
+    .sla-form.is-disabled textarea {
+      border-color: rgba(245, 211, 122, .16);
+      background: rgba(255,255,255,.035);
+      color: rgba(247,242,223,.58);
+      opacity: .82;
+    }
+
+    .sla-form.is-disabled .submit-btn {
+      opacity: .52;
+      cursor: not-allowed;
+      transform: none;
+    }
 
     .body-text {
       color: var(--text);
@@ -877,6 +943,7 @@
       .worklog-form-row { grid-template-columns: 1fr; }
       .task-context-grid { grid-template-columns: 1fr; }
       .linked-soc-grid { grid-template-columns: 1fr; }
+      .sla-fields { grid-template-columns: 1fr; }
       .linked-soc-head { align-items: stretch; }
       .linked-soc-actions,
       .linked-soc-actions .context-link { width: 100%; }
@@ -916,6 +983,38 @@
               <summary>Raw Task Detail</summary>
               <div class="body-text" id="ticket-task">Loading...</div>
             </details>
+          </section>
+
+          <section class="context-panel sla-panel" aria-label="ServiceOps SLA">
+            <div class="context-panel-head">
+              <div>
+                <div class="label">SLA / Due Date</div>
+                <h3>SLA Control</h3>
+              </div>
+            </div>
+            <div class="sla-display" id="sla-display"></div>
+            <form class="sla-form is-disabled" id="sla-form">
+              <label>
+                SLA Level
+                <select name="sla_level" disabled>
+                  <option value="low">Low</option>
+                  <option value="normal">Normal</option>
+                  <option value="high">High</option>
+                  <option value="urgent">Urgent</option>
+                </select>
+              </label>
+              <label>
+                Due At
+                <input name="due_at" type="datetime-local" disabled>
+              </label>
+              <label>
+                Blocked Reason
+                <textarea name="blocked_reason" maxlength="2000" placeholder="Optional blocker context" disabled></textarea>
+              </label>
+              <button class="submit-btn" type="submit" disabled>Update SLA</button>
+              <span class="message" id="sla-message"></span>
+              <div class="muted" id="sla-permission-note">Login with Operator / Supervisor / Admin to update SLA.</div>
+            </form>
           </section>
 
           <section class="context-panel" aria-label="Linked SOC Source Context">
@@ -1167,6 +1266,87 @@ Checked linked SOC incident, service status and recent worklog context.`
       } catch {
         return value;
       }
+    }
+
+    function slaLevel(item) {
+      const level = String((item && item.sla_level) || "normal").toLowerCase();
+      return ["low", "normal", "high", "urgent"].includes(level) ? level : "normal";
+    }
+
+    function isTicketOverdue(item) {
+      if (!item || !item.due_at || isArchivedOrDeletedTicket(item) || item.status === "done") return false;
+      const due = new Date(item.due_at);
+      if (Number.isNaN(due.getTime())) return false;
+      return Date.now() > due.getTime();
+    }
+
+    function toDatetimeLocalValue(value) {
+      if (!value) return "";
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return "";
+      const pad = (number) => String(number).padStart(2, "0");
+      return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+    }
+
+    function localDatetimeToIsoOffset(value) {
+      if (!value) return null;
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return null;
+      const pad = (number) => String(Math.abs(number)).padStart(2, "0");
+      const offsetMinutes = -date.getTimezoneOffset();
+      const sign = offsetMinutes >= 0 ? "+" : "-";
+      const hours = Math.trunc(Math.abs(offsetMinutes) / 60);
+      const minutes = Math.abs(offsetMinutes) % 60;
+      return `${value}:00${sign}${pad(hours)}:${pad(minutes)}`;
+    }
+
+    function renderSlaBadges(item) {
+      const level = slaLevel(item);
+      const overdue = isTicketOverdue(item);
+      const blocked = Boolean(String((item && item.blocked_reason) || "").trim());
+      return [
+        `<span class="pill sla-${escapeHtml(level)}">SLA ${escapeHtml(level.toUpperCase())}</span>`,
+        `<span class="pill ${overdue ? "sla-overdue" : "sla-not-overdue"}">${overdue ? "Overdue" : "Not overdue"}</span>`,
+        blocked ? `<span class="pill sla-blocked">Blocked</span>` : ""
+      ].filter(Boolean).join("");
+    }
+
+    function renderSlaPanel(item) {
+      const blockedReason = String((item && item.blocked_reason) || "").trim();
+      document.getElementById("sla-display").innerHTML = `
+        <div class="sla-badge-row">${renderSlaBadges(item)}</div>
+        <div class="sla-fields">
+          ${renderSlaField("SLA Level", slaLevel(item).toUpperCase())}
+          ${renderSlaField("Due At", formatTime(item.due_at))}
+          ${renderSlaField("Overdue", isTicketOverdue(item) ? "Overdue" : "Not overdue")}
+          ${renderSlaField("Blocked Reason", blockedReason || "-")}
+        </div>
+      `;
+      setSlaFormState(item);
+    }
+
+    function renderSlaField(label, value) {
+      return `
+        <div class="sla-field">
+          <div class="label">${escapeHtml(label)}</div>
+          <div class="value">${escapeHtml(value || "-")}</div>
+        </div>
+      `;
+    }
+
+    function setSlaFormState(item) {
+      const form = document.getElementById("sla-form");
+      const enabled = Boolean(item && !isArchivedOrDeletedTicket(item) && canWrite());
+      form.classList.toggle("is-disabled", !enabled);
+      form.elements.sla_level.value = slaLevel(item);
+      form.elements.due_at.value = toDatetimeLocalValue(item && item.due_at);
+      form.elements.blocked_reason.value = (item && item.blocked_reason) || "";
+      Array.from(form.elements).forEach((field) => {
+        if (field.name || field.type === "submit") field.disabled = !enabled;
+      });
+      document.getElementById("sla-permission-note").textContent = enabled
+        ? "Operator / Supervisor / Admin can update SLA."
+        : "Preview / Viewer cannot update SLA, and archived tickets must be restored first.";
     }
 
     function isArchivedOrDeletedTicket(item) {
@@ -1653,7 +1833,7 @@ Checked linked SOC incident, service status and recent worklog context.`
       document.title = `ENYRAX ServiceOps Ticket #${item.id}`;
       document.getElementById("ticket-kicker").textContent = `ServiceOps Ticket #${item.id}`;
       document.getElementById("ticket-title").textContent = item.title || `Ticket #${item.id}`;
-      document.getElementById("hero-status").innerHTML = `<span class="pill ${escapeHtml(status)}">${escapeHtml(statusLabel(status))}</span>`;
+      document.getElementById("hero-status").innerHTML = `<span class="pill ${escapeHtml(status)}">${escapeHtml(statusLabel(status))}</span>${renderSlaBadges(item)}`;
       document.getElementById("ticket-task").textContent = item.task || "-";
       document.getElementById("ticket-task-fields").innerHTML = renderTaskContextFields(item);
 
@@ -1661,6 +1841,10 @@ Checked linked SOC incident, service status and recent worklog context.`
         renderSummaryCard("Status", statusLabel(status)),
         renderSummaryCard("Created At", formatTime(item.created_at)),
         renderSummaryCard("Updated At", formatTime(item.updated_at)),
+        renderSummaryCard("SLA Level", slaLevel(item).toUpperCase()),
+        renderSummaryCard("Due At", formatTime(item.due_at)),
+        renderSummaryCard("Overdue", isTicketOverdue(item) ? "Overdue" : "Not overdue"),
+        renderSummaryCard("Blocked Reason", item.blocked_reason),
         renderSummaryCard("Owner", item.owner),
         renderSummaryCard("Project", item.project),
         renderSummaryCard("Estimate / Actual Hours", `${item.estimate_hours ?? "-"}h / ${item.actual_hours ?? "-"}h`),
@@ -1684,6 +1868,7 @@ Checked linked SOC incident, service status and recent worklog context.`
       }
 
       renderLinkedSocContext(item);
+      renderSlaPanel(item);
       renderActions(item);
       renderWorklogComposer(item);
       loadWorklogEntries(item.id);
@@ -1780,6 +1965,35 @@ Checked linked SOC incident, service status and recent worklog context.`
         method: "PUT",
         headers: window.ENYRAXRole ? window.ENYRAXRole.header() : {}
       }, "Restore failed").catch((err) => alert(err.message));
+    }
+
+    async function updateTicketSla(event) {
+      event.preventDefault();
+      if (!currentTicket || !canWrite() || isArchivedOrDeletedTicket(currentTicket)) return showWriteLoginRequired();
+
+      const form = event.currentTarget;
+      const message = document.getElementById("sla-message");
+      const payload = {
+        sla_level: form.elements.sla_level.value,
+        due_at: localDatetimeToIsoOffset(form.elements.due_at.value),
+        blocked_reason: form.elements.blocked_reason.value.trim() || null
+      };
+
+      message.textContent = "Updating...";
+      message.style.color = "rgba(247,242,223,.68)";
+
+      try {
+        await apiUpdate(`/api/serviceops/tickets/${currentTicket.id}/sla`, {
+          method: "PUT",
+          headers: window.ENYRAXRole ? window.ENYRAXRole.jsonHeaders() : { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        }, "SLA update failed");
+        message.textContent = "Updated.";
+        message.style.color = "#8ff7b2";
+      } catch (err) {
+        message.textContent = err.message;
+        message.style.color = "#ff6b86";
+      }
     }
 
     async function updateTicketProgress(event) {
@@ -1891,6 +2105,7 @@ Checked linked SOC incident, service status and recent worklog context.`
     }
 
     document.getElementById("progress-form").addEventListener("submit", updateTicketProgress);
+    document.getElementById("sla-form").addEventListener("submit", updateTicketSla);
     document.getElementById("worklog-form").addEventListener("submit", addWorklogEntry);
     document.getElementById("worklog-filter-row").addEventListener("click", handleWorklogFilterClick);
     document.getElementById("worklog-template-row").addEventListener("click", handleWorklogTemplateClick);

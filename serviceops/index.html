@@ -186,6 +186,51 @@
       background: rgba(255, 184, 107, .055);
     }
 
+    .ticket.is-overdue {
+      border-color: rgba(255, 107, 134, .46);
+      box-shadow: 0 0 0 1px rgba(255, 107, 134, .08), 0 0 28px rgba(255, 107, 134, .12);
+    }
+
+    .sla-row {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      flex-wrap: wrap;
+      margin: 8px 0 2px;
+    }
+
+    .sla-badge {
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      border: 1px solid rgba(255,255,255,.14);
+      border-radius: 999px;
+      padding: 4px 8px;
+      color: var(--muted);
+      background: rgba(255,255,255,.055);
+      font-size: 10px;
+      font-weight: 950;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .sla-low,
+    .sla-normal { color: rgba(247,242,223,.74); background: rgba(255,255,255,.06); }
+    .sla-high { color: #241203; background: var(--gold); border-color: rgba(245, 211, 122, .44); }
+    .sla-urgent { color: #26060c; background: var(--red); border-color: rgba(255, 107, 134, .52); }
+    .sla-overdue { color: #26060c; background: var(--red); border-color: rgba(255, 107, 134, .54); box-shadow: 0 0 18px rgba(255, 107, 134, .22); }
+    .sla-blocked { color: #160a2b; background: var(--purple); border-color: rgba(184, 148, 255, .5); }
+
+    .blocked-line {
+      margin-top: 5px;
+      color: rgba(247,242,223,.82);
+      font-size: 13px;
+      font-weight: 850;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
     .title {
       font-size: 16px;
       font-weight: 950;
@@ -837,6 +882,39 @@
       }
     }
 
+    function slaLevel(item) {
+      const level = String((item && item.sla_level) || "normal").toLowerCase();
+      return ["low", "normal", "high", "urgent"].includes(level) ? level : "normal";
+    }
+
+    function isTicketOverdue(item) {
+      if (!item || !item.due_at || isArchivedOrDeletedTicket(item) || item.status === "done") return false;
+      const due = new Date(item.due_at);
+      if (Number.isNaN(due.getTime())) return false;
+      return Date.now() > due.getTime();
+    }
+
+    function renderSlaInfo(item) {
+      if (!item) return "";
+      const level = slaLevel(item);
+      const overdue = isTicketOverdue(item);
+      const blocked = Boolean(String(item.blocked_reason || "").trim());
+      const badges = [
+        `<span class="sla-badge sla-${escapeHtml(level)}">SLA ${escapeHtml(level.toUpperCase())}</span>`
+      ];
+
+      if (overdue) badges.push(`<span class="sla-badge sla-overdue">OVERDUE</span>`);
+      if (blocked) badges.push(`<span class="sla-badge sla-blocked">BLOCKED</span>`);
+
+      return `
+        <div class="sla-row">
+          ${badges.join("")}
+          <span>Due: ${escapeHtml(formatTime(item.due_at))}</span>
+        </div>
+        ${blocked ? `<div class="blocked-line">Blocked: ${escapeHtml(item.blocked_reason)}</div>` : ""}
+      `;
+    }
+
     function ticketCreatedAt(item) {
       if (!item || !item.created_at) return null;
 
@@ -1164,7 +1242,7 @@
         } else {
           queue.innerHTML = tickets.map((item) => {
             return `
-              <div class="ticket">
+              <div class="ticket${isTicketOverdue(item) ? " is-overdue" : ""}">
                 <div class="ticket-top">
                   <div class="title">${escapeHtml(item.title)}${renderNewBadge(item)}</div>
                   <div class="pill ${escapeHtml(item.status)}">${escapeHtml(statusLabel(item.status))}</div>
@@ -1174,6 +1252,7 @@
                   Owner: ${escapeHtml(item.owner)} · Project: ${escapeHtml(item.project)}<br>
                   Estimate: ${escapeHtml(item.estimate_hours)}h · Actual: ${escapeHtml(item.actual_hours)}h<br>
                   Task: ${escapeHtml(item.task)}
+                  ${renderSlaInfo(item)}
                   ${renderLinkedSocContext(item)}
                   ${renderProgressInfo(item)}
                 </div>
