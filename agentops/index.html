@@ -216,6 +216,8 @@
       color: #ffd5dc;
     }
 
+    .inference-notice,
+    .project-overconfidence-hint,
     .quality-notes {
       display: none;
       margin: 0 0 18px;
@@ -225,8 +227,28 @@
       padding: 13px 15px;
     }
 
+    .inference-notice.active,
+    .project-overconfidence-hint.active,
     .quality-notes.active { display: block; }
 
+    .inference-notice {
+      border-color: rgba(255, 209, 102, .42);
+      background:
+        linear-gradient(135deg, rgba(255, 209, 102, .1), rgba(245, 211, 122, .045)),
+        rgba(255, 255, 255, .025);
+    }
+
+    .project-overconfidence-hint {
+      margin-top: -8px;
+      border-color: rgba(245, 211, 122, .26);
+      background: rgba(245, 211, 122, .045);
+      color: var(--muted-strong);
+      font-size: 13px;
+      font-weight: 800;
+      line-height: 1.45;
+    }
+
+    .inference-notice strong,
     .quality-notes strong {
       display: block;
       color: var(--amber);
@@ -234,6 +256,14 @@
       font-weight: 950;
       letter-spacing: .08em;
       text-transform: uppercase;
+    }
+
+    .inference-notice p {
+      margin: 8px 0 0;
+      color: var(--muted-strong);
+      font-size: 13px;
+      font-weight: 800;
+      line-height: 1.5;
     }
 
     .quality-notes ul {
@@ -268,6 +298,14 @@
       margin-top: 10px;
       color: var(--amber);
       font-size: 24px;
+    }
+
+    .quality-helper {
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 750;
+      line-height: 1.35;
     }
 
     .quality-badges {
@@ -606,7 +644,234 @@
       font-weight: 800;
     }
 
+    .preview-dashboard {
+      margin: 0 0 24px;
+      border: 1px solid rgba(115, 244, 223, .2);
+      border-radius: 24px;
+      background:
+        linear-gradient(145deg, rgba(115, 244, 223, .065), rgba(184, 148, 255, .045)),
+        rgba(12, 15, 34, .74);
+      box-shadow: 0 22px 76px rgba(0, 0, 0, .22);
+      padding: 20px;
+    }
+
+    .preview-dashboard-head {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .preview-dashboard h2 {
+      font-size: clamp(26px, 4vw, 38px);
+    }
+
+    .preview-dashboard .subtitle {
+      max-width: 920px;
+      font-size: 16px;
+    }
+
+    .dashboard-description,
+    .dashboard-zh-note {
+      max-width: 960px;
+      margin: 0;
+      color: var(--muted-strong);
+      font-size: 14px;
+      line-height: 1.55;
+    }
+
+    .dashboard-zh-note {
+      color: var(--muted);
+    }
+
+    .dashboard-warning {
+      border: 1px solid rgba(255, 209, 102, .32);
+      border-radius: 16px;
+      color: var(--amber);
+      background: rgba(255, 209, 102, .07);
+      padding: 13px 15px;
+      font-size: 13px;
+      font-weight: 850;
+      line-height: 1.45;
+    }
+
+    .preview-kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 10px;
+      margin: 18px 0;
+    }
+
+    .preview-kpi-card {
+      min-height: 116px;
+      border: 1px solid rgba(255, 255, 255, .11);
+      border-radius: 16px;
+      background: rgba(255, 255, 255, .04);
+      padding: 13px;
+    }
+
+    .preview-kpi-card strong {
+      display: block;
+      margin-top: 12px;
+      color: var(--gold);
+      font-size: 24px;
+      font-weight: 950;
+      line-height: 1.05;
+      overflow-wrap: anywhere;
+    }
+
+    .preview-kpi-card span {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 950;
+      letter-spacing: .07em;
+      line-height: 1.25;
+      text-transform: uppercase;
+    }
+
+    .preview-kpi-card p {
+      margin: 9px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 750;
+      line-height: 1.35;
+    }
+
+    .preview-chart-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 16px;
+    }
+
+    .preview-chart-card {
+      border: 1px solid rgba(255, 255, 255, .11);
+      border-radius: 18px;
+      background: rgba(255, 255, 255, .035);
+      padding: 15px;
+      min-width: 0;
+    }
+
+    .preview-chart-card h3 {
+      margin: 0;
+      color: var(--text);
+      font-size: 16px;
+      line-height: 1.2;
+    }
+
+    .preview-bar {
+      margin-top: 14px;
+    }
+
+    .preview-bar-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      color: var(--muted-strong);
+      font-size: 13px;
+      font-weight: 900;
+    }
+
+    .preview-bar-track {
+      height: 12px;
+      margin-top: 9px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, .08);
+      overflow: hidden;
+    }
+
+    .preview-bar-fill {
+      height: 100%;
+      width: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--cyan), var(--violet));
+    }
+
+    .preview-note {
+      margin: 12px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 750;
+      line-height: 1.45;
+    }
+
+    .token-compare {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .token-box,
+    .health-item {
+      border: 1px solid rgba(115, 244, 223, .13);
+      border-radius: 12px;
+      background: rgba(115, 244, 223, .035);
+      padding: 10px;
+    }
+
+    .token-box span,
+    .health-item span {
+      display: block;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 950;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+
+    .token-box strong,
+    .health-item strong {
+      display: block;
+      margin-top: 8px;
+      color: var(--cyan);
+      font-size: 16px;
+      line-height: 1.15;
+      overflow-wrap: anywhere;
+    }
+
+    .health-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .metric-semantics {
+      margin-top: 16px;
+      border: 1px solid rgba(184, 148, 255, .2);
+      border-radius: 18px;
+      background: rgba(184, 148, 255, .045);
+      padding: 15px;
+    }
+
+    .metric-semantics h3 {
+      margin: 0 0 10px;
+      font-size: 16px;
+    }
+
+    .metric-semantics ul {
+      margin: 0;
+      padding-left: 18px;
+      color: var(--muted-strong);
+      font-size: 13px;
+      font-weight: 750;
+      line-height: 1.55;
+    }
+
     @media (max-width: 1100px) {
+      .preview-kpi-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .preview-chart-grid { grid-template-columns: 1fr; }
+
+      .preview-kpi-grid,
+      .health-grid,
+      .token-compare { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+      .preview-kpi-grid,
+      .health-grid,
+      .token-compare { grid-template-columns: 1fr; }
+
       .summary-grid,
       .quality-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
       .dashboard-grid { grid-template-columns: 1fr; }
@@ -619,6 +884,17 @@
       }
 
       .hero { grid-template-columns: 1fr; }
+      .preview-kpi-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .preview-chart-grid { grid-template-columns: 1fr; }
+
+      .preview-kpi-grid,
+      .health-grid,
+      .token-compare { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+      .preview-kpi-grid,
+      .health-grid,
+      .token-compare { grid-template-columns: 1fr; }
+
       .summary-grid,
       .quality-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .row-stats,
@@ -628,6 +904,17 @@
     }
 
     @media (max-width: 520px) {
+      .preview-kpi-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .preview-chart-grid { grid-template-columns: 1fr; }
+
+      .preview-kpi-grid,
+      .health-grid,
+      .token-compare { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+      .preview-kpi-grid,
+      .health-grid,
+      .token-compare { grid-template-columns: 1fr; }
+
       .summary-grid,
       .quality-grid,
       .row-stats,
@@ -639,6 +926,492 @@
       .run-top { grid-template-columns: 1fr; }
       .status-badge { width: fit-content; }
     }
+    @media (max-width: 1100px) {
+      .preview-kpi-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .preview-chart-grid { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 760px) {
+      .preview-kpi-grid,
+      .health-grid,
+      .token-compare { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .preview-dashboard { padding: 16px; }
+    }
+
+    @media (max-width: 520px) {
+      .preview-kpi-grid,
+      .health-grid,
+      .token-compare { grid-template-columns: 1fr; }
+    }
+
+    .preview-kpi-card strong,
+    .token-box strong,
+    .health-item strong {
+      word-break: normal;
+      overflow-wrap: anywhere;
+    }
+
+    .preview-kpi-card strong {
+      font-size: clamp(20px, 2.4vw, 24px);
+    }
+
+    .dashboard-warning {
+      max-width: 980px;
+    }
+
+    .preview-bar-top {
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
+
+    .preview-bar-top span {
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+
+    .preview-chart-card {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .metric-semantics {
+      max-width: 980px;
+    }
+
+    .metric-semantics li + li {
+      margin-top: 5px;
+    }
+
+    @media (max-width: 760px) {
+      .preview-dashboard-head { gap: 10px; }
+      .dashboard-warning { padding: 12px; }
+      .preview-kpi-card { min-height: 104px; }
+    }
+
+    @media (max-width: 520px) {
+      .preview-dashboard { padding: 14px; }
+      .preview-chart-card { padding: 13px; }
+      .preview-kpi-card strong { font-size: 21px; }
+      .token-box strong,
+      .health-item strong { font-size: 15px; }
+    }
+
+    .trend-snapshot {
+      margin-top: 16px;
+      border: 1px solid rgba(115, 244, 223, .18);
+      border-radius: 18px;
+      background: rgba(7, 12, 28, .42);
+      padding: 15px;
+    }
+
+    .trend-head {
+      display: grid;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .trend-head h3 {
+      margin: 0;
+      color: var(--text);
+      font-size: 17px;
+      line-height: 1.2;
+    }
+
+    .trend-head p {
+      max-width: 940px;
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 750;
+      line-height: 1.45;
+    }
+
+    .trend-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .trend-card {
+      border: 1px solid rgba(255, 255, 255, .1);
+      border-radius: 15px;
+      background: rgba(255, 255, 255, .035);
+      padding: 13px;
+      min-width: 0;
+    }
+
+    .trend-card h4 {
+      margin: 0 0 6px;
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1.2;
+    }
+
+    .trend-card p {
+      margin: 0 0 12px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 750;
+      line-height: 1.4;
+    }
+
+    .trend-rows {
+      display: grid;
+      gap: 8px;
+    }
+
+    .trend-row {
+      display: grid;
+      grid-template-columns: 54px minmax(0, 1fr) auto;
+      gap: 9px;
+      align-items: center;
+      color: var(--muted-strong);
+      font-size: 12px;
+      font-weight: 850;
+    }
+
+    .trend-track {
+      min-width: 0;
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, .08);
+      overflow: hidden;
+    }
+
+    .trend-fill {
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--cyan), var(--violet));
+    }
+
+    .trend-value {
+      color: var(--cyan);
+      overflow-wrap: anywhere;
+      text-align: right;
+    }
+
+    .trend-status-list,
+    .coverage-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .trend-status-item,
+    .coverage-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      border: 1px solid rgba(115, 244, 223, .12);
+      border-radius: 12px;
+      background: rgba(115, 244, 223, .035);
+      padding: 9px 10px;
+      color: var(--muted-strong);
+      font-size: 12px;
+      font-weight: 850;
+    }
+
+    .trend-status-item strong,
+    .coverage-item strong {
+      color: var(--green);
+      overflow-wrap: anywhere;
+      text-align: right;
+    }
+
+    .trend-note {
+      margin-top: 12px;
+      border: 1px solid rgba(255, 209, 102, .22);
+      border-radius: 14px;
+      background: rgba(255, 209, 102, .055);
+      color: var(--muted-strong);
+      padding: 11px 12px;
+      font-size: 12px;
+      font-weight: 750;
+      line-height: 1.45;
+    }
+
+    @media (max-width: 760px) {
+      .trend-grid { grid-template-columns: 1fr; }
+      .trend-row { grid-template-columns: 48px minmax(0, 1fr) auto; }
+    }
+
+    @media (max-width: 520px) {
+      .trend-snapshot { padding: 13px; }
+      .trend-row { grid-template-columns: 1fr; gap: 6px; }
+      .trend-value { text-align: left; }
+      .trend-status-item,
+      .coverage-item { align-items: flex-start; flex-direction: column; }
+      .trend-status-item strong,
+      .coverage-item strong { text-align: left; }
+    }
+
+    .release-score {
+      margin-top: 16px;
+      border: 1px solid rgba(143, 247, 178, .22);
+      border-radius: 18px;
+      background:
+        linear-gradient(135deg, rgba(143, 247, 178, .075), rgba(115, 244, 223, .035)),
+        rgba(7, 12, 28, .44);
+      padding: 15px;
+    }
+
+    .release-score-grid {
+      display: grid;
+      grid-template-columns: minmax(220px, .42fr) minmax(0, .58fr);
+      gap: 14px;
+      align-items: stretch;
+    }
+
+    .release-score-main {
+      border: 1px solid rgba(143, 247, 178, .18);
+      border-radius: 16px;
+      background: rgba(143, 247, 178, .055);
+      padding: 14px;
+    }
+
+    .release-score-main h3 {
+      margin: 0;
+      color: var(--text);
+      font-size: 18px;
+      line-height: 1.2;
+    }
+
+    .score-value {
+      margin-top: 16px;
+      color: var(--green);
+      font-size: clamp(40px, 6vw, 58px);
+      font-weight: 950;
+      line-height: .95;
+      overflow-wrap: anywhere;
+    }
+
+    .score-status {
+      display: inline-flex;
+      width: fit-content;
+      min-height: 28px;
+      align-items: center;
+      margin-top: 12px;
+      border: 1px solid rgba(143, 247, 178, .35);
+      border-radius: 999px;
+      color: var(--green);
+      background: rgba(143, 247, 178, .08);
+      padding: 7px 10px;
+      font-size: 11px;
+      font-weight: 950;
+      text-transform: uppercase;
+    }
+
+    .score-label {
+      margin-top: 10px;
+      color: var(--muted-strong);
+      font-size: 13px;
+      font-weight: 850;
+    }
+
+    .score-note {
+      margin: 12px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 750;
+      line-height: 1.45;
+    }
+
+    .score-breakdown {
+      display: grid;
+      gap: 8px;
+    }
+
+    .score-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: center;
+      border: 1px solid rgba(255, 255, 255, .1);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, .035);
+      padding: 9px 10px;
+    }
+
+    .score-row span {
+      min-width: 0;
+      color: var(--muted-strong);
+      font-size: 12px;
+      font-weight: 850;
+      overflow-wrap: anywhere;
+    }
+
+    .score-row strong {
+      color: var(--green);
+      font-size: 12px;
+      font-weight: 950;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .score-row.caution strong {
+      color: var(--amber);
+    }
+
+    @media (max-width: 760px) {
+      .release-score-grid { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 520px) {
+      .release-score { padding: 13px; }
+      .score-row { grid-template-columns: 1fr; }
+      .score-row strong { text-align: left; white-space: normal; }
+    }
+
+    .risk-anomaly {
+      margin-top: 16px;
+      border: 1px solid rgba(255, 209, 102, .22);
+      border-radius: 18px;
+      background:
+        linear-gradient(135deg, rgba(255, 209, 102, .075), rgba(115, 244, 223, .028)),
+        rgba(7, 12, 28, .44);
+      padding: 15px;
+    }
+
+    .risk-grid {
+      display: grid;
+      grid-template-columns: minmax(230px, .35fr) minmax(0, .65fr);
+      gap: 14px;
+      align-items: start;
+    }
+
+    .risk-summary-card {
+      border: 1px solid rgba(255, 209, 102, .2);
+      border-radius: 16px;
+      background: rgba(255, 209, 102, .055);
+      padding: 14px;
+    }
+
+    .risk-summary-card h3 {
+      margin: 0;
+      color: var(--text);
+      font-size: 18px;
+      line-height: 1.2;
+    }
+
+    .risk-level {
+      margin-top: 14px;
+      color: var(--green);
+      font-size: clamp(34px, 5vw, 50px);
+      font-weight: 950;
+      line-height: 1;
+    }
+
+    .risk-status {
+      margin-top: 10px;
+      color: var(--muted-strong);
+      font-size: 13px;
+      font-weight: 850;
+      line-height: 1.35;
+    }
+
+    .risk-counts {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 13px;
+    }
+
+    .risk-count {
+      border: 1px solid rgba(255, 255, 255, .1);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, .035);
+      padding: 9px;
+    }
+
+    .risk-count span {
+      display: block;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 950;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+
+    .risk-count strong {
+      display: block;
+      margin-top: 7px;
+      color: var(--cyan);
+      font-size: 20px;
+      line-height: 1.1;
+    }
+
+    .risk-note {
+      margin: 12px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 750;
+      line-height: 1.45;
+    }
+
+    .risk-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .risk-item {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: start;
+      border: 1px solid rgba(255, 255, 255, .1);
+      border-radius: 13px;
+      background: rgba(255, 255, 255, .035);
+      padding: 10px;
+    }
+
+    .risk-item-title {
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 950;
+      line-height: 1.25;
+    }
+
+    .risk-item-meta {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 750;
+      line-height: 1.35;
+    }
+
+    .risk-badge {
+      display: inline-flex;
+      width: fit-content;
+      min-height: 26px;
+      align-items: center;
+      border: 1px solid rgba(143, 247, 178, .3);
+      border-radius: 999px;
+      color: var(--green);
+      background: rgba(143, 247, 178, .075);
+      padding: 6px 9px;
+      font-size: 11px;
+      font-weight: 950;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .risk-badge.caution {
+      border-color: rgba(255, 209, 102, .35);
+      color: var(--amber);
+      background: rgba(255, 209, 102, .08);
+    }
+
+    @media (max-width: 880px) {
+      .risk-grid { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 520px) {
+      .risk-anomaly { padding: 13px; }
+      .risk-counts { grid-template-columns: 1fr; }
+      .risk-item { grid-template-columns: 1fr; }
+      .risk-badge { white-space: normal; }
+    }
+
   </style>
 </head>
 <body>
@@ -664,14 +1437,206 @@
           </div>
         </div>
       </aside>
-    </section>
 
+    <div class="inference-notice" id="inference-notice" aria-live="polite"></div>
     <div class="notice" id="warning-message" role="status"></div>
     <div class="quality-notes" id="quality-notes" aria-live="polite"></div>
     <div class="notice error" id="error-message" role="alert"></div>
 
+    <section class="preview-dashboard" aria-labelledby="preview-dashboard-title">
+      <div class="preview-dashboard-head">
+        <span class="kicker">Safety-reviewed preview</span>
+        <div>
+          <h2 id="preview-dashboard-title">AgentOps Preview Dashboard</h2>
+          <p class="subtitle">Observe AI agent work records, token usage, preview review quality, and safe metadata classification.</p>
+        </div>
+        <p class="dashboard-description">AgentOps summarizes AI agent / Codex work records using safe metadata and preview review checks. It helps operators understand work volume, token usage estimates, classification coverage, schema safety, and potential quality risks without inspecting prompt or response content.</p>
+        <p class="dashboard-zh-note">AgentOps 用來觀察 AI Agent / Codex 工作紀錄，整理任務量、Token 使用量、Review 結果、分類覆蓋率與安全邊界。它不是用來讀取 prompt / response 內容，而是用安全 metadata 建立 AI 工作流可觀測性。</p>
+        <div class="dashboard-warning">Project and task values are operational metadata. Token values are operational estimates and are not billing-grade cost data.</div>
+      </div>
+
+      <div class="preview-kpi-grid" aria-label="AgentOps Preview Dashboard KPI Cards">
+        <article class="preview-kpi-card"><span>Preview Records</span><strong>50</strong><p>Preview sample size, not all historical sessions.</p></article>
+        <article class="preview-kpi-card"><span>Review Status</span><strong>passed</strong><p>Must remain passed before release.</p></article>
+        <article class="preview-kpi-card"><span>Total Tokens</span><strong>50,078,459</strong><p>Normalized operational estimate, not billing-grade cost data.</p></article>
+        <article class="preview-kpi-card"><span>Project Coverage</span><strong>100%</strong><p>Pipeline-level metadata classification coverage.</p></article>
+        <article class="preview-kpi-card"><span>Task Coverage</span><strong>100%</strong><p>Pipeline-level metadata classification coverage.</p></article>
+        <article class="preview-kpi-card"><span>Unknown Models</span><strong>0</strong><p>Records missing model metadata should stay low.</p></article>
+        <article class="preview-kpi-card"><span>Zero Token Records</span><strong>0</strong><p>May indicate missing usage metadata.</p></article>
+        <article class="preview-kpi-card"><span>Forbidden Hits</span><strong>0</strong><p>Must remain zero.</p></article>
+        <article class="preview-kpi-card"><span>Extra Fields</span><strong>0</strong><p>Unexpected schema fields should remain zero.</p></article>
+        <article class="preview-kpi-card"><span>Token Normalization Reduction</span><strong>approx. 95.3%</strong><p>Operational estimate only.</p></article>
+      </div>
+
+      <div class="preview-chart-grid">
+        <article class="preview-chart-card">
+          <h3>Project Distribution</h3>
+          <div class="preview-bar">
+            <div class="preview-bar-top"><span>AgentOps</span><strong>50</strong></div>
+            <div class="preview-bar-track" aria-hidden="true"><div class="preview-bar-fill"></div></div>
+          </div>
+          <p class="preview-note">This is pipeline-level operational classification based on safe metadata, not authoritative session-content-level project classification.</p>
+        </article>
+
+        <article class="preview-chart-card">
+          <h3>Task Distribution</h3>
+          <div class="preview-bar">
+            <div class="preview-bar-top"><span>AgentOps Preview Generation</span><strong>50</strong></div>
+            <div class="preview-bar-track" aria-hidden="true"><div class="preview-bar-fill"></div></div>
+          </div>
+          <p class="preview-note">This is pipeline-level operational task classification, not authoritative session-content-level task classification.</p>
+        </article>
+
+        <article class="preview-chart-card">
+          <h3>Token Normalization Summary</h3>
+          <div class="token-compare">
+            <div class="token-box"><span>Original total_tokens</span><strong>1,058,156,153</strong></div>
+            <div class="token-box"><span>Normalized total_tokens</span><strong>50,078,459</strong></div>
+            <div class="token-box"><span>Normalized value</span><strong>about 4.7%</strong></div>
+            <div class="token-box"><span>Reduction</span><strong>about 95.3%</strong></div>
+          </div>
+          <p class="preview-note">Token normalization reduces cumulative snapshot overcounting risk. Token values remain operational estimates, not billing-grade cost data.</p>
+        </article>
+
+        <article class="preview-chart-card">
+          <h3>Review Health Summary</h3>
+          <div class="health-grid">
+            <div class="health-item"><span>Review status</span><strong>passed</strong></div>
+            <div class="health-item"><span>Forbidden hits</span><strong>0</strong></div>
+            <div class="health-item"><span>Extra fields</span><strong>0</strong></div>
+            <div class="health-item"><span>Unknown models</span><strong>0</strong></div>
+            <div class="health-item"><span>Zero token records</span><strong>0</strong></div>
+          </div>
+          <p class="preview-note">Review health indicates whether preview output is safe to present. Review passed does not mean content-level correctness of every underlying session.</p>
+        </article>
+      </div>
+
+      <div class="metric-semantics">
+        <h3>Metric Semantics</h3>
+        <ul>
+          <li>records = current preview records count.</li>
+          <li>total_tokens = normalized operational token estimate.</li>
+          <li>project coverage = non-unknown project_name ratio.</li>
+          <li>task coverage = non-unknown task_name ratio.</li>
+          <li>coverage does not equal content-level classification accuracy; high coverage can still be pipeline-level classification.</li>
+          <li>token values are not billing-grade cost data.</li>
+          <li>content-based inference remains prohibited.</li>
+        </ul>
+      </div>
+
+      <section class="release-score" aria-labelledby="release-quality-title">
+        <div class="release-score-grid">
+          <div class="release-score-main">
+            <h3 id="release-quality-title">Release Quality Score</h3>
+            <div class="score-value">98 / 100</div>
+            <div class="score-status">Ready for preview</div>
+            <div class="score-label">Preview release readiness</div>
+            <p class="score-note">This score represents preview release readiness. It is not an AI answer quality score, not session-content-level correctness, and not billing-grade. It is based on operational metadata, review health, schema safety, metadata coverage, and token sanity signals.</p>
+          </div>
+
+          <div class="score-breakdown" aria-label="Release Quality Score breakdown">
+            <div class="score-row"><span>Review Passed</span><strong>strong positive</strong></div>
+            <div class="score-row"><span>Forbidden Hits</span><strong>0</strong></div>
+            <div class="score-row"><span>Extra Fields</span><strong>0</strong></div>
+            <div class="score-row"><span>Unknown Models</span><strong>0</strong></div>
+            <div class="score-row"><span>Zero Token Records</span><strong>0</strong></div>
+            <div class="score-row"><span>Project Coverage</span><strong>100%</strong></div>
+            <div class="score-row"><span>Task Coverage</span><strong>100%</strong></div>
+            <div class="score-row caution"><span>Token Estimate Caution</span><strong>active</strong></div>
+            <div class="score-row caution"><span>Content-based inference</span><strong>prohibited</strong></div>
+          </div>
+        </div>
+        <p class="score-note">Release Quality Score is a dashboard-level readiness indicator for AgentOps preview data. It measures whether the preview output is safe and clear enough to present. It does not evaluate the semantic correctness of every underlying AI session.</p>
+      </section>
+
+      <section class="risk-anomaly" aria-labelledby="risk-anomaly-title">
+        <div class="risk-grid">
+          <div class="risk-summary-card">
+            <h3 id="risk-anomaly-title">Risk &amp; Anomaly Detection</h3>
+            <div class="risk-level">Low</div>
+            <div class="risk-status">No blocking preview risks detected. Ready for preview with semantic cautions.</div>
+            <div class="risk-counts">
+              <div class="risk-count"><span>Blocking Risks</span><strong>0</strong></div>
+              <div class="risk-count"><span>Caution Items</span><strong>3</strong></div>
+            </div>
+            <p class="risk-note">Rule-based preview risk indicators are based on review metrics, schema checks, token sanity, and metadata coverage. They do not inspect prompt / response content and do not evaluate AI answer quality or session-content correctness.</p>
+          </div>
+
+          <div class="risk-list" aria-label="Rule-based preview risk indicators">
+            <article class="risk-item"><div><div class="risk-item-title">Review Failure Risk</div><div class="risk-item-meta">Review Status: passed. Preview review must pass before presentation.</div></div><span class="risk-badge">low</span></article>
+            <article class="risk-item"><div><div class="risk-item-title">Forbidden Hits Risk</div><div class="risk-item-meta">Forbidden Hits: 0. Forbidden hits must remain zero.</div></div><span class="risk-badge">low</span></article>
+            <article class="risk-item"><div><div class="risk-item-title">Schema Drift Risk</div><div class="risk-item-meta">Extra Fields: 0. Unexpected schema fields should be reviewed before release.</div></div><span class="risk-badge">low</span></article>
+            <article class="risk-item"><div><div class="risk-item-title">Unknown Model Risk</div><div class="risk-item-meta">Unknown Models: 0. Unknown models reduce observability.</div></div><span class="risk-badge">low</span></article>
+            <article class="risk-item"><div><div class="risk-item-title">Zero Token Records Risk</div><div class="risk-item-meta">Zero Token Records: 0. Zero token records may indicate missing usage metadata.</div></div><span class="risk-badge">low</span></article>
+            <article class="risk-item"><div><div class="risk-item-title">Token Overcounting / Estimate Risk</div><div class="risk-item-meta">Token Normalization: approx. 95.3% reduction. Normalization reduced cumulative overcounting risk, but token values remain operational estimates and not billing-grade cost detection.</div></div><span class="risk-badge caution">caution</span></article>
+            <article class="risk-item"><div><div class="risk-item-title">Classification Semantics Risk</div><div class="risk-item-meta">Project Coverage: 100%. Task Coverage: 100%. Classification is pipeline-level operational metadata, not authoritative session-content-level labeling.</div></div><span class="risk-badge caution">caution</span></article>
+            <article class="risk-item"><div><div class="risk-item-title">Trend Sample Data Risk</div><div class="risk-item-meta">Trend Data: dashboard preview sample. Trend snapshot is not full historical telemetry.</div></div><span class="risk-badge caution">caution</span></article>
+          </div>
+        </div>
+        <p class="risk-note">Risk &amp; anomaly indicators are dashboard-level operational checks. They are rule-based, explainable, and derived from preview review metrics, schema health, token sanity, metadata coverage, and dashboard sample status. They are not AI answer quality, not session-content-level correctness, not billing-grade cost detection, and content-based inference remains prohibited.</p>
+      </section>
+
+      <section class="trend-snapshot" aria-labelledby="trend-snapshot-title">
+        <div class="trend-head">
+          <h3 id="trend-snapshot-title">AgentOps Trend Snapshot</h3>
+          <p>Sample trend for dashboard preview. Not a full historical dataset. Token values are operational estimates, not billing-grade cost data.</p>
+          <p>Trend metrics are dashboard-level operational indicators. This first version uses static preview trend data to show how AgentOps can present work volume, token usage estimates, review health, and classification coverage over time.</p>
+        </div>
+
+        <div class="trend-grid">
+          <article class="trend-card">
+            <h4>Daily Records</h4>
+            <p>Shows the growth of AI agent work records included in preview observations.</p>
+            <div class="trend-rows">
+              <div class="trend-row"><span>Day 1</span><div class="trend-track"><div class="trend-fill" style="width:24%"></div></div><span class="trend-value">12</span></div>
+              <div class="trend-row"><span>Day 2</span><div class="trend-track"><div class="trend-fill" style="width:36%"></div></div><span class="trend-value">18</span></div>
+              <div class="trend-row"><span>Day 3</span><div class="trend-track"><div class="trend-fill" style="width:48%"></div></div><span class="trend-value">24</span></div>
+              <div class="trend-row"><span>Day 4</span><div class="trend-track"><div class="trend-fill" style="width:62%"></div></div><span class="trend-value">31</span></div>
+              <div class="trend-row"><span>Day 5</span><div class="trend-track"><div class="trend-fill" style="width:100%"></div></div><span class="trend-value">50</span></div>
+            </div>
+          </article>
+
+          <article class="trend-card">
+            <h4>Daily Normalized Tokens</h4>
+            <p>Shows normalized operational token estimates over time.</p>
+            <div class="trend-rows">
+              <div class="trend-row"><span>Day 1</span><div class="trend-track"><div class="trend-fill" style="width:16%"></div></div><span class="trend-value">8.2M</span></div>
+              <div class="trend-row"><span>Day 2</span><div class="trend-track"><div class="trend-fill" style="width:27%"></div></div><span class="trend-value">13.5M</span></div>
+              <div class="trend-row"><span>Day 3</span><div class="trend-track"><div class="trend-fill" style="width:45%"></div></div><span class="trend-value">22.4M</span></div>
+              <div class="trend-row"><span>Day 4</span><div class="trend-track"><div class="trend-fill" style="width:73%"></div></div><span class="trend-value">36.8M</span></div>
+              <div class="trend-row"><span>Day 5</span><div class="trend-track"><div class="trend-fill" style="width:100%"></div></div><span class="trend-value">50.1M</span></div>
+            </div>
+          </article>
+
+          <article class="trend-card">
+            <h4>Review Health</h4>
+            <p>Shows whether preview review remained safe to present.</p>
+            <div class="trend-status-list">
+              <div class="trend-status-item"><span>Day 1</span><strong>passed</strong></div>
+              <div class="trend-status-item"><span>Day 2</span><strong>passed</strong></div>
+              <div class="trend-status-item"><span>Day 3</span><strong>passed</strong></div>
+              <div class="trend-status-item"><span>Day 4</span><strong>passed</strong></div>
+              <div class="trend-status-item"><span>Day 5</span><strong>passed</strong></div>
+            </div>
+          </article>
+
+          <article class="trend-card">
+            <h4>Classification Coverage</h4>
+            <p>Shows safe metadata classification coverage, not content-level classification accuracy.</p>
+            <div class="coverage-list">
+              <div class="coverage-item"><span>Project Coverage</span><strong>100%</strong></div>
+              <div class="coverage-item"><span>Task Coverage</span><strong>100%</strong></div>
+            </div>
+            <div class="trend-note">Trend data is for dashboard preview. It is not full historical telemetry. Token trend values are operational estimates. Project / task coverage trend does not imply content-level classification accuracy and may still be pipeline-level metadata classification.</div>
+          </article>
+        </div>
+      </section>
+
+    </section>
+
     <section class="summary-grid" id="summary-cards" aria-label="AgentOps summary cards"></section>
     <section class="quality-grid" id="preview-quality-cards" aria-label="Preview Quality Guard"></section>
+    <div class="project-overconfidence-hint" id="project-overconfidence-hint" aria-live="polite"></div>
 
     <section class="dashboard-grid">
       <div>
@@ -722,7 +1687,6 @@
           <div class="model-list" id="top-models"></div>
         </section>
       </aside>
-    </section>
   </main>
 
   <script src="/shared/command-header.js?v=0524agentops"></script>
@@ -748,6 +1712,8 @@
       previewWarning: "",
       qualityNotes: [],
       previewQuality: null,
+      previewTopProjectCount: 0,
+      previewRecentRunCount: 0,
       summaryRequestId: 0,
       runsRequestId: 0
     };
@@ -898,6 +1864,8 @@
           state.previewWarning = "";
           state.qualityNotes = [];
           state.previewQuality = null;
+          state.previewTopProjectCount = 0;
+          state.previewRecentRunCount = 0;
           setNotice("error-message", "", false);
           renderSourceToggle();
           renderSourceMessages();
@@ -910,15 +1878,47 @@
     function renderSourceMessages() {
       if (state.sourceMode !== "preview") {
         setNotice("warning-message", "", false);
+        renderInferenceNotice(null);
         renderQualityNotes([]);
         renderPreviewQualityCards(null);
+        renderProjectOverconfidenceHint();
         return;
       }
 
       const warning = [PREVIEW_WARNING, state.previewWarning].filter(Boolean).join(" ");
+      renderInferenceNotice(state.previewQuality);
       setNotice("warning-message", warning, true);
       renderQualityNotes(state.qualityNotes);
       renderPreviewQualityCards(state.previewQuality);
+      renderProjectOverconfidenceHint();
+    }
+
+    function renderInferenceNotice(quality) {
+      const el = document.getElementById("inference-notice");
+      if (!el) return;
+
+      if (state.sourceMode !== "preview") {
+        el.innerHTML = "";
+        el.classList.remove("active");
+        return;
+      }
+
+      const unknownTasks = numberValue(quality || {}, ["unknown_task_count"]) > 0;
+      el.innerHTML = `
+        <strong>Inference quality notice</strong>
+        <p>Preview project, task, model and duration values are inferred from allowlisted metadata only. Unknown values are acceptable when safe inference is not possible.</p>
+        ${unknownTasks ? "<p>Task numbers are not inferred from prompts or responses. Unknown task values indicate the parser avoided unsafe content.</p>" : ""}
+      `;
+      el.classList.add("active");
+    }
+
+    function renderProjectOverconfidenceHint() {
+      const el = document.getElementById("project-overconfidence-hint");
+      if (!el) return;
+
+      const active = state.sourceMode === "preview" && state.previewTopProjectCount === 1 && state.previewRecentRunCount >= 3;
+      el.textContent = active ? "Project overconfidence: Most preview runs map to one project. Review keyword inference before using this as reporting data." : "";
+      el.classList.toggle("active", active);
     }
 
     function renderQualityNotes(notes) {
@@ -949,17 +1949,38 @@
       }
 
       const cards = [
-        { label: "Unknown Projects", value: numberValue(quality, ["unknown_project_count"]) },
-        { label: "Unknown Tasks", value: numberValue(quality, ["unknown_task_count"]) },
-        { label: "Unknown Models", value: numberValue(quality, ["unknown_model_count"]) },
-        { label: "Zero Duration Runs", value: numberValue(quality, ["zero_duration_count"]) },
-        { label: "Large Token Runs", value: numberValue(quality, ["large_token_run_count"]) }
+        {
+          label: "Unknown Projects",
+          value: numberValue(quality, ["unknown_project_count"]),
+          helper: "Project names are inferred from allowlisted keywords and may require review."
+        },
+        {
+          label: "Unknown Tasks",
+          value: numberValue(quality, ["unknown_task_count"]),
+          helper: "Task numbers are only extracted from safe metadata patterns."
+        },
+        {
+          label: "Unknown Models",
+          value: numberValue(quality, ["unknown_model_count"]),
+          helper: "Model names are extracted only from safe model fields."
+        },
+        {
+          label: "Zero Duration Runs",
+          value: numberValue(quality, ["zero_duration_count"]),
+          helper: "Duration is inferred from event timestamps when available."
+        },
+        {
+          label: "Large Token Runs",
+          value: numberValue(quality, ["large_token_run_count"]),
+          helper: "Token totals may be estimated, cumulative or inflated."
+        }
       ];
 
       el.innerHTML = cards.map((card) => `
         <article class="quality-card">
           <p class="metric-label">${escapeHtml(card.label)}</p>
           <div class="metric-value">${escapeHtml(compactNumber(card.value))}</div>
+          <div class="quality-helper">${escapeHtml(card.helper)}</div>
         </article>
       `).join("");
       el.classList.add("active");
@@ -1149,18 +2170,37 @@
       return "/api/agentops/runs?" + params.toString();
     }
 
+    function isPreviewRun(item) {
+      const source = textValue(item || {}, ["source"], "").toLowerCase();
+      return state.sourceMode === "preview" && source.includes("preview");
+    }
+
     function renderPreviewRunBadges(item) {
-      if (state.sourceMode !== "preview") return "";
+      if (!isPreviewRun(item)) return "";
 
-      const quality = item && item.preview_quality;
-      if (!quality || typeof quality !== "object") return "";
-
+      const quality = item && item.preview_quality && typeof item.preview_quality === "object" ? item.preview_quality : {};
+      const projectName = textValue(item, ["project_name", "project"], "unknown").toLowerCase();
+      const modelName = textValue(item, ["model", "model_name"], "unknown").toLowerCase();
+      const duration = numberValue(item, ["duration_seconds"]);
       const badges = [];
+
       if (quality.large_token_total === true) {
         badges.push({ label: "Estimated / cumulative token usage", muted: false });
       }
       if (quality.unknown_project === true || quality.unknown_task === true || quality.unknown_model === true) {
         badges.push({ label: "Conservative inference", muted: true });
+      }
+      if (quality.unknown_task === true) {
+        badges.push({ label: "Task unknown by safety policy", muted: false });
+      }
+      if (projectName && projectName !== "unknown") {
+        badges.push({ label: "Project inferred", muted: true });
+      }
+      if (modelName && modelName !== "unknown") {
+        badges.push({ label: "Model inferred", muted: true });
+      }
+      if (duration > 0) {
+        badges.push({ label: "Duration inferred", muted: true });
       }
 
       if (!badges.length) return "";
@@ -1226,10 +2266,12 @@
         state.previewWarning = state.sourceMode === "preview" && summary && summary.warning ? String(summary.warning) : "";
         state.qualityNotes = state.sourceMode === "preview" ? extractList(getPathValue(summary, "quality.notes", []), "notes") : [];
         state.previewQuality = state.sourceMode === "preview" ? getPathValue(summary, "quality", null) : null;
+        const topProjects = extractList(summary, "top_projects");
+        state.previewTopProjectCount = state.sourceMode === "preview" ? topProjects.length : 0;
         renderSourceMessages();
         renderSummaryCards(summary || {});
         renderTopTasks(extractList(summary, "top_tasks"));
-        renderTopProjects(extractList(summary, "top_projects"));
+        renderTopProjects(topProjects);
         renderTopModels(extractList(summary, "top_models"));
       } catch (err) {
         if (requestId !== state.summaryRequestId) return;
@@ -1238,6 +2280,7 @@
         state.previewWarning = "";
         state.qualityNotes = [];
         state.previewQuality = null;
+        state.previewTopProjectCount = 0;
         renderSourceMessages();
         setNotice("error-message", state.sourceMode === "preview" ? PREVIEW_UNAVAILABLE : "AgentOps telemetry unavailable", true);
         renderSummaryCards({});
@@ -1260,12 +2303,17 @@
           renderSourceMessages();
         }
 
-        renderRuns(extractList(data, "runs"));
+        const runs = extractList(data, "runs");
+        state.previewRecentRunCount = state.sourceMode === "preview" ? runs.length : 0;
+        renderProjectOverconfidenceHint();
+        renderRuns(runs);
       } catch (err) {
         if (requestId !== state.runsRequestId) return;
 
         console.error("Failed to load AgentOps runs:", err);
         document.getElementById("runs-state").textContent = "Unavailable";
+        state.previewRecentRunCount = 0;
+        renderProjectOverconfidenceHint();
         document.getElementById("recent-runs").innerHTML = `<div class="empty">${escapeHtml(state.sourceMode === "preview" ? PREVIEW_UNAVAILABLE : "AgentOps telemetry unavailable")}</div>`;
         if (state.sourceMode === "preview") {
           setNotice("error-message", PREVIEW_UNAVAILABLE, true);
