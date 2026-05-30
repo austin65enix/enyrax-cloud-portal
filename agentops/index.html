@@ -1,0 +1,937 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ENYRAX AgentOps</title>
+  <style>
+    :root {
+      --bg: #070813;
+      --panel: rgba(12, 15, 34, .82);
+      --panel-strong: rgba(15, 20, 50, .9);
+      --line: rgba(255, 215, 130, .2);
+      --line-cyan: rgba(115, 244, 223, .2);
+      --gold: #f5d37a;
+      --cyan: #73f4df;
+      --violet: #b894ff;
+      --green: #8ff7b2;
+      --red: #ff6b86;
+      --amber: #ffd166;
+      --text: #f7f2df;
+      --muted: rgba(247, 242, 223, .66);
+      --muted-strong: rgba(247, 242, 223, .82);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at 16% 8%, rgba(115, 244, 223, .14), transparent 28%),
+        radial-gradient(circle at 82% 16%, rgba(245, 211, 122, .13), transparent 27%),
+        radial-gradient(circle at 58% 0%, rgba(184, 148, 255, .12), transparent 26%),
+        linear-gradient(135deg, #070813 0%, #11163b 52%, #070813 100%);
+    }
+
+    a { color: inherit; }
+
+    .wrap {
+      width: min(1240px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 36px 0 50px;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(280px, 420px);
+      gap: 20px;
+      align-items: end;
+      margin-bottom: 24px;
+    }
+
+    .kicker {
+      display: inline-flex;
+      width: fit-content;
+      align-items: center;
+      min-height: 32px;
+      border: 1px solid rgba(115, 244, 223, .28);
+      border-radius: 999px;
+      padding: 8px 13px;
+      color: var(--cyan);
+      background: rgba(115, 244, 223, .06);
+      font-size: 12px;
+      font-weight: 950;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 16px 0 10px;
+      color: var(--text);
+      font-size: clamp(38px, 6vw, 68px);
+      line-height: .96;
+      letter-spacing: .01em;
+    }
+
+    .subtitle {
+      max-width: 780px;
+      margin: 0;
+      color: var(--muted);
+      font-size: 18px;
+      line-height: 1.55;
+    }
+
+    .privacy {
+      border: 1px solid rgba(184, 148, 255, .28);
+      border-radius: 18px;
+      background:
+        linear-gradient(135deg, rgba(184, 148, 255, .11), rgba(115, 244, 223, .04)),
+        rgba(255, 255, 255, .035);
+      padding: 16px;
+      box-shadow: 0 18px 58px rgba(0, 0, 0, .18);
+    }
+
+    .privacy strong {
+      display: block;
+      color: var(--violet);
+      font-size: 13px;
+      font-weight: 950;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .privacy p {
+      margin: 8px 0 0;
+      color: var(--muted-strong);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .notice {
+      display: none;
+      margin: 0 0 18px;
+      border-radius: 16px;
+      border: 1px solid rgba(245, 211, 122, .28);
+      background: rgba(245, 211, 122, .08);
+      color: var(--gold);
+      padding: 13px 15px;
+      font-size: 14px;
+      font-weight: 800;
+      line-height: 1.45;
+    }
+
+    .notice.active { display: block; }
+
+    .notice.error {
+      border-color: rgba(255, 107, 134, .36);
+      background: rgba(255, 107, 134, .08);
+      color: #ffd5dc;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 22px;
+    }
+
+    .metric-card,
+    .panel {
+      border: 1px solid var(--line);
+      background:
+        linear-gradient(145deg, rgba(255, 255, 255, .045), rgba(255, 255, 255, .02)),
+        var(--panel);
+      box-shadow: 0 22px 76px rgba(0, 0, 0, .22);
+    }
+
+    .metric-card {
+      min-height: 120px;
+      border-radius: 18px;
+      padding: 16px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .metric-card::after {
+      content: "";
+      position: absolute;
+      right: 12px;
+      top: 12px;
+      width: 42px;
+      height: 3px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--violet), var(--cyan));
+      opacity: .78;
+    }
+
+    .metric-label {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 950;
+      letter-spacing: .08em;
+      line-height: 1.25;
+      text-transform: uppercase;
+    }
+
+    .metric-value {
+      margin-top: 16px;
+      color: var(--gold);
+      font-size: clamp(26px, 3vw, 36px);
+      font-weight: 950;
+      line-height: 1;
+      overflow-wrap: anywhere;
+    }
+
+    .metric-note {
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 750;
+    }
+
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.35fr) minmax(320px, .65fr);
+      gap: 16px;
+      align-items: start;
+    }
+
+    .panel {
+      border-radius: 22px;
+      padding: 18px;
+      min-width: 0;
+    }
+
+    .panel + .panel { margin-top: 16px; }
+
+    .panel-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    h2 {
+      margin: 0;
+      color: var(--text);
+      font-size: 20px;
+      line-height: 1.2;
+    }
+
+    .panel-subtitle {
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 750;
+    }
+
+    .loading {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .rows {
+      display: grid;
+      gap: 10px;
+    }
+
+    .data-row {
+      border: 1px solid rgba(255, 255, 255, .11);
+      border-radius: 16px;
+      background: rgba(255, 255, 255, .04);
+      padding: 13px;
+    }
+
+    .row-main {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: start;
+    }
+
+    .row-title {
+      color: var(--text);
+      font-size: 15px;
+      font-weight: 950;
+      line-height: 1.32;
+      overflow-wrap: anywhere;
+    }
+
+    .row-meta {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 750;
+      line-height: 1.4;
+      overflow-wrap: anywhere;
+    }
+
+    .row-stats {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .row-stats.three {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .stat {
+      min-height: 58px;
+      border: 1px solid rgba(115, 244, 223, .13);
+      border-radius: 12px;
+      background: rgba(115, 244, 223, .035);
+      padding: 9px;
+    }
+
+    .stat span {
+      display: block;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 950;
+      letter-spacing: .06em;
+      line-height: 1.2;
+      text-transform: uppercase;
+    }
+
+    .stat strong {
+      display: block;
+      margin-top: 7px;
+      color: var(--cyan);
+      font-size: 15px;
+      line-height: 1.1;
+      overflow-wrap: anywhere;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 26px;
+      border: 1px solid rgba(255, 255, 255, .14);
+      border-radius: 999px;
+      padding: 6px 9px;
+      color: var(--muted-strong);
+      background: rgba(255, 255, 255, .045);
+      font-size: 11px;
+      font-weight: 950;
+      line-height: 1;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .status-badge.success {
+      border-color: rgba(143, 247, 178, .36);
+      color: var(--green);
+      background: rgba(143, 247, 178, .08);
+    }
+
+    .status-badge.failed {
+      border-color: rgba(255, 107, 134, .36);
+      color: #ffd5dc;
+      background: rgba(255, 107, 134, .08);
+    }
+
+    .status-badge.interrupted {
+      border-color: rgba(255, 209, 102, .38);
+      color: var(--amber);
+      background: rgba(255, 209, 102, .08);
+    }
+
+    .model-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .model-card {
+      border: 1px solid rgba(255, 255, 255, .11);
+      border-radius: 16px;
+      background: rgba(255, 255, 255, .04);
+      padding: 13px;
+    }
+
+    .model-name {
+      color: var(--violet);
+      font-size: 14px;
+      font-weight: 950;
+      overflow-wrap: anywhere;
+    }
+
+    .mini-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .filter-chip {
+      min-height: 34px;
+      border: 1px solid rgba(255, 255, 255, .13);
+      border-radius: 999px;
+      color: var(--text);
+      background: rgba(255, 255, 255, .045);
+      padding: 8px 12px;
+      font: inherit;
+      font-size: 12px;
+      font-weight: 950;
+      cursor: pointer;
+    }
+
+    .filter-chip.active {
+      color: #071018;
+      border-color: rgba(245, 211, 122, .5);
+      background: linear-gradient(135deg, var(--gold), #fff0b8);
+      box-shadow: 0 0 22px rgba(245, 211, 122, .14);
+    }
+
+    .runs-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .run-card {
+      border: 1px solid rgba(255, 255, 255, .11);
+      border-radius: 18px;
+      background:
+        linear-gradient(135deg, rgba(184, 148, 255, .055), rgba(115, 244, 223, .025)),
+        rgba(255, 255, 255, .04);
+      padding: 14px;
+    }
+
+    .run-top {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: start;
+    }
+
+    .run-result {
+      margin-top: 10px;
+      border-top: 1px solid rgba(255, 255, 255, .09);
+      padding-top: 10px;
+      color: var(--muted-strong);
+      font-size: 13px;
+      line-height: 1.45;
+      overflow-wrap: anywhere;
+    }
+
+    .empty {
+      border: 1px dashed rgba(255, 255, 255, .16);
+      border-radius: 16px;
+      padding: 16px;
+      color: var(--muted);
+      background: rgba(255, 255, 255, .025);
+      font-weight: 800;
+    }
+
+    @media (max-width: 1100px) {
+      .summary-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .dashboard-grid { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 760px) {
+      .wrap {
+        width: min(100% - 24px, 1240px);
+        padding: 26px 0 38px;
+      }
+
+      .hero { grid-template-columns: 1fr; }
+      .summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .row-stats,
+      .row-stats.three,
+      .mini-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 520px) {
+      .summary-grid,
+      .row-stats,
+      .row-stats.three,
+      .mini-grid { grid-template-columns: 1fr; }
+
+      .panel { padding: 14px; }
+      .row-main,
+      .run-top { grid-template-columns: 1fr; }
+      .status-badge { width: fit-content; }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="hero">
+      <div>
+        <span class="kicker">AI Delivery Telemetry</span>
+        <h1>AgentOps</h1>
+        <p class="subtitle">AI agent workload, token usage, tool activity and delivery telemetry.</p>
+      </div>
+
+      <aside class="privacy">
+        <strong>Privacy boundary</strong>
+        <p>AgentOps displays normalized metadata only. It does not store full prompts, responses, shell output, file contents, credentials, API keys or .env values.</p>
+      </aside>
+    </section>
+
+    <div class="notice" id="warning-message" role="status"></div>
+    <div class="notice error" id="error-message" role="alert"></div>
+
+    <section class="summary-grid" id="summary-cards" aria-label="AgentOps summary cards"></section>
+
+    <section class="dashboard-grid">
+      <div>
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <h2>Top Tasks</h2>
+              <div class="panel-subtitle">Highest token and file activity by task.</div>
+            </div>
+            <span class="loading" id="top-tasks-state">Loading</span>
+          </div>
+          <div class="rows" id="top-tasks"></div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <h2>Top Projects</h2>
+              <div class="panel-subtitle">Project workload, cache usage and outcomes.</div>
+            </div>
+            <span class="loading" id="top-projects-state">Loading</span>
+          </div>
+          <div class="rows" id="top-projects"></div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <h2>Recent Agent Runs</h2>
+              <div class="panel-subtitle">Latest normalized run metadata from the AgentOps API.</div>
+            </div>
+            <span class="loading" id="runs-state">Loading</span>
+          </div>
+          <div class="toolbar" id="run-filters" aria-label="Recent Agent Runs filters"></div>
+          <div class="runs-list" id="recent-runs"></div>
+        </section>
+      </div>
+
+      <aside>
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <h2>Top Models</h2>
+              <div class="panel-subtitle">Model usage by runs and tokens.</div>
+            </div>
+            <span class="loading" id="top-models-state">Loading</span>
+          </div>
+          <div class="model-list" id="top-models"></div>
+        </section>
+      </aside>
+    </section>
+  </main>
+
+  <script src="/shared/command-header.js?v=0524agentops"></script>
+  <script src="/shared/role-switcher.js?v=0523dock"></script>
+  <script>
+    const filters = [
+      { label: "All", query: "" },
+      { label: "Success", query: "status=success" },
+      { label: "Failed", query: "status=failed" },
+      { label: "Interrupted", query: "status=interrupted" },
+      { label: "Vulnerability", query: "project=Vulnerability" },
+      { label: "ServiceOps", query: "project=ServiceOps" },
+      { label: "Sync Gateway", query: "project=Sync Gateway" },
+      { label: "AgentOps", query: "project=AgentOps" }
+    ];
+
+    const state = {
+      activeFilter: "All"
+    };
+
+    function getPathValue(source, path, fallback) {
+      const parts = path.split(".");
+      let current = source;
+
+      for (const part of parts) {
+        if (!current || typeof current !== "object" || !(part in current)) {
+          return fallback;
+        }
+
+        current = current[part];
+      }
+
+      return current ?? fallback;
+    }
+
+    function firstValue(source, paths, fallback) {
+      for (const path of paths) {
+        const value = getPathValue(source, path, undefined);
+
+        if (value !== undefined && value !== null && value !== "") {
+          return value;
+        }
+      }
+
+      return fallback;
+    }
+
+    function numberValue(source, paths) {
+      const value = firstValue(source, paths, 0);
+      const number = Number(value);
+      return Number.isFinite(number) ? number : 0;
+    }
+
+    function textValue(source, paths, fallback) {
+      return String(firstValue(source, paths, fallback));
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function compactNumber(value) {
+      const number = Number(value);
+
+      if (!Number.isFinite(number)) return "0";
+
+      return new Intl.NumberFormat("en", {
+        notation: "compact",
+        maximumFractionDigits: 2
+      }).format(number);
+    }
+
+    function percentValue(value) {
+      const number = Number(value);
+
+      if (!Number.isFinite(number)) return "0.00%";
+
+      const normalized = number <= 1 ? number * 100 : number;
+      return normalized.toFixed(2) + "%";
+    }
+
+    function durationValue(seconds) {
+      const number = Number(seconds);
+
+      if (!Number.isFinite(number) || number <= 0) return "0 sec";
+      if (number < 60) return Math.round(number) + " sec";
+
+      return (number / 60).toFixed(1) + " min";
+    }
+
+    function ratioValue(value) {
+      const number = Number(value);
+      return Number.isFinite(number) ? number.toFixed(2) + "x" : "0.00x";
+    }
+
+    function dateValue(value) {
+      if (!value) return "Unknown start";
+
+      const date = new Date(value);
+
+      if (Number.isNaN(date.getTime())) {
+        return String(value);
+      }
+
+      return date.toLocaleString("en", {
+        month: "short",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit"
+      });
+    }
+
+    function statusClass(status) {
+      const normalized = String(status || "unknown").toLowerCase().replaceAll("_", "-");
+      if (normalized.includes("success")) return "success";
+      if (normalized.includes("fail") || normalized.includes("error")) return "failed";
+      if (normalized.includes("interrupt") || normalized.includes("cancel")) return "interrupted";
+      return "unknown";
+    }
+
+    function statusBadge(status) {
+      const label = String(status || "unknown").replaceAll("_", " ");
+      return `<span class="status-badge ${statusClass(status)}">${escapeHtml(label)}</span>`;
+    }
+
+    function setNotice(id, message, active) {
+      const el = document.getElementById(id);
+      if (!el) return;
+
+      el.textContent = message || "";
+      el.classList.toggle("active", Boolean(active && message));
+    }
+
+    async function fetchJson(path) {
+      const res = await fetch(path, { cache: "no-store" });
+
+      if (!res.ok) {
+        throw new Error("HTTP " + res.status);
+      }
+
+      return res.json();
+    }
+
+    function extractList(data, key) {
+      if (Array.isArray(data)) return data;
+      if (Array.isArray(data && data[key])) return data[key];
+      if (Array.isArray(data && data.items)) return data.items;
+      if (Array.isArray(data && data.results)) return data.results;
+      return [];
+    }
+
+    function renderSummaryCards(summary) {
+      const totals = summary && typeof summary.totals === "object" ? summary.totals : {};
+      const totalTokens = numberValue(summary, ["totals.total_tokens", "total_tokens"]);
+      const cachedTokens = numberValue(summary, ["totals.cached_tokens", "cached_tokens"]);
+      const outputTokens = numberValue(summary, ["totals.output_tokens", "output_tokens"]);
+      const reasoningTokens = numberValue(summary, ["totals.reasoning_tokens", "reasoning_tokens"]);
+      const cacheRatio = totalTokens > 0 ? cachedTokens / totalTokens : 0;
+      const cacheEfficiency = numberValue(summary, ["cache_efficiency.cached_to_total_ratio", "cache_efficiency.ratio", "totals.cache_efficiency"]);
+
+      const cards = [
+        { label: "Agent Runs", value: compactNumber(numberValue(totals, ["agent_runs", "runs", "total_runs"])) },
+        { label: "Success Rate", value: percentValue(numberValue(summary, ["success_rate", "totals.success_rate"])) },
+        { label: "Total Tokens", value: compactNumber(totalTokens) },
+        { label: "Cached Tokens", value: compactNumber(cachedTokens) },
+        { label: "Output Tokens", value: compactNumber(outputTokens) },
+        { label: "Reasoning Tokens", value: compactNumber(reasoningTokens) },
+        { label: "Tool Calls", value: compactNumber(numberValue(totals, ["tool_calls", "total_tool_calls"])) },
+        { label: "Files Modified", value: compactNumber(numberValue(totals, ["files_modified", "total_files_modified"])) },
+        { label: "Avg Duration", value: durationValue(numberValue(summary, ["avg_duration_seconds", "totals.avg_duration_seconds"])) },
+        { label: "Cache Ratio", value: ratioValue(cacheEfficiency || cacheRatio) }
+      ];
+
+      document.getElementById("summary-cards").innerHTML = cards.map((card) => `
+        <article class="metric-card">
+          <p class="metric-label">${escapeHtml(card.label)}</p>
+          <div class="metric-value">${escapeHtml(card.value)}</div>
+          <div class="metric-note">Normalized metadata</div>
+        </article>
+      `).join("");
+    }
+
+    function renderTopTasks(items) {
+      const el = document.getElementById("top-tasks");
+      document.getElementById("top-tasks-state").textContent = items.length ? `${items.length} tasks` : "No data";
+
+      if (!items.length) {
+        el.innerHTML = '<div class="empty">No Top Tasks telemetry available.</div>';
+        return;
+      }
+
+      el.innerHTML = items.map((item) => {
+        const taskNumber = textValue(item, ["task_number", "task"], "Task");
+        const taskName = textValue(item, ["task_name", "name"], "Untitled task");
+        const projectName = textValue(item, ["project_name", "project"], "Unassigned project");
+        const status = textValue(item, ["status", "latest_status"], "unknown");
+
+        return `
+          <article class="data-row">
+            <div class="row-main">
+              <div>
+                <div class="row-title">${escapeHtml(taskNumber)} - ${escapeHtml(taskName)}</div>
+                <div class="row-meta">${escapeHtml(projectName)}</div>
+              </div>
+              ${statusBadge(status)}
+            </div>
+            <div class="row-stats">
+              ${renderStat("Runs", compactNumber(numberValue(item, ["runs", "run_count"])))}
+              ${renderStat("Total Tokens", compactNumber(numberValue(item, ["total_tokens"])))}
+              ${renderStat("Output Tokens", compactNumber(numberValue(item, ["output_tokens"])))}
+              ${renderStat("Reasoning", compactNumber(numberValue(item, ["reasoning_tokens"])))}
+              ${renderStat("Files", compactNumber(numberValue(item, ["files_modified"])))}
+            </div>
+          </article>
+        `;
+      }).join("");
+    }
+
+    function renderTopProjects(items) {
+      const el = document.getElementById("top-projects");
+      document.getElementById("top-projects-state").textContent = items.length ? `${items.length} projects` : "No data";
+
+      if (!items.length) {
+        el.innerHTML = '<div class="empty">No Top Projects telemetry available.</div>';
+        return;
+      }
+
+      el.innerHTML = items.map((item) => {
+        const projectName = textValue(item, ["project_name", "project"], "Unassigned project");
+
+        return `
+          <article class="data-row">
+            <div class="row-main">
+              <div>
+                <div class="row-title">${escapeHtml(projectName)}</div>
+                <div class="row-meta">Success ${compactNumber(numberValue(item, ["success", "success_runs"]))} - Failed ${compactNumber(numberValue(item, ["failed", "failed_runs"]))} - Interrupted ${compactNumber(numberValue(item, ["interrupted", "interrupted_runs"]))}</div>
+              </div>
+            </div>
+            <div class="row-stats">
+              ${renderStat("Runs", compactNumber(numberValue(item, ["runs", "run_count"])))}
+              ${renderStat("Total Tokens", compactNumber(numberValue(item, ["total_tokens"])))}
+              ${renderStat("Cached Tokens", compactNumber(numberValue(item, ["cached_tokens"])))}
+              ${renderStat("Files", compactNumber(numberValue(item, ["files_modified"])))}
+            </div>
+          </article>
+        `;
+      }).join("");
+    }
+
+    function renderTopModels(items) {
+      const el = document.getElementById("top-models");
+      document.getElementById("top-models-state").textContent = items.length ? `${items.length} models` : "No data";
+
+      if (!items.length) {
+        el.innerHTML = '<div class="empty">No Top Models telemetry available.</div>';
+        return;
+      }
+
+      el.innerHTML = items.map((item) => `
+        <article class="model-card">
+          <div class="model-name">${escapeHtml(textValue(item, ["model", "model_name"], "unknown model"))}</div>
+          <div class="mini-grid">
+            ${renderStat("Runs", compactNumber(numberValue(item, ["runs", "run_count"])))}
+            ${renderStat("Total Tokens", compactNumber(numberValue(item, ["total_tokens"])))}
+            ${renderStat("Output Tokens", compactNumber(numberValue(item, ["output_tokens"])))}
+          </div>
+        </article>
+      `).join("");
+    }
+
+    function renderStat(label, value) {
+      return `
+        <div class="stat">
+          <span>${escapeHtml(label)}</span>
+          <strong>${escapeHtml(value)}</strong>
+        </div>
+      `;
+    }
+
+    function renderFilters() {
+      const el = document.getElementById("run-filters");
+
+      el.innerHTML = filters.map((filter) => {
+        const active = filter.label === state.activeFilter ? " active" : "";
+        return `<button class="filter-chip${active}" type="button" data-filter="${escapeHtml(filter.label)}">${escapeHtml(filter.label)}</button>`;
+      }).join("");
+
+      el.querySelectorAll("button").forEach((button) => {
+        button.addEventListener("click", () => {
+          state.activeFilter = button.dataset.filter;
+          renderFilters();
+          loadRuns();
+        });
+      });
+    }
+
+    function runsPath() {
+      const filter = filters.find((item) => item.label === state.activeFilter) || filters[0];
+      const params = new URLSearchParams();
+
+      if (filter.query) {
+        const [key, value] = filter.query.split("=");
+        params.set(key, value);
+      }
+
+      params.set("limit", "12");
+      return "/api/agentops/runs?" + params.toString();
+    }
+
+    function renderRuns(items) {
+      const el = document.getElementById("recent-runs");
+      document.getElementById("runs-state").textContent = items.length ? `${items.length} runs` : "No data";
+
+      if (!items.length) {
+        el.innerHTML = '<div class="empty">No Recent Agent Runs match this filter.</div>';
+        return;
+      }
+
+      el.innerHTML = items.map((item) => {
+        const taskNumber = textValue(item, ["task_number", "task"], "Task");
+        const taskName = textValue(item, ["task_name", "name"], "Untitled task");
+        const projectName = textValue(item, ["project_name", "project"], "Unassigned project");
+        const status = textValue(item, ["status"], "unknown");
+        const result = textValue(item, ["result", "summary", "message"], "No result recorded.");
+
+        return `
+          <article class="run-card">
+            <div class="run-top">
+              <div>
+                <div class="row-title">${escapeHtml(taskNumber)} - ${escapeHtml(taskName)}</div>
+                <div class="row-meta">${escapeHtml(projectName)} - ${escapeHtml(dateValue(firstValue(item, ["started_at", "start_time"], "")))} - ${escapeHtml(textValue(item, ["model", "model_name"], "unknown model"))}</div>
+              </div>
+              ${statusBadge(status)}
+            </div>
+            <div class="row-stats">
+              ${renderStat("Duration", durationValue(numberValue(item, ["duration_seconds"])))}
+              ${renderStat("Total Tokens", compactNumber(numberValue(item, ["total_tokens"])))}
+              ${renderStat("Cached", compactNumber(numberValue(item, ["cached_tokens"])))}
+              ${renderStat("Tool Calls", compactNumber(numberValue(item, ["tool_calls"])))}
+              ${renderStat("Files", compactNumber(numberValue(item, ["files_modified"])))}
+            </div>
+            <div class="run-result">${escapeHtml(result)}</div>
+          </article>
+        `;
+      }).join("");
+    }
+
+    async function loadSummary() {
+      try {
+        const summary = await fetchJson("/api/agentops/summary");
+        setNotice("error-message", "", false);
+
+        if (summary && summary.warning) {
+          setNotice("warning-message", String(summary.warning), true);
+        } else {
+          setNotice("warning-message", "", false);
+        }
+
+        renderSummaryCards(summary || {});
+        renderTopTasks(extractList(summary, "top_tasks"));
+        renderTopProjects(extractList(summary, "top_projects"));
+        renderTopModels(extractList(summary, "top_models"));
+      } catch (err) {
+        console.error("Failed to load AgentOps summary:", err);
+        setNotice("error-message", "AgentOps telemetry unavailable", true);
+        renderSummaryCards({});
+        renderTopTasks([]);
+        renderTopProjects([]);
+        renderTopModels([]);
+      }
+    }
+
+    async function loadRuns() {
+      document.getElementById("runs-state").textContent = "Loading";
+
+      try {
+        const data = await fetchJson(runsPath());
+        renderRuns(extractList(data, "runs"));
+      } catch (err) {
+        console.error("Failed to load AgentOps runs:", err);
+        document.getElementById("runs-state").textContent = "Unavailable";
+        document.getElementById("recent-runs").innerHTML = '<div class="empty">AgentOps telemetry unavailable</div>';
+      }
+    }
+
+    renderFilters();
+    loadSummary();
+    loadRuns();
+  </script>
+</body>
+</html>

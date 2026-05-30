@@ -9,6 +9,7 @@
     { key: "soc", label: "SOC", href: "/soc/" },
     { key: "serviceops", label: "ServiceOps", href: "/serviceops/" },
     { key: "projectops", label: "ProjectOps", href: "/projectops/" },
+    { key: "agentops", label: "AgentOps", href: "/agentops/" },
     { key: "sync", label: "Sync Gateway", href: "/sync/" },
     { key: "audit", label: "Audit Logs", href: "/audit/" },
     { key: "status", label: "Status", href: "/status/" }
@@ -19,6 +20,7 @@
     { test: (path) => path.startsWith("/soc/"), label: "SOC Monitoring", key: "soc" },
     { test: (path) => path.startsWith("/serviceops/"), label: "ServiceOps / Infra Operation Workflow", key: "serviceops" },
     { test: (path) => path.startsWith("/projectops/"), label: "ProjectOps / Portfolio Delivery Control", key: "projectops" },
+    { test: (path) => path.startsWith("/agentops/"), label: "AgentOps", key: "agentops" },
     { test: (path) => path.startsWith("/sync/"), label: "Sync Gateway", key: "sync" },
     { test: (path) => path.startsWith("/status/"), label: "Status Center", key: "status" },
     { test: (path) => path.startsWith("/audit/"), label: "Audit Logs", key: "audit" },
