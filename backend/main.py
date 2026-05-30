@@ -49,6 +49,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 NORMALIZED_VULNERABILITIES_PATH = (
     PROJECT_ROOT / "data" / "vulnerabilities" / "normalized_vulnerabilities.json"
 )
+AGENT_RUNS_PATH = PROJECT_ROOT / "data" / "agentops" / "demo_agent_runs.json"
 SEVERITY_ORDER = {
     "critical": 0,
     "high": 1,
@@ -682,6 +683,261 @@ def load_normalized_vulnerabilities():
 load_normalized_vulnerabilities.warning = None
 
 
+def load_agent_runs():
+    load_agent_runs.warning = None
+
+    try:
+        data = json.loads(AGENT_RUNS_PATH.read_text())
+    except FileNotFoundError:
+        load_agent_runs.warning = "agentops demo data not found"
+        return []
+    except json.JSONDecodeError:
+        load_agent_runs.warning = "agentops demo data parse error"
+        return []
+    except OSError:
+        load_agent_runs.warning = "agentops demo data unavailable"
+        return []
+
+    if not isinstance(data, list):
+        load_agent_runs.warning = "agentops demo data parse error"
+        return []
+
+    return [item for item in data if isinstance(item, dict)]
+
+
+load_agent_runs.warning = None
+
+
+def agentops_int(item, field: str) -> int:
+    try:
+        return int(item.get(field) or 0)
+    except (TypeError, ValueError):
+        return 0
+
+
+def agentops_text(item, field: str, default: str = "") -> str:
+    value = item.get(field)
+    if value is None:
+        return default
+    return str(value)
+
+
+def normalize_agentops_status(value) -> str:
+    status = str(value or "unknown").strip().lower()
+    if status in {"success", "failed", "interrupted", "unknown"}:
+        return status
+    return "unknown"
+
+
+def agentops_public_run(item, fields):
+    return {field: item.get(field) for field in fields}
+
+
+def agentops_sort_started_at(item):
+    return agentops_text(item, "started_at")
+
+
+def agentops_group_status(status_counts):
+    active_statuses = [status for status, count in status_counts.items() if count]
+    if len(active_statuses) == 1:
+        return active_statuses[0]
+    if not active_statuses:
+        return "unknown"
+    return "mixed"
+
+
+# AgentOps API only exposes normalized metadata. It must not expose prompt,
+# response, shell output, file contents, credentials or .env values.
+def agentops_summary_response(runs):
+    totals = {
+        "agent_runs": len(runs),
+        "success": 0,
+        "failed": 0,
+        "interrupted": 0,
+        "unknown": 0,
+        "total_tokens": 0,
+        "cached_tokens": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "reasoning_tokens": 0,
+        "tool_calls": 0,
+        "files_modified": 0,
+        "commands_run": 0,
+        "error_count": 0,
+        "warning_count": 0,
+    }
+    task_groups = {}
+    project_groups = {}
+    model_groups = {}
+    duration_total = 0
+
+    for item in runs:
+        status = normalize_agentops_status(item.get("status"))
+        totals[status] += 1
+        duration_total += agentops_int(item, "duration_seconds")
+
+        for field in (
+            "total_tokens",
+            "cached_tokens",
+            "input_tokens",
+            "output_tokens",
+            "reasoning_tokens",
+            "tool_calls",
+            "files_modified",
+            "commands_run",
+            "error_count",
+            "warning_count",
+        ):
+            totals[field] += agentops_int(item, field)
+
+        task_number = agentops_text(item, "task_number", "Unknown Task").strip() or "Unknown Task"
+        task_name = agentops_text(item, "task_name", "Untitled task").strip() or "Untitled task"
+        task_key = (task_number, task_name)
+        task_entry = task_groups.setdefault(
+            task_key,
+            {
+                "task_number": task_number,
+                "task_name": task_name,
+                "project_name": agentops_text(item, "project_name", "Unknown"),
+                "runs": 0,
+                "total_tokens": 0,
+                "output_tokens": 0,
+                "reasoning_tokens": 0,
+                "files_modified": 0,
+                "status_counts": {
+                    "success": 0,
+                    "failed": 0,
+                    "interrupted": 0,
+                    "unknown": 0,
+                },
+            },
+        )
+        task_entry["runs"] += 1
+        task_entry["total_tokens"] += agentops_int(item, "total_tokens")
+        task_entry["output_tokens"] += agentops_int(item, "output_tokens")
+        task_entry["reasoning_tokens"] += agentops_int(item, "reasoning_tokens")
+        task_entry["files_modified"] += agentops_int(item, "files_modified")
+        task_entry["status_counts"][status] += 1
+
+        project_name = agentops_text(item, "project_name", "Unknown").strip() or "Unknown"
+        project_entry = project_groups.setdefault(
+            project_name,
+            {
+                "project_name": project_name,
+                "runs": 0,
+                "total_tokens": 0,
+                "cached_tokens": 0,
+                "files_modified": 0,
+                "success": 0,
+                "failed": 0,
+                "interrupted": 0,
+            },
+        )
+        project_entry["runs"] += 1
+        project_entry["total_tokens"] += agentops_int(item, "total_tokens")
+        project_entry["cached_tokens"] += agentops_int(item, "cached_tokens")
+        project_entry["files_modified"] += agentops_int(item, "files_modified")
+        if status in {"success", "failed", "interrupted"}:
+            project_entry[status] += 1
+
+        model = agentops_text(item, "model", "unknown").strip() or "unknown"
+        model_entry = model_groups.setdefault(
+            model,
+            {
+                "model": model,
+                "runs": 0,
+                "total_tokens": 0,
+                "output_tokens": 0,
+            },
+        )
+        model_entry["runs"] += 1
+        model_entry["total_tokens"] += agentops_int(item, "total_tokens")
+        model_entry["output_tokens"] += agentops_int(item, "output_tokens")
+
+    agent_runs = totals["agent_runs"]
+    success_rate = round((totals["success"] / agent_runs * 100), 2) if agent_runs else 0
+    avg_duration = round(duration_total / agent_runs) if agent_runs else 0
+    cached_to_total_ratio = (
+        round(totals["cached_tokens"] / totals["total_tokens"], 2)
+        if totals["total_tokens"]
+        else 0
+    )
+
+    top_tasks = []
+    for task_entry in task_groups.values():
+        top_tasks.append(
+            {
+                "task_number": task_entry["task_number"],
+                "task_name": task_entry["task_name"],
+                "project_name": task_entry["project_name"],
+                "runs": task_entry["runs"],
+                "total_tokens": task_entry["total_tokens"],
+                "output_tokens": task_entry["output_tokens"],
+                "reasoning_tokens": task_entry["reasoning_tokens"],
+                "files_modified": task_entry["files_modified"],
+                "status": agentops_group_status(task_entry["status_counts"]),
+            }
+        )
+    top_tasks.sort(key=lambda item: item["total_tokens"], reverse=True)
+
+    top_projects = sorted(
+        project_groups.values(),
+        key=lambda item: item["total_tokens"],
+        reverse=True,
+    )
+    top_models = sorted(
+        model_groups.values(),
+        key=lambda item: item["total_tokens"],
+        reverse=True,
+    )
+    recent_fields = [
+        "id",
+        "session_id",
+        "project_name",
+        "task_number",
+        "task_name",
+        "started_at",
+        "ended_at",
+        "duration_seconds",
+        "status",
+        "result",
+        "model",
+        "total_tokens",
+        "cached_tokens",
+        "output_tokens",
+        "reasoning_tokens",
+        "tool_calls",
+        "files_modified",
+        "commands_run",
+    ]
+    recent_runs = [
+        agentops_public_run(item, recent_fields)
+        for item in sorted(runs, key=agentops_sort_started_at, reverse=True)[:5]
+    ]
+
+    response = {
+        "status": "ok",
+        "source": "demo_agent_runs",
+        "generated_at": now_utc(),
+        "totals": totals,
+        "success_rate": success_rate,
+        "avg_duration_seconds": avg_duration,
+        "cache_efficiency": {
+            "cached_tokens": totals["cached_tokens"],
+            "total_tokens": totals["total_tokens"],
+            "cached_to_total_ratio": cached_to_total_ratio,
+        },
+        "top_tasks": top_tasks[:5],
+        "top_projects": top_projects[:5],
+        "top_models": top_models[:5],
+        "recent_runs": recent_runs,
+    }
+    warning = load_agent_runs.warning
+    if warning:
+        response["warning"] = warning
+    return response
+
+
 def vulnerability_host_key(item) -> Optional[str]:
     hostname = str(item.get("hostname") or "").strip()
     if hostname:
@@ -1028,6 +1284,89 @@ def write_vulnerability_ticket_audit(db, action: str, entity_id, summary: str, a
             )
     except Exception as exc:
         print(f"Warning: failed to write vulnerability ServiceOps audit log: {exc}")
+
+
+@app.get("/api/agentops/summary")
+def agentops_summary():
+    runs = load_agent_runs()
+    return agentops_summary_response(runs)
+
+
+@app.get("/api/agentops/runs")
+def list_agentops_runs(
+    project: Optional[str] = None,
+    status: Optional[str] = None,
+    task: Optional[str] = None,
+    model: Optional[str] = None,
+    limit: int = 100,
+):
+    runs = load_agent_runs()
+
+    if limit < 1:
+        limit = 100
+    limit = min(limit, 500)
+
+    def contains(value, needle: Optional[str]) -> bool:
+        if not needle:
+            return True
+        return needle.strip().lower() in str(value or "").lower()
+
+    filtered = []
+    status_filter = status.strip().lower() if status else None
+    for item in runs:
+        item_status = normalize_agentops_status(item.get("status"))
+        task_text = f"{item.get('task_number') or ''} {item.get('task_name') or ''}"
+        if not contains(item.get("project_name"), project):
+            continue
+        if status_filter and item_status != status_filter:
+            continue
+        if not contains(task_text, task):
+            continue
+        if not contains(item.get("model"), model):
+            continue
+        filtered.append(item)
+
+    public_fields = [
+        "id",
+        "session_id",
+        "source",
+        "project_name",
+        "task_name",
+        "task_number",
+        "started_at",
+        "ended_at",
+        "duration_seconds",
+        "status",
+        "result",
+        "model",
+        "input_tokens",
+        "cached_tokens",
+        "output_tokens",
+        "reasoning_tokens",
+        "total_tokens",
+        "tool_calls",
+        "files_modified",
+        "commands_run",
+        "error_count",
+        "warning_count",
+        "created_at",
+    ]
+    items = [
+        agentops_public_run(item, public_fields)
+        for item in sorted(filtered, key=agentops_sort_started_at, reverse=True)[:limit]
+    ]
+
+    response = {
+        "status": "ok",
+        "source": "demo_agent_runs",
+        "count": len(filtered),
+        "limit": limit,
+        "items": items,
+    }
+    warning = load_agent_runs.warning
+    if warning:
+        response["warning"] = warning
+    return response
 
 
 @app.get("/api/vulnerabilities/summary")
