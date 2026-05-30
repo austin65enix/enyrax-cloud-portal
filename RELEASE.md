@@ -1,5 +1,125 @@
 # ENYRAX Cloud Portal Release Notes
 
+## v0.6.21-agentops-preview-inference-quality
+
+Release date: 2026-05-30
+
+## Summary
+
+This release improves AgentOps preview telemetry readability and trustworthiness by enhancing safe metadata inference and adding explicit inference quality indicators to the AgentOps dashboard.
+
+AgentOps Preview can now infer model, duration and project metadata more effectively from allowlisted metadata while keeping task numbers unknown when safe metadata is insufficient. The dashboard now clearly labels inferred values, unknown task values, large token estimates and project inference overconfidence.
+
+## Completed
+
+- Improved safe model inference for Codex preview telemetry
+- Improved timestamp and duration inference from safe event metadata
+- Improved project inference using allowlisted keyword mapping
+- Added parser-generated task names based on project and task context
+- Preserved task_number as unknown when Task #NNN is not available from safe metadata
+- Regenerated AgentOps preview output with improved inference
+- Added Inference quality notice in AgentOps Preview mode
+- Added helper text to Preview Quality Cards
+- Added Task unknown by safety policy badge
+- Added Project inferred badge
+- Added Model inferred badge
+- Added Duration inferred badge
+- Added Project overconfidence hint when preview runs collapse into one inferred project
+- Kept Demo Data mode free of preview inference indicators
+
+## Inference Results
+
+```text
+Latest preview review result:
+
+records: 5
+records_with_unknown_model: 0
+zero_duration_count: 0
+unknown_project_count: 0
+unknown_task_count: 5
+review status: passed
+forbidden hits: none
+```
+
+```text
+Unknown task values are expected when Task #NNN cannot be inferred from safe metadata.
+The parser does not use prompts, responses, shell output, file contents or diffs to infer task numbers.
+```
+
+## Safety Boundary
+
+```text
+Inference remains allowlist-based.
+
+The parser does not use:
+- full prompts
+- full assistant responses
+- shell output
+- command text
+- file contents
+- diffs
+- raw JSONL lines
+- credentials
+- API keys
+- passwords
+- .env values
+- full home directory paths
+
+Unknown is an acceptable result when safe inference is not possible.
+```
+
+## Preview UI Indicators
+
+```text
+AgentOps Preview mode now displays:
+
+- Inference quality notice
+- Unknown task safety explanation
+- Preview quality helper text
+- Task unknown by safety policy
+- Project inferred
+- Model inferred
+- Duration inferred
+- Estimated / cumulative token usage
+- Conservative inference
+- Project overconfidence hint
+```
+
+## Product Positioning
+
+```text
+AgentOps Preview is not a productivity scorecard and not a billing-grade cost report.
+
+It is an operational visibility layer that shows how AI agent metadata can be safely summarized, reviewed and interpreted without exposing sensitive session content.
+```
+
+## Current Product Status
+
+```text
+Safe Model Inference          Improved
+Duration Inference            Improved
+Project Inference             Improved
+Task Number Inference         Safety-first unknown
+Preview Review                Passed
+Preview UI Quality Notice     Added
+Preview Inference Badges      Added
+Project Overconfidence Hint   Added
+Demo Mode                     Unchanged
+```
+
+## Next Phase
+
+- Run larger preview generation with --limit 50
+- Review project inference overmatching
+- Improve project keyword priority
+- Explore safe task number sources outside prompt / response content
+- Add preview inference confidence score
+- Add AgentOps run detail page
+- Add daily AgentOps preview summary
+- Add weekly AI delivery report
+
+---
+
 ## v0.6.20-agentops-codex-preview-telemetry
 
 Release date: 2026-05-30
