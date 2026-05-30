@@ -1,5 +1,56 @@
 # ENYRAX Cloud Portal Release Notes
 
+## v0.6.22-agentops-dashboard-preview
+
+Release date: 2026-05-30
+
+## Summary
+
+This release packages the AgentOps Dashboard Preview experience built across Tasks #123-#128. It moves AgentOps from preview parser / review pipeline work into a release-ready dashboard presentation for AI agent / Codex operational visibility.
+
+## Completed
+
+- Added AgentOps Preview Dashboard UI
+- Added Dashboard Metrics Design
+- Added Visual QA / responsive pass
+- Added Explainability Demo Notes
+- Added Trend Snapshot using dashboard-local sample trend data
+- Added Release Quality Score: 98 / 100
+- Added Risk & Anomaly Detection with rule-based indicators
+- Confirmed preview review remains passed
+- Preserved safety / semantic boundaries
+- Made no parser, schema, backend, review script, or preview JSON changes in this release packaging task
+
+## Current Preview Status
+
+```text
+records: 50
+review status: passed
+forbidden_hits: {}
+extra_fields: {}
+unknown_project_count: 0
+unknown_task_count: 0
+top_projects: AgentOps: 50
+top_tasks: AgentOps Preview Generation: 50
+total_tokens: 50078459
+Release Quality Score: 98 / 100
+Overall Risk Level: Low
+Blocking Risks: 0
+Caution Items: 3
+```
+
+## Safety and Semantic Boundaries
+
+AgentOps Dashboard Preview uses operational metadata and preview review checks. Token values are operational estimates, not billing-grade cost data. Project / task values may be pipeline-level metadata classifications. Trend Snapshot uses dashboard preview sample data, not full historical telemetry. Release Quality Score is not AI answer quality and not session-content-level correctness. Risk & Anomaly indicators are rule-based dashboard-level checks, not billing-grade cost detection. Content-based inference remains prohibited.
+
+## Suggested Tag
+
+```bash
+git tag v0.6.22-agentops-dashboard-preview
+```
+
+---
+
 ## v0.6.21-agentops-preview-inference-quality
 
 Release date: 2026-05-30

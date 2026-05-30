@@ -30,6 +30,150 @@ python3 scripts/review_agentops_preview.py
 python3 scripts/review_agentops_preview.py --json | python3 -m json.tool
 ```
 
+## Inference Quality Review
+
+Review preview quality metrics after regenerating `data/agentops/agent_runs_preview.json`:
+
+* `unknown_project_count`
+* `unknown_task_count`
+* `unknown_model_count` / `records_with_unknown_model`
+* `zero_duration_count` / records with `duration_seconds` equal to `0`
+* `large_token_run_count`
+
+Unknown values are acceptable when safe inference is not possible. The review should confirm that quality improved where safe metadata exists without expanding the parser beyond its safety boundary.
+
+## Inference UI Indicators
+
+Preview UI must indicate inferred values so users can distinguish safety-reviewed preview telemetry from reporting data.
+
+Unknown task values are acceptable when safe metadata does not include `Task #NNN`. The UI should explain that task numbers are not inferred from prompts or responses.
+
+Project inference may over-match keywords and should be reviewed before reporting. If most preview runs map to one project, the UI should show a review hint.
+
+Preview telemetry is operational insight, not an official productivity or billing report.
+
+## Project Inference Semantics
+
+Project inference currently uses safety-first metadata signals.
+
+`agent_runs_preview.json` is a safe filename basename signal. When the preview output basename maps to AgentOps, the classification means the preview telemetry output is associated with the AgentOps pipeline.
+
+This does not imply that the parser inspected session prompt, response, shell output, command text, diff, file contents, or raw JSONL content. It also does not guarantee that every underlying session's work content was AgentOps.
+
+The current result should be interpreted as pipeline-level operational classification. Preview project values are operational metadata, not authoritative content-level labels.
+
+Checklist additions:
+
+* If preview output basename is used as a project signal, document that the result is pipeline-level classification.
+* Do not present pipeline-level classification as content-level session classification.
+* Continue to avoid content-based inference.
+* Unknown remains preferred when safe per-session metadata is insufficient.
+
+## Task Inference Safe Allowlist
+
+Task inference review must verify that task values use safe metadata allowlist signals only. Explicit filename basename mapping may infer AgentOps task names, but generic words such as `preview`, `review`, `docs`, `scripts`, or `parser` must not infer task values by themselves.
+
+Checklist additions:
+
+* Confirm `TASK_MINIMUM_SCORE = 3` remains documented and enforced.
+* Confirm allowlisted filename basename matches can infer AgentOps task names.
+* Confirm content-based inference remains prohibited.
+* Confirm tie or ambiguous match returns `unknown`.
+* Confirm `unknown` remains preferred over unsafe inference.
+* If `agent_runs_preview.json` is used as a task signal, document that the result is pipeline-level operational task classification.
+* Do not present pipeline-level task classification as authoritative session-content-level task classification.
+
+Task #122 result:
+
+* before unknown_task_count: 50
+* after unknown_task_count: 0
+* top_tasks: AgentOps Preview Generation: 50
+* review status: passed
+
+## AgentOps Dashboard Metrics Design
+
+Task #123 defines dashboard KPI cards, chart sections, metric semantics, warning copy, and Task #124 UI handoff.
+
+Dashboard metrics remain operational indicators. Token values are not billing-grade cost data. Project / task values may be pipeline-level metadata classifications. Content-based inference remains prohibited.
+
+## AgentOps Preview Dashboard UI
+
+Task #124 implements the first AgentOps Preview Dashboard UI.
+
+The UI includes KPI cards, project/task distribution, token normalization summary, review health, and metric semantics. Dashboard uses operational metrics defined in Task #123. Token values remain operational estimates, not billing-grade cost data. Project / task values may be pipeline-level metadata classifications. Content-based inference remains prohibited.
+
+No parser, schema, backend, or preview JSON changes were made.
+
+## AgentOps Dashboard Visual QA and Demo Notes
+
+Task #125 performs visual QA / responsive pass for the AgentOps Preview Dashboard UI.
+
+Task #125 adds explainability demo notes for non-parser audiences. Demo notes explain AgentOps positioning, token normalization, review health, project/task semantic boundaries, and safety constraints.
+
+No parser, schema, backend, review script, or preview JSON changes were made.
+
+## AgentOps Dashboard Preview Release
+
+Task #129 packages Tasks #123-#128 as AgentOps Dashboard Preview.
+
+Suggested tag: `v0.6.22-agentops-dashboard-preview`. Preview review remains passed. This release preserves safety boundaries and semantic warnings. Future work should focus on historical snapshots and schema split design.
+
+## AgentOps Risk & Anomaly Detection
+
+Task #128 adds a first Risk & Anomaly Detection section to the AgentOps Preview Dashboard.
+
+The first version uses explainable rule-based indicators. Current overall risk level: Low. Blocking risks: 0. Caution items: 3. Caution items are token estimate caution, classification semantics caution, and trend sample data caution.
+
+Risk indicators are based on review status, forbidden hits, extra fields, unknown model count, zero token records, token normalization, project/task coverage, and trend sample status. Risk indicators are not AI answer quality. Risk indicators are not session-content-level correctness. Risk indicators are not billing-grade cost detection.
+
+No parser, schema, backend, review script, or preview JSON changes were made.
+
+Risk & Anomaly Detection review items:
+
+* Risk indicators must be rule-based and explainable.
+* Risk indicators must not be presented as AI answer quality.
+* Risk indicators must not be presented as session-content-level correctness.
+* Risk indicators must preserve token operational estimate warning.
+* Risk indicators must preserve pipeline-level classification warning.
+* Risk indicators must clearly label sample trend data.
+* Overall risk must not say "no risk" when caution items exist.
+* Blocking risks and caution items must be visible.
+* Risk UI must remain readable on mobile.
+
+## AgentOps Release Quality Score
+
+Task #127 adds a first Release Quality Score section to the AgentOps Preview Dashboard.
+
+The first score is a dashboard-level preview release/readiness indicator. Current score: 98 / 100. Score is based on review status, forbidden hits, extra fields, unknown model count, zero token records, project/task coverage, and token estimate caution.
+
+Score is not billing-grade cost data. Score is not AI answer quality. Score is not session-content-level correctness. No parser, schema, backend, review script, or preview JSON changes were made.
+
+Release Quality Score review items:
+
+* Score must be labeled as preview release/readiness quality.
+* Score must not be presented as AI answer quality.
+* Score must not be presented as session-content-level correctness.
+* Score must preserve token operational estimate warning.
+* Score must preserve pipeline-level classification warning.
+* Score must remain explainable by visible metrics.
+* Score must not hide failed review, forbidden hits, extra fields, unknown model, or zero token warnings.
+
+## AgentOps Trend Chart
+
+Task #126 adds a first Trend Chart / Trend Snapshot section to the AgentOps Preview Dashboard.
+
+The first version uses static sample trend data or dashboard-local constants. No parser, schema, backend, review script, or preview JSON changes were made. Trend metrics are dashboard-level operational indicators. Token values remain operational estimates, not billing-grade cost data. Project / task coverage trend does not imply content-level classification accuracy.
+
+Future versions may use generated historical snapshots after schema and storage design are approved.
+
+Trend Chart review items:
+
+* Trend chart must label sample data clearly.
+* Trend chart must not imply full historical telemetry unless real historical data exists.
+* Token trend must preserve operational estimate warning.
+* Project / task coverage trend must preserve pipeline-level / non-content-level warning.
+* Trend UI must remain readable on mobile.
+
 ## Decision Gate
 
 Only when review status is `passed` may the work proceed to Task #109: AgentOps Preview API Source Toggle.
@@ -57,3 +201,45 @@ Large token totals are flagged but not blocked.
 Preview data is not billing-grade cost data.
 
 Preview data is for operational insight only.
+
+## Full Limit Review
+
+Small preview samples may hide inference bias.
+
+Larger preview review should be run before using preview telemetry for reports.
+
+Full limit review should check project distribution, unknown task count, zero duration count and large token totals.
+
+If one project dominates unexpectedly, keyword inference may be overmatching.
+
+Preview remains opt-in and not production telemetry.
+
+## Token Normalization Review
+
+Full limit preview should compare token totals before and after normalization.
+
+Large token totals may still occur.
+
+Token values are operational estimates, not billing-grade.
+
+If token values remain inflated, UI must continue showing estimated / cumulative warning.
+
+## Project Inference Recall Improvement
+
+Task #121 implemented safe metadata scoring for project inference.
+
+The parser uses explicit AgentOps filename basename mapping and conservative scoring. Generic words do not receive score, content-based inference remains prohibited, and tie or ambiguous matches return `unknown`. Unknown remains preferred over unsafe inference.
+
+Current scoring uses `PROJECT_MINIMUM_SCORE = 3`. Explicit AgentOps filename basename matches score 3.
+
+Before Task #121:
+
+* unknown_project_count: 50
+* top_projects: unknown: 50
+
+After Task #121:
+
+* unknown_project_count: 0
+* top_projects: AgentOps: 50
+* review status: passed
+`AgentOps: 50` is based on safe preview output basename mapping from `agent_runs_preview.json`. This is a conservative pipeline-level classification. Future work may separate `pipeline_project` from `session_project` if schema changes are approved.
