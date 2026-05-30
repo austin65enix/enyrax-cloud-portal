@@ -1,5 +1,114 @@
 # ENYRAX Cloud Portal Release Notes
 
+## v0.6.19-agentops-telemetry-dashboard
+
+Release date: 2026-05-30
+
+## Summary
+
+This release introduces AgentOps as a first-class ENYRAX module for tracking AI agent workload, token usage, tool activity and delivery telemetry.
+
+AgentOps helps answer a new operational question: how much work did the AI agent perform, how many tokens were consumed, which tasks were completed, which tools were used, and what delivery outcomes were produced.
+
+## Completed
+
+- Added AgentOps telemetry blueprint
+- Added AgentOps normalized demo data model
+- Added demo agent run records
+- Added AgentOps Summary API
+- Added AgentOps Runs API
+- Added AgentOps Dashboard UI at /agentops/
+- Added AgentOps summary cards for runs, tokens, tools, files and duration
+- Added Top Tasks, Top Projects and Top Models sections
+- Added Recent Agent Runs with filters
+- Added AgentOps module card to Portal homepage
+- Added AgentOps navigation to Command Header
+- Added privacy boundary notice for AI agent telemetry
+
+## Architecture
+
+```text
+Codex / AI Agent Sessions
+  → Normalized Agent Run Metadata
+  → AgentOps Summary API
+  → AgentOps Runs API
+  → AgentOps Dashboard
+  → Management Visibility
+```
+
+## Metrics
+
+```text
+Agent Runs        Number of AI agent sessions
+Success Rate      Completed runs / total runs
+Total Tokens      Input + output + reasoning token usage
+Cached Tokens     Reused context tokens
+Output Tokens     Assistant generated tokens
+Reasoning Tokens  Reasoning / thinking token usage
+Tool Calls        File, shell, search and editing operations
+Files Modified    Delivery impact across repository files
+Avg Duration      Average agent run execution time
+Cache Ratio       Cached tokens compared with total tokens
+```
+
+## Privacy Boundary
+
+```text
+AgentOps displays normalized metadata only.
+
+It does not store:
+- full prompts
+- full responses
+- shell output
+- file contents
+- credentials
+- API keys
+- .env values
+- private notes
+
+The first version uses safe demo data before connecting to local Codex session telemetry.
+```
+
+## Current Product Status
+
+```text
+AgentOps Blueprint       Documented
+AgentOps Demo Data       Added
+AgentOps Summary API     Available
+AgentOps Runs API        Available
+AgentOps Dashboard       Added at /agentops/
+Portal Module Card       Added
+Command Header Nav       Added
+Privacy Boundary         Displayed in dashboard
+```
+
+## Product Positioning
+
+```text
+SOC tracks security incidents.
+ServiceOps tracks human work orders and responsibility.
+ProjectOps tracks project delivery.
+Vulnerability Inventory tracks CVE risk and affected hosts.
+AgentOps tracks AI agent work, token cost, tool usage and delivery output.
+
+AgentOps is not monitoring people. It is measuring how AI agents participate in delivery work.
+```
+
+## Next Phase
+
+- Parse local Codex session telemetry
+- Add AgentOps run detail page
+- Add token cost estimation
+- Add cached token efficiency analysis
+- Add failed session analysis
+- Add files modified heatmap
+- Link AgentOps runs to ServiceOps tickets
+- Link AgentOps runs to ProjectOps tasks
+- Add daily AgentOps summary report
+- Add weekly AI delivery report
+
+---
+
 ## v0.6.18-portal-enterprise-ops-architecture
 
 Release date: 2026-05-29
