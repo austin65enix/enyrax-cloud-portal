@@ -1,5 +1,31 @@
 # ENYRAX Cloud Portal Release Notes
 
+## v0.6.25-plan-serviceops-personal-work-queue
+
+Plan_ServiceOPS Personal Work Queue is the first static demo release of a personal daily operations cockpit for IT operators.
+
+Highlights:
+
+- Added `/plan-serviceops/` static prototype.
+- Added Portal homepage entry.
+- Added summary cards for today tickets, doing, overdue, nearest deadline, and blocked team tickets.
+- Added Today Tickets section with demo status toggle.
+- Added Team Queue section for blocked / pending / doing team tickets.
+- Added Project Deadlines section with D-Day indicators.
+- Completed visual QA and interaction QA.
+- Verified `/plan-serviceops/` and `/` return HTTP 200.
+
+Scope boundary:
+
+- Static demo only.
+- No backend changes.
+- No DB migration.
+- No API implementation.
+- No ServiceOps / ProjectOps behavior changes.
+- No deployment setting changes.
+
+---
+
 ## v0.6.24-agentops-bilingual-demo-dashboard
 
 AgentOps Dashboard is now optimized for bilingual interview / product demo presentation.

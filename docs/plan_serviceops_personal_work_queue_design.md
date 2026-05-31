@@ -402,3 +402,11 @@ Task #148: Plan_ServiceOPS Personal Work Queue UI Prototype
 * 未接 DB。
 * 未新增 API。
 * 未修改 ServiceOps / ProjectOps existing flow。
+
+## Task #150 Release Note
+
+* Task #150 packages Tasks #147-#149 as `v0.6.25-plan-serviceops-personal-work-queue`。
+* Release covers design, static UI prototype, Portal homepage card, visual QA, and interaction QA。
+* Release remains static demo only。
+* No backend, DB, API, ServiceOps, ProjectOps, or deployment changes were made。
+* Future work should start with API aggregation design。
