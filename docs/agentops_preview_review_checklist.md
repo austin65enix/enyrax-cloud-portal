@@ -388,3 +388,22 @@ Snapshot Retention Policy review items:
 * Retention policy must preserve the safety boundary.
 * Auto update must not auto commit or auto push.
 * Retention docs must distinguish daily vs release snapshots.
+
+## AgentOps Snapshot Retention Dry-run Report
+
+Task #138 adds `scripts/report_agentops_snapshot_retention.py`.
+
+The script outputs a retention dry-run report. It does not delete snapshots, modify `index.json`, auto commit, or auto push. It does not read raw sessions or prompt / response content.
+
+The report verifies daily snapshot retention, release snapshot permanence, unknown snapshot files, and index consistency. Future prune automation must build on the dry-run report first.
+
+Retention dry-run review items:
+
+* Retention dry-run script must not delete files.
+* Retention dry-run script must not modify index.
+* Retention dry-run script must not read raw sessions.
+* Release snapshots must be retained permanently.
+* Unknown snapshot files must be reported, not deleted.
+* Index path validation must reject unsafe paths.
+* JSON output must be valid and pretty-printable.
+* Human-readable output must state dry-run only.

@@ -112,3 +112,11 @@ Only `/data/agentops/snapshots/` is published. The remaining `/data/` tree, incl
 Task #137 defines retention policy for AgentOps snapshots. Daily snapshots retain the recent 30 days, while release snapshots are kept permanently.
 
 The auto update workflow updates the working tree only and does not auto commit or auto push. This task does not delete snapshots. Future retention automation must start with dry-run reporting.
+
+## AgentOps Snapshot Retention Dry-run Report
+
+Task #138 adds `scripts/report_agentops_snapshot_retention.py`.
+
+The script outputs a retention dry-run report. It does not delete snapshots, modify `index.json`, auto commit, or auto push. It does not read raw sessions or prompt / response content.
+
+The report verifies daily snapshot retention, release snapshot permanence, unknown snapshot files, and index consistency. Future prune automation must build on the dry-run report first.
