@@ -455,3 +455,47 @@ Task #141 packages Tasks #130-#140 as release `v0.6.23-agentops-historical-snaps
 The release covers historical snapshots, trend integration, retention dry-run, and the Snapshot Retention Health dashboard summary. It preserves safety boundaries: no prompt / response or raw session content is stored.
 
 This release introduces no automatic prune. Future work must require dry-run reporting and explicit approval before any prune automation.
+
+
+## AgentOps Chinese Copy Integration
+
+Task #143 adds bilingual Chinese / English copy to AgentOps Dashboard. Chinese copy explains AgentOps positioning, privacy boundary, preview metrics, Release Quality Score, Risk & Anomaly Detection, Trend Snapshot, Snapshot Retention Health, and interview demo notes. Existing safety boundaries remain unchanged.
+
+Chinese Copy Integration review items:
+
+* Chinese copy must not imply AgentOps reads prompt / response.
+* Chinese copy must preserve token operational estimate warning.
+* Chinese copy must preserve pipeline-level classification warning.
+* Chinese copy must preserve dry-run retention warning.
+* UI must remain mobile readable.
+* Existing snapshot / retention fetch behavior must not break.
+* This task must not modify parser, backend, snapshot JSON, nginx, cron, or systemd.
+
+
+## AgentOps Bilingual Layout QA
+
+Task #144 improves layout readability after Chinese copy integration. KPI cards, Project / Task Distribution, Token Normalization, Review Health, Metric Semantics, and Snapshot Retention Health were adjusted for bilingual display. Additional Chinese helper text was added to Project Distribution, Task Distribution, Token Normalization Summary, and Review Health Summary. No parser, backend, snapshot JSON, nginx, cron, or systemd changes were made. Existing safety boundaries remain unchanged.
+
+AgentOps Bilingual Layout QA review items:
+
+* Desktop dashboard should not appear overly compressed.
+* KPI cards should have readable Chinese helper text.
+* Project / Task Distribution should include Chinese semantic warning.
+* Token Normalization should include Chinese operational estimate warning.
+* Review Health should include Chinese content-level correctness warning.
+* Mobile layout must not overflow horizontally.
+* Existing snapshot / retention fetch behavior must not break.
+
+
+## AgentOps Preview Dashboard Full-width Layout Fix
+
+Task #144.5 moves / expands AgentOps Preview Dashboard into a full-width dashboard section below the hero and privacy boundary row. KPI cards and summary cards now use the full desktop width. Project / Task Distribution, Token Normalization, and Review Health remain bilingual and readable. Mobile stacking remains preserved. No parser, backend, snapshot JSON, nginx, cron, or systemd changes were made.
+
+AgentOps Preview Dashboard Full-width Layout Fix review items:
+
+* AgentOps Preview Dashboard must not be constrained to the hero left column.
+* Desktop layout should show hero + privacy on first row and dashboard full width on second row.
+* KPI cards should not be overly compressed.
+* Summary cards should not be overlapped by privacy boundary or right-side overlay.
+* Mobile layout must not overflow horizontally.
+* Existing snapshot / retention fetch behavior must not break.
