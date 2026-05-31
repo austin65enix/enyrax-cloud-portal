@@ -381,3 +381,13 @@ Task #148: Plan_ServiceOPS Personal Work Queue UI Prototype
 * 不接 DB。
 * 不改 ServiceOps existing flow。
 * 先驗證 demo value。
+
+## Task #148 UI Prototype
+
+* 新增 `/plan-serviceops/` static prototype。
+* 使用 demo data。
+* 加入 Portal 首頁入口。
+* 第一版不接 DB。
+* 第一版不新增 API。
+* 第一版不改 ServiceOps / ProjectOps existing flow。
+* Status toggle 只做前端 demo state。
