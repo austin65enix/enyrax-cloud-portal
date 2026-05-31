@@ -1,5 +1,41 @@
 # ENYRAX Cloud Portal Release Notes
 
+## v0.6.23-agentops-historical-snapshot-governance
+
+Release date: 2026-05-31
+
+## Summary
+
+This release packages AgentOps Historical Snapshot Governance across Tasks #130-#140. It advances AgentOps Dashboard Preview with snapshot-backed Trend data, scheduled update documentation, retention policy, dry-run retention reporting, and a read-only Snapshot Retention Health summary.
+
+## Completed
+
+- Added historical snapshot schema
+- Added Snapshot Generation
+- Added snapshot index and Trend integration
+- Added snapshot publish path
+- Added auto update workflow
+- Added scheduled update documentation and verification
+- Added retention policy
+- Added retention dry-run report
+- Added Snapshot Retention Health dashboard summary
+- Preserved safety boundaries
+- Made no parser, backend, or preview regeneration changes in this release packaging task
+
+## Safety and Semantic Boundaries
+
+Snapshots contain aggregate dashboard-level operational metrics only. No prompt / response or raw session content is stored. Retention reporting remains dry-run only and introduces no automatic prune. Token values remain operational estimates, not billing-grade cost data. Project / task values may remain pipeline-level metadata classifications.
+
+## Suggested Tag
+
+Prepare in Task #142:
+
+```bash
+git tag v0.6.23-agentops-historical-snapshot-governance
+```
+
+---
+
 ## v0.6.22-agentops-dashboard-preview
 
 Release date: 2026-05-30

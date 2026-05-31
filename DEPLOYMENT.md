@@ -136,3 +136,11 @@ See `docs/agentops_snapshot_retention_dry_run_deployment_check.md`.
 Task #140 adds a read-only retention dry-run summary to the AgentOps Dashboard. The Dashboard fetches `data/agentops/snapshots/retention_report.json` when available and displays daily snapshot retention, release snapshot permanence, unknown files, and index consistency.
 
 The Dashboard does not delete snapshots, modify `index.json`, auto commit, or auto push. The retention report remains dry-run only. If the retention report is unavailable, the Dashboard falls back to a read-only unavailable state.
+
+## AgentOps Historical Snapshot Governance Release
+
+Task #141 packages Tasks #130-#140 as release `v0.6.23-agentops-historical-snapshot-governance`.
+
+The release covers historical snapshots, trend integration, retention dry-run, and the Snapshot Retention Health dashboard summary. It preserves safety boundaries: no prompt / response or raw session content is stored.
+
+This release introduces no automatic prune. Future work must require dry-run reporting and explicit approval before any prune automation.

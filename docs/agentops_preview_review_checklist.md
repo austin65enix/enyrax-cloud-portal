@@ -447,3 +447,11 @@ Retention dashboard review items:
 * Fetch failure must not break the Dashboard.
 * Retention report JSON must be valid.
 * Retention report must not contain prompt / response / raw sessions / credentials / secrets / full home paths.
+
+## AgentOps Historical Snapshot Governance Release
+
+Task #141 packages Tasks #130-#140 as release `v0.6.23-agentops-historical-snapshot-governance`.
+
+The release covers historical snapshots, trend integration, retention dry-run, and the Snapshot Retention Health dashboard summary. It preserves safety boundaries: no prompt / response or raw session content is stored.
+
+This release introduces no automatic prune. Future work must require dry-run reporting and explicit approval before any prune automation.
