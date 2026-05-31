@@ -115,3 +115,13 @@ Task #138 adds `scripts/report_agentops_snapshot_retention.py`.
 The script outputs a retention dry-run report. It does not delete snapshots, modify `index.json`, auto commit, or auto push. It does not read raw sessions or prompt / response content.
 
 The report verifies daily snapshot retention, release snapshot permanence, unknown snapshot files, and index consistency. Future prune automation must build on the dry-run report first.
+
+## AgentOps Snapshot Retention Dry-run Deployment Check
+
+Task #139 documents deployment verification for the retention dry-run report.
+
+The deployment check verifies human-readable and JSON dry-run output, remote snapshot index availability, and that the preview fixture remains blocked with `404`. It also confirms the remote index keeps `Cache-Control: no-store`.
+
+The check does not delete snapshots, modify `index.json`, change cron / nginx / systemd, auto commit, or auto push.
+
+See `docs/agentops_snapshot_retention_dry_run_deployment_check.md`.

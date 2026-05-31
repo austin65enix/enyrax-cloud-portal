@@ -407,3 +407,24 @@ Retention dry-run review items:
 * Index path validation must reject unsafe paths.
 * JSON output must be valid and pretty-printable.
 * Human-readable output must state dry-run only.
+
+## AgentOps Snapshot Retention Dry-run Deployment Check
+
+Task #139 documents deployment verification for the retention dry-run report.
+
+The deployment check verifies human-readable and JSON dry-run output, remote snapshot index availability, and that the preview fixture remains blocked with `404`. It also confirms the remote index keeps `Cache-Control: no-store`.
+
+The check does not delete snapshots, modify `index.json`, change cron / nginx / systemd, auto commit, or auto push.
+
+See `docs/agentops_snapshot_retention_dry_run_deployment_check.md`.
+
+Retention dry-run deployment check review items:
+
+* Deployment check must confirm dry-run report executes on host.
+* Deployment check must confirm JSON report is valid.
+* Deployment check must confirm release snapshots are retained permanently.
+* Deployment check must confirm unknown snapshots are reported only.
+* Deployment check must confirm remote index returns `200`.
+* Deployment check must confirm preview fixture returns `404`.
+* Deployment check must not modify cron / nginx / systemd.
+* Deployment check must not delete snapshots or modify index.
