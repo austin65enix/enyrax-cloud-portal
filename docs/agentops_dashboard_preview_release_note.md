@@ -214,3 +214,14 @@ Task #144.5 moves / expands AgentOps Preview Dashboard into a full-width dashboa
 KPI cards and summary cards now use the full desktop width. Project / Task Distribution, Token Normalization, and Review Health remain bilingual and readable. Mobile stacking remains preserved.
 
 No parser, backend, snapshot JSON, nginx, cron, or systemd changes were made.
+
+
+## AgentOps Bilingual Demo Dashboard Release
+
+Task #145 packages Tasks #143, #144, and #144.5 as release `v0.6.24-agentops-bilingual-demo-dashboard`.
+
+The release focuses on bilingual Chinese / English demo copy and layout readability. Preview Dashboard now spans full width below the hero and privacy boundary row.
+
+Chinese helper copy explains privacy boundary, metrics, release readiness, risk indicators, trend snapshots, retention health, and interview demo positioning. Existing safety boundaries remain unchanged.
+
+No parser, backend, snapshot JSON, nginx, cron, or systemd changes were made.

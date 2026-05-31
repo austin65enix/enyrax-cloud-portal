@@ -1,5 +1,30 @@
 # ENYRAX Cloud Portal Release Notes
 
+## v0.6.24-agentops-bilingual-demo-dashboard
+
+AgentOps Dashboard is now optimized for bilingual interview / product demo presentation.
+
+Highlights:
+
+- Added Chinese / English positioning copy.
+- Added Chinese privacy boundary explanation.
+- Added bilingual Preview Dashboard metric explanations.
+- Added bilingual Release Quality Score, Risk & Anomaly, Trend Snapshot, and Snapshot Retention Health explanations.
+- Added Interview Demo Notes section.
+- Fixed Preview Dashboard layout so it spans full desktop width below the Hero and Privacy Boundary row.
+- Improved KPI and summary card readability.
+- Preserved all safety boundaries.
+
+Safety:
+
+- No prompt / response content is read or stored.
+- Token values remain operational estimates, not billing-grade cost data.
+- Project / Task values may remain pipeline-level metadata classification.
+- Retention dashboard remains dry-run / read-only.
+- No parser, backend, snapshot JSON, nginx, cron, or systemd changes were made.
+
+---
+
 ## v0.6.23-agentops-historical-snapshot-governance
 
 Release date: 2026-05-31

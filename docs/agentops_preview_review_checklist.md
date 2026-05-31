@@ -499,3 +499,24 @@ AgentOps Preview Dashboard Full-width Layout Fix review items:
 * Summary cards should not be overlapped by privacy boundary or right-side overlay.
 * Mobile layout must not overflow horizontally.
 * Existing snapshot / retention fetch behavior must not break.
+
+
+## AgentOps Bilingual Demo Dashboard Release
+
+Task #145 packages Tasks #143, #144, and #144.5 as release `v0.6.24-agentops-bilingual-demo-dashboard`.
+
+The release focuses on bilingual Chinese / English demo copy and layout readability. Preview Dashboard now spans full width below the hero and privacy boundary row.
+
+Chinese helper copy explains privacy boundary, metrics, release readiness, risk indicators, trend snapshots, retention health, and interview demo positioning. Existing safety boundaries remain unchanged.
+
+No parser, backend, snapshot JSON, nginx, cron, or systemd changes were made.
+
+AgentOps Bilingual Demo Dashboard Release review items:
+
+* Release note must state bilingual demo purpose.
+* Release note must mention full-width Preview Dashboard layout fix.
+* Release note must preserve safety boundaries.
+* Release note must not imply AgentOps reads prompt / response.
+* Release note must not imply token values are billing-grade.
+* Release note must not imply project/task labels are content-level truth.
+* Release note must not imply retention dashboard performs prune.
