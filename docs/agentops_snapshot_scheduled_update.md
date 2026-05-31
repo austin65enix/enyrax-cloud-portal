@@ -79,3 +79,9 @@ Automatic daily commits would pollute repository history. Review generated snaps
 * release snapshot automation
 * snapshot validation script
 * audit export
+
+## AgentOps Snapshot Retention Policy
+
+Task #137 defines retention policy for AgentOps snapshots. Daily snapshots retain the recent 30 days, while release snapshots are kept permanently.
+
+The auto update workflow updates the working tree only and does not auto commit or auto push. This task does not delete snapshots. Future retention automation must start with dry-run reporting.

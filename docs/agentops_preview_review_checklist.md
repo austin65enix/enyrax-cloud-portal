@@ -371,3 +371,20 @@ Scheduled Update review items:
 * Remote snapshot index must return `200`.
 * Preview fixture must remain `404`.
 * `Cache-Control` should remain `no-store`.
+
+## AgentOps Snapshot Retention Policy
+
+Task #137 defines retention policy for AgentOps snapshots. Daily snapshots retain the recent 30 days, while release snapshots are kept permanently.
+
+The auto update workflow updates the working tree only and does not auto commit or auto push. This task does not delete snapshots. Future retention automation must start with dry-run reporting.
+
+Snapshot Retention Policy review items:
+
+* Retention policy must not delete snapshots in v1.
+* Release snapshots must not be pruned.
+* Daily retention automation must start with dry-run.
+* `index.json` should not grow without limit.
+* Snapshot paths must remain safe relative paths.
+* Retention policy must preserve the safety boundary.
+* Auto update must not auto commit or auto push.
+* Retention docs must distinguish daily vs release snapshots.
