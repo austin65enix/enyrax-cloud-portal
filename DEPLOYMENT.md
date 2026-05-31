@@ -78,3 +78,31 @@ Task #134 adds `scripts/update_agentops_snapshots.py`.
 The auto update workflow generates daily snapshots and updates the snapshot index from aggregate review JSON only. It does not regenerate preview JSON and does not read raw sessions or prompt / response content.
 
 This keeps snapshot trend data aligned with generated historical snapshots. Release snapshots remain explicit and require `--write-release`.
+
+## AgentOps Snapshot Scheduled Update
+
+Task #135 documents manual deployment of a daily scheduled update. The schedule runs `scripts/update_agentops_snapshots.py`, updates the daily snapshot and snapshot index, and does not auto commit or auto push generated files.
+
+Manual run:
+
+```bash
+cd /var/www/enyrax-portal
+python3 scripts/update_agentops_snapshots.py --snapshot-date "$(date +%F)"
+```
+
+Cron example:
+
+```cron
+30 23 * * * cd /var/www/enyrax-portal && python3 scripts/update_agentops_snapshots.py --snapshot-date "$(date +\%F)" >> /var/log/agentops-snapshot-update.log 2>&1
+```
+
+Cron requires `%` to be escaped as `\%`.
+
+Verify the remote index:
+
+```bash
+curl -I https://portal.soc-monitoring.dev/data/agentops/snapshots/index.json
+curl -s https://portal.soc-monitoring.dev/data/agentops/snapshots/index.json | python3 -m json.tool >/tmp/agentops_snapshot_index_remote_check.json
+```
+
+Only `/data/agentops/snapshots/` is published. The remaining `/data/` tree, including preview fixtures, must stay unavailable.

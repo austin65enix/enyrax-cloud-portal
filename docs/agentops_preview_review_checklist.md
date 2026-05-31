@@ -355,3 +355,19 @@ Auto Update review items:
 * Release snapshot update must require explicit `--write-release`.
 * Generated JSON must be pretty-printed and valid.
 * Trend UI must still fallback if index is unavailable.
+
+## AgentOps Snapshot Scheduled Update
+
+Task #135 documents scheduled update deployment. The schedule runs `scripts/update_agentops_snapshots.py` to update the daily snapshot and snapshot index.
+
+The schedule does not regenerate preview JSON and does not read raw sessions or prompt / response content. The first version does not auto commit or auto push generated files.
+
+Scheduled Update review items:
+
+* Scheduled update must not run parser regeneration.
+* Scheduled update must not read `~/.codex/sessions`.
+* Scheduled update must log output to a known file.
+* Scheduled update must not auto commit or auto push in v1.
+* Remote snapshot index must return `200`.
+* Preview fixture must remain `404`.
+* `Cache-Control` should remain `no-store`.

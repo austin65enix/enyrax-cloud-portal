@@ -29,3 +29,9 @@ python3 scripts/update_agentops_snapshots.py \
 The workflow updates the daily snapshot and snapshot index. It uses aggregate review output only.
 
 The workflow does not regenerate preview JSON, does not read raw sessions, and does not inspect prompt / response content.
+
+## AgentOps Snapshot Scheduled Update
+
+Task #135 documents scheduled update deployment. The schedule runs `scripts/update_agentops_snapshots.py` to update the daily snapshot and snapshot index.
+
+The schedule does not regenerate preview JSON and does not read raw sessions or prompt / response content. The first version does not auto commit or auto push generated files.
