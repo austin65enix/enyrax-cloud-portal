@@ -336,3 +336,22 @@ Snapshot Index Publish Path review items:
 * Confirm other `/data/` paths return `404`.
 * Confirm snapshot files contain aggregate operational metrics only.
 * Confirm Trend UI fallback remains labeled as sample data.
+
+## AgentOps Snapshot Auto Update Workflow
+
+Task #134 adds `scripts/update_agentops_snapshots.py`.
+
+The auto update workflow generates daily snapshots and updates the snapshot index from aggregate review JSON only. It does not regenerate preview JSON and does not read raw sessions or prompt / response content.
+
+This keeps snapshot trend data aligned with generated historical snapshots. Release snapshots remain explicit and require `--write-release`.
+
+Auto Update review items:
+
+* Auto update script must not run parser preview regeneration.
+* Auto update script must not read `~/.codex/sessions`.
+* Auto update script must only use aggregate review output.
+* Auto update script must update index without duplicate `snapshot_date` entries.
+* Snapshot index paths must remain safe relative paths.
+* Release snapshot update must require explicit `--write-release`.
+* Generated JSON must be pretty-printed and valid.
+* Trend UI must still fallback if index is unavailable.

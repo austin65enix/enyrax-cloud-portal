@@ -18,3 +18,14 @@ Snapshot schema version: `agentops_snapshot_v1`.
 
 * `daily/` stores daily AgentOps snapshot files.
 * `releases/` stores release AgentOps snapshot files.
+
+## Auto Update Workflow
+
+```bash
+python3 scripts/update_agentops_snapshots.py \
+  --snapshot-date YYYY-MM-DD
+```
+
+The workflow updates the daily snapshot and snapshot index. It uses aggregate review output only.
+
+The workflow does not regenerate preview JSON, does not read raw sessions, and does not inspect prompt / response content.

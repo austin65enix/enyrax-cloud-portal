@@ -369,3 +369,11 @@ location ^~ /data/ {
 ```
 
 `Cache-Control: no-store` is preferred for preview dashboard freshness. If the snapshot index is unavailable, Trend UI falls back to clearly labeled sample data.
+
+## AgentOps Snapshot Auto Update Workflow
+
+Task #134 adds `scripts/update_agentops_snapshots.py`.
+
+The auto update workflow generates daily snapshots and updates the snapshot index from aggregate review JSON only. It does not regenerate preview JSON and does not read raw sessions or prompt / response content.
+
+This keeps snapshot trend data aligned with generated historical snapshots. Release snapshots remain explicit and require `--write-release`.

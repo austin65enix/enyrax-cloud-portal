@@ -145,3 +145,11 @@ Task #133 documents how `/data/agentops/snapshots/index.json` should be served b
 Only `/data/agentops/snapshots/` should be exposed, not the entire `/data/` tree. Snapshot files contain aggregate operational metrics only. The restricted publish path must not expose preview fixtures or other present or future files under `/data/`.
 
 The nginx rule should use `root /var/www/enyrax-portal`, add `Cache-Control: no-store` for preview dashboard freshness, and return `404` for the remaining `/data/` tree. Trend UI falls back to clearly labeled sample data if the snapshot index is unavailable.
+
+## AgentOps Snapshot Auto Update Workflow
+
+Task #134 adds `scripts/update_agentops_snapshots.py`.
+
+The auto update workflow generates daily snapshots and updates the snapshot index from aggregate review JSON only. It does not regenerate preview JSON and does not read raw sessions or prompt / response content.
+
+This keeps snapshot trend data aligned with generated historical snapshots. Release snapshots remain explicit and require `--write-release`.

@@ -295,3 +295,11 @@ Token values are not billing-grade cost data.
 Project / task coverage does not imply content-level classification accuracy.
 
 No prompt / response content is used.
+
+## AgentOps Snapshot Auto Update Workflow
+
+Task #134 adds `scripts/update_agentops_snapshots.py`.
+
+The auto update workflow generates daily snapshots and updates the snapshot index from aggregate review JSON only. It does not regenerate preview JSON and does not read raw sessions or prompt / response content.
+
+This keeps snapshot trend data aligned with generated historical snapshots. Release snapshots remain explicit and require `--write-release`.
