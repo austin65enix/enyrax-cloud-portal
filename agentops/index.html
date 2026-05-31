@@ -1152,6 +1152,31 @@
       .coverage-item strong { text-align: left; }
     }
 
+    .retention-health {
+      margin-top: 16px;
+      border: 1px solid rgba(115, 244, 223, .18);
+      border-radius: 18px;
+      background: rgba(7, 12, 28, .44);
+      padding: 15px;
+    }
+
+    .retention-head,
+    .retention-status-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
+    .retention-head h3 { margin: 0; font-size: 17px; }
+    .retention-label { margin: 7px 0 0; color: var(--muted); font-size: 12px; font-weight: 750; }
+    .retention-badge { border: 1px solid rgba(143, 247, 178, .34); border-radius: 999px; color: var(--green); background: rgba(143, 247, 178, .08); padding: 7px 10px; font-size: 11px; font-weight: 950; text-transform: uppercase; }
+    .retention-badge.caution { border-color: rgba(255, 209, 102, .4); color: var(--amber); background: rgba(255, 209, 102, .08); }
+    .retention-kpis { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 9px; margin-top: 13px; }
+    .retention-kpi { border: 1px solid rgba(255, 255, 255, .1); border-radius: 13px; background: rgba(255, 255, 255, .035); padding: 11px; }
+    .retention-kpi span { display: block; min-height: 29px; color: var(--muted); font-size: 11px; font-weight: 800; line-height: 1.3; }
+    .retention-kpi strong { display: block; margin-top: 7px; color: var(--cyan); font-size: 23px; }
+    .retention-warning { margin-top: 13px; border: 1px solid rgba(255, 209, 102, .3); border-radius: 13px; color: var(--amber); background: rgba(255, 209, 102, .065); padding: 10px 11px; font-size: 12px; font-weight: 850; }
+    .retention-checklist { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px 12px; margin-top: 13px; }
+    .retention-check { color: var(--muted-strong); font-size: 12px; font-weight: 750; line-height: 1.4; }
+    .retention-check::before { content: "[ok] "; color: var(--green); font-weight: 950; }
+    @media (max-width: 900px) { .retention-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+    @media (max-width: 520px) { .retention-kpis, .retention-checklist { grid-template-columns: 1fr; } }
+
     .release-score {
       margin-top: 16px;
       border: 1px solid rgba(143, 247, 178, .22);
@@ -1641,6 +1666,23 @@
         </div>
       </section>
 
+      <section class="retention-health" aria-labelledby="retention-health-title">
+        <div class="retention-head">
+          <div><h3 id="retention-health-title">Snapshot Retention Health</h3><p class="retention-label" id="retention-label">Retention dry-run report</p></div>
+          <span class="retention-badge" id="retention-status">Loading / Dry-run only</span>
+        </div>
+        <div class="retention-kpis" id="retention-kpis" aria-label="Retention dry-run summary"></div>
+        <div class="retention-warning">No-delete boundary: retention report is dry-run only. This Dashboard remains read-only.</div>
+        <div class="retention-checklist">
+          <div class="retention-check">No snapshots are deleted by this dashboard.</div>
+          <div class="retention-check">Release snapshots are never pruned.</div>
+          <div class="retention-check">Unknown snapshot files require manual review.</div>
+          <div class="retention-check">This dashboard does not modify index.</div>
+          <div class="retention-check">This dashboard does not auto commit or push.</div>
+          <div class="retention-check">No prompt / response content is used.</div>
+        </div>
+      </section>
+
     </section>
 
     <section class="summary-grid" id="summary-cards" aria-label="AgentOps summary cards"></section>
@@ -2074,6 +2116,74 @@
       }
     }
 
+    const RETENTION_REPORT_PATH = "/data/agentops/snapshots/retention_report.json";
+
+    function countList(value) {
+      return Array.isArray(value) ? value.length : 0;
+    }
+
+    function retentionCard(label, value) {
+      return `<article class="retention-kpi"><span>` + escapeHtml(label) + `</span><strong>` + escapeHtml(String(value)) + `</strong></article>`;
+    }
+
+    function validateRetentionReport(report) {
+      const actions = report && report.actions;
+      if (!report || report.schema_version !== "agentops_retention_report_v1" || report.mode !== "dry_run"
+        || !report.daily || !report.releases || !report.unknown || !actions
+        || actions.delete_files !== false || actions.modify_index !== false
+        || actions.auto_commit !== false || actions.auto_push !== false) {
+        throw new Error("Invalid AgentOps retention report");
+      }
+    }
+
+    function renderRetentionReport(report) {
+      const daily = report.daily;
+      const releases = report.releases;
+      const unknown = report.unknown;
+      const candidateCount = countList(daily.retention_candidates);
+      const unknownCount = Number(unknown.total) || 0;
+      const hasCaution = candidateCount > 0 || unknownCount > 0 || countList(daily.missing_from_index) > 0 || countList(daily.index_entries_without_files) > 0 || countList(releases.prune_candidates) > 0 || countList(report.warnings) > 0;
+      document.getElementById("retention-label").textContent = "Retention dry-run report";
+      const status = document.getElementById("retention-status");
+      status.textContent = hasCaution ? "Review needed / Dry-run only" : "Healthy / Dry-run only";
+      status.classList.toggle("caution", hasCaution);
+      document.getElementById("retention-kpis").innerHTML = [
+        ["Mode", report.mode],
+        ["Daily snapshots total", daily.total],
+        ["Daily retained", daily.retained],
+        ["Daily retention candidates", candidateCount],
+        ["Missing daily snapshots from index", countList(daily.missing_from_index)],
+        ["Index entries without files", countList(daily.index_entries_without_files)],
+        ["Release snapshots total", releases.total],
+        ["Release snapshots retained permanently", releases.retained_permanently],
+        ["Release prune candidates", countList(releases.prune_candidates)],
+        ["Unknown snapshot files", unknownCount],
+        ["delete_files", report.actions.delete_files],
+        ["modify_index", report.actions.modify_index],
+        ["auto_commit", report.actions.auto_commit],
+        ["auto_push", report.actions.auto_push]
+      ].map(([label, value]) => retentionCard(label, value)).join("");
+    }
+
+    function renderRetentionUnavailable() {
+      document.getElementById("retention-label").textContent = "Retention report unavailable";
+      const status = document.getElementById("retention-status");
+      status.textContent = "Unavailable / Read-only";
+      status.classList.add("caution");
+      document.getElementById("retention-kpis").innerHTML = retentionCard("Note", "Retention summary is unavailable; dashboard remains read-only.");
+    }
+
+    async function loadRetentionReport() {
+      try {
+        const report = await fetchJson(RETENTION_REPORT_PATH);
+        validateRetentionReport(report);
+        renderRetentionReport(report);
+      } catch (err) {
+        console.warn("Retention report unavailable; dashboard remains read-only:", err);
+        renderRetentionUnavailable();
+      }
+    }
+
     function extractList(data, key) {
       if (Array.isArray(data)) return data;
       if (Array.isArray(data && data[key])) return data[key];
@@ -2402,6 +2512,7 @@
     loadSummary();
     loadRuns();
     loadSnapshotTrend();
+    loadRetentionReport();
   </script>
 </body>
 </html>

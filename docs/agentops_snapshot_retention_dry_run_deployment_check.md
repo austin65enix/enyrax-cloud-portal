@@ -129,3 +129,9 @@ Task #140 can design Retention Report Integration, for example:
 * generate `data/agentops/snapshots/retention_report.json`
 
 The integration must remain dry-run and read-only. It must not delete snapshots.
+
+## AgentOps Retention Report Dashboard Integration
+
+Task #140 adds a read-only retention dry-run summary to the AgentOps Dashboard. The Dashboard fetches `data/agentops/snapshots/retention_report.json` when available and displays daily snapshot retention, release snapshot permanence, unknown files, and index consistency.
+
+The Dashboard does not delete snapshots, modify `index.json`, auto commit, or auto push. The retention report remains dry-run only. If the retention report is unavailable, the Dashboard falls back to a read-only unavailable state.

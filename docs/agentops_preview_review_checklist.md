@@ -428,3 +428,22 @@ Retention dry-run deployment check review items:
 * Deployment check must confirm preview fixture returns `404`.
 * Deployment check must not modify cron / nginx / systemd.
 * Deployment check must not delete snapshots or modify index.
+
+## AgentOps Retention Report Dashboard Integration
+
+Task #140 adds a read-only retention dry-run summary to the AgentOps Dashboard. The Dashboard fetches `data/agentops/snapshots/retention_report.json` when available and displays daily snapshot retention, release snapshot permanence, unknown files, and index consistency.
+
+The Dashboard does not delete snapshots, modify `index.json`, auto commit, or auto push. The retention report remains dry-run only. If the retention report is unavailable, the Dashboard falls back to a read-only unavailable state.
+
+Retention dashboard review items:
+
+* Retention dashboard must be read-only.
+* Retention dashboard must not delete snapshots.
+* Retention dashboard must not modify index.
+* Retention dashboard must not imply prune automation exists.
+* Retention dashboard must label dry-run mode clearly.
+* Release snapshots must be shown as permanently retained.
+* Unknown snapshot files must be shown as manual review items.
+* Fetch failure must not break the Dashboard.
+* Retention report JSON must be valid.
+* Retention report must not contain prompt / response / raw sessions / credentials / secrets / full home paths.

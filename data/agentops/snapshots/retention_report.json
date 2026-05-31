@@ -1,0 +1,31 @@
+{
+  "actions": {
+    "auto_commit": false,
+    "auto_push": false,
+    "delete_files": false,
+    "modify_index": false
+  },
+  "daily": {
+    "index_entries_without_files": [],
+    "missing_from_index": [],
+    "retained": 1,
+    "retention_candidates": [],
+    "total": 1
+  },
+  "manual_review_retention_days": 90,
+  "mode": "dry_run",
+  "releases": {
+    "prune_candidates": [],
+    "retained_permanently": 1,
+    "total": 1
+  },
+  "retention_days": 30,
+  "schema_version": "agentops_retention_report_v1",
+  "snapshots_root": "data/agentops/snapshots",
+  "today": "2026-05-31",
+  "unknown": {
+    "files": [],
+    "total": 0
+  },
+  "warnings": []
+}

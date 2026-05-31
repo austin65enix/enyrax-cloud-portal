@@ -180,7 +180,7 @@ def inspect_releases(root: Path, warnings: list[str]) -> dict[str, Any]:
 
 
 def find_unknown_json(root: Path) -> list[str]:
-    known = {root / "index.json"}
+    known = {root / "index.json", root / "retention_report.json"}
     known.update((root / "daily").glob("*.json"))
     known.update((root / "releases").glob("*.json"))
     return sorted(relative_path(path, root) for path in root.rglob("*.json") if path not in known)
@@ -218,11 +218,6 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
             "auto_commit": False,
             "auto_push": False,
         },
-        "semantic_warnings": [
-            "retention_report_does_not_read_prompt_response",
-            "release_snapshots_are_never_pruned",
-            "dry_run_only",
-        ],
         "warnings": warnings,
     }
 
