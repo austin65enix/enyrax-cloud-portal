@@ -391,3 +391,14 @@ Task #148: Plan_ServiceOPS Personal Work Queue UI Prototype
 * 第一版不新增 API。
 * 第一版不改 ServiceOps / ProjectOps existing flow。
 * Status toggle 只做前端 demo state。
+
+## Task #149 Visual QA and Interaction Review
+
+* `/plan-serviceops/` 已完成 visual QA。
+* 已檢查 desktop、tablet、mobile layout，包含 summary cards、ticket lists、priority / status badges、D-Day badges 與 responsive stacking。
+* Today Ticket status toggle 已驗證：`Pending -> Doing -> Done -> Pending`，refresh 後恢復 demo data。
+* Portal homepage `/plan-serviceops/` card 已驗證。
+* 第一版仍為 static demo，demo data 不代表 production data。
+* 未接 DB。
+* 未新增 API。
+* 未修改 ServiceOps / ProjectOps existing flow。
