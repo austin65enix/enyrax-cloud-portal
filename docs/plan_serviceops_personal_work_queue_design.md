@@ -410,3 +410,12 @@ Task #148: Plan_ServiceOPS Personal Work Queue UI Prototype
 * Release remains static demo only。
 * No backend, DB, API, ServiceOps, ProjectOps, or deployment changes were made。
 * Future work should start with API aggregation design。
+
+## Task #152 API Aggregation Design
+
+* Task #152 defines read-only API aggregation layer.
+* Proposed primary endpoint: `/api/plan-serviceops/dashboard`.
+* Sources: existing ServiceOps tickets and ProjectOps projects.
+* No DB migration.
+* No mutation.
+* Future work should implement read-only API prototype before changing the frontend.
