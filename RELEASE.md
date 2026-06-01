@@ -1,5 +1,34 @@
 # ENYRAX Cloud Portal Release Notes
 
+## v0.6.27-team-agentops-static-prototype
+
+Team_AgentOps introduces the first static dashboard prototype for managing human-AI team collaboration, agent activity, project contribution, human review, and governance boundaries.
+
+Highlights:
+
+- Added `/team-agentops/` static dashboard prototype.
+- Added Portal homepage entry.
+- Added KPI cards for Active Agents, Pending Review, Project Impact, Failed Runs, and Usage Cost.
+- Added Agent Activity Timeline.
+- Added Project Agent Contribution with progress meters.
+- Added Human Review Flow.
+- Added Team Scorecard.
+- Added Shadow AI Risk panel.
+- Added Safety Boundary for safe metadata, no prompt / response storage, and no employee surveillance scoring.
+- Completed visual / responsive QA and HTTP checks.
+
+Scope boundary:
+
+- Static demo only.
+- No backend changes.
+- No DB migration.
+- No API implementation.
+- No AgentOps parser changes.
+- No production data integration.
+- No deployment setting changes.
+
+---
+
 ## v0.6.26-plan-serviceops-api-backed-dashboard
 
 Plan_ServiceOPS now supports API-first read-only dashboard loading with local demo fallback.

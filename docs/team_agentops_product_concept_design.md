@@ -337,3 +337,11 @@ This helps enterprises reduce shadow AI risk and gives managers visibility into 
 * Shadow AI risk copy 已確認。
 * No backend、DB、API、AgentOps parser、ProjectOps、ServiceOps、or deployment changes。
 * Prototype remains a static demo with demo data only。
+
+## Task #164 Static Prototype Release Note
+
+* Task #164 packages Tasks #161-#163 as `v0.6.27-team-agentops-static-prototype`。
+* Release covers product concept、static dashboard prototype、Portal homepage card、visual QA、safety boundary、and demo positioning。
+* Release remains static demo only。
+* No backend、DB、API、parser、ProjectOps、ServiceOps、AgentOps、or deployment changes were made。
+* Future work should start with release tag and then schema design。
