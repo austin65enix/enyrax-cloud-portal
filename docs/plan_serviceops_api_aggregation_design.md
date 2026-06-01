@@ -408,3 +408,16 @@ Task #153 reads existing ServiceOps and ProjectOps tables with `SELECT` queries 
 The prototype uses the server local timestamp for `generated_at` and the server local date for D-Day computation. A future task can pin the application timezone to `Asia/Taipei` if deployment environments need an explicit timezone policy.
 
 `X-Demo-Role` supports `viewer`, `operator`, `supervisor`, and `admin`. `preview` aliases to `viewer`, and unknown roles fall back to the limited `viewer` scope without changing existing authentication behavior.
+
+## Task #154 Frontend API Switch with Demo Fallback
+
+* `/plan-serviceops/` now fetches `GET /api/plan-serviceops/dashboard`.
+* API success renders read-only aggregated data from existing ServiceOps / ProjectOps sources.
+* API failure, non-200 responses, invalid JSON, or incomplete dashboard schema fall back to local demo data.
+* API mode disables the Today Ticket status toggle.
+* Demo fallback mode keeps the local `Pending -> Doing -> Done -> Pending` status toggle.
+* Role, auth session, and relevant storage changes trigger a dashboard refetch.
+* API warnings render as a non-blocking warning strip.
+* No backend changes.
+* No DB changes.
+* No ServiceOps / ProjectOps mutation.

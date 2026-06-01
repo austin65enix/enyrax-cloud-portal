@@ -432,3 +432,16 @@ Task #148: Plan_ServiceOPS Personal Work Queue UI Prototype
 * Future task can switch frontend to API with demo fallback.
 
 The first API prototype keeps the personal work queue UI unchanged. The dashboard endpoint reads existing data only: it does not create tickets, update ticket status, update project status, write audit logs, or mutate ServiceOps or ProjectOps data.
+
+## Task #154 Frontend API Switch with Demo Fallback
+
+* `/plan-serviceops/` now fetches `GET /api/plan-serviceops/dashboard`.
+* API success renders read-only aggregated data from existing ServiceOps / ProjectOps sources.
+* API failure, non-200 responses, invalid JSON, or incomplete dashboard schema fall back to local demo data.
+* API mode disables the Today Ticket status toggle.
+* Demo fallback mode keeps the local `Pending -> Doing -> Done -> Pending` status toggle.
+* Role, auth session, and relevant storage changes trigger a dashboard refetch.
+* API warnings render as a non-blocking warning strip.
+* No backend changes.
+* No DB changes.
+* No ServiceOps / ProjectOps mutation.
