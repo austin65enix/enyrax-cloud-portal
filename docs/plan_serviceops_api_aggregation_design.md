@@ -421,3 +421,12 @@ The prototype uses the server local timestamp for `generated_at` and the server 
 * No backend changes.
 * No DB changes.
 * No ServiceOps / ProjectOps mutation.
+
+## Task #155 API-backed Frontend QA and Release Note
+
+* Task #155 validates API-backed frontend behavior.
+* API success renders read-only aggregated data.
+* API failure falls back to local demo data.
+* API mode disables status toggle.
+* Demo mode preserves local status toggle.
+* Release note prepared for `v0.6.26-plan-serviceops-api-backed-dashboard`.

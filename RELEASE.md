@@ -1,5 +1,29 @@
 # ENYRAX Cloud Portal Release Notes
 
+## v0.6.26-plan-serviceops-api-backed-dashboard
+
+Plan_ServiceOPS now supports API-first read-only dashboard loading with local demo fallback.
+
+Highlights:
+
+- `/plan-serviceops/` now fetches `/api/plan-serviceops/dashboard`.
+- API success mode displays API DATA / API 資料.
+- API unavailable mode falls back to DEMO FALLBACK / DEMO 備援.
+- API mode is read-only and disables local status updates.
+- Demo fallback mode preserves local Pending → Doing → Done toggle.
+- Viewer role empty team queue state is handled.
+- Operator / supervisor / viewer API checks completed.
+
+Scope boundary:
+
+- No DB migration.
+- No new table.
+- No ticket or project mutation.
+- No ServiceOps / ProjectOps behavior changes.
+- No deployment setting changes.
+
+---
+
 ## v0.6.25-plan-serviceops-personal-work-queue
 
 Plan_ServiceOPS Personal Work Queue is the first static demo release of a personal daily operations cockpit for IT operators.
