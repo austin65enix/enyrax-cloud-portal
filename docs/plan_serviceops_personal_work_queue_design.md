@@ -419,3 +419,16 @@ Task #148: Plan_ServiceOPS Personal Work Queue UI Prototype
 * No DB migration.
 * No mutation.
 * Future work should implement read-only API prototype before changing the frontend.
+
+## Task #153 Read-only API Prototype
+
+* Added `GET /api/plan-serviceops/dashboard`.
+* API aggregates existing ServiceOps tickets and ProjectOps projects.
+* API remains read-only.
+* No DB migration.
+* No new table.
+* No mutation.
+* Frontend remains static demo in this task.
+* Future task can switch frontend to API with demo fallback.
+
+The first API prototype keeps the personal work queue UI unchanged. The dashboard endpoint reads existing data only: it does not create tickets, update ticket status, update project status, write audit logs, or mutate ServiceOps or ProjectOps data.

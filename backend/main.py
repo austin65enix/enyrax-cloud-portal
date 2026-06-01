@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Optional
 import json
@@ -554,6 +554,323 @@ def project_row_to_dict(row):
         "archived_at": data["archived_at"].isoformat() if data.get("archived_at") else None,
         "archived_by": data.get("archived_by"),
         "archive_reason": data.get("archive_reason"),
+    }
+
+
+PLAN_SERVICEOPS_WARNING_MESSAGES = {
+    "serviceops_unavailable": "ServiceOps ticket data is temporarily unavailable.",
+    "projectops_unavailable": "Project deadline data is temporarily unavailable.",
+}
+PLAN_SERVICEOPS_PRIORITY_ORDER = {"High": 0, "Medium": 1, "Low": 2}
+PLAN_SERVICEOPS_PROJECT_RISK_ORDER = {"Delayed": 0, "At Risk": 1, "Watch": 2, "On Track": 3}
+
+
+def normalize_plan_serviceops_role(role: Optional[str]) -> str:
+    normalized = (role or "viewer").strip().lower()
+
+    if normalized == "preview":
+        return "viewer"
+    if normalized not in ROLE_LEVELS:
+        return "viewer"
+
+    return normalized
+
+
+def plan_serviceops_scope(role: str) -> str:
+    return {
+        "viewer": "limited",
+        "operator": "personal",
+        "supervisor": "team",
+        "admin": "cross-team",
+    }[role]
+
+
+def normalize_plan_serviceops_status(value: Optional[str]) -> str:
+    normalized = (value or "").strip().lower().replace("-", "_").replace(" ", "_")
+
+    if normalized in {"blocked", "waiting", "pending_approval"}:
+        return "Blocked"
+    if normalized in {"doing", "in_progress"}:
+        return "Doing"
+    if normalized in {"done", "closed", "completed", "complete"}:
+        return "Done"
+    if normalized in {"pending", "open", "not_started"}:
+        return "Pending"
+
+    return "Pending"
+
+
+def plan_serviceops_ticket_status(ticket) -> str:
+    statuses = [
+        normalize_plan_serviceops_status(ticket.get("status")),
+        normalize_plan_serviceops_status(ticket.get("progress_status")),
+    ]
+
+    for status in ("Blocked", "Done", "Doing", "Pending"):
+        if status in statuses:
+            return status
+
+    return "Pending"
+
+
+def is_archived_or_deleted_status(value: Optional[str]) -> bool:
+    normalized = (value or "").strip().lower().replace("-", "_").replace(" ", "_")
+    return normalized in {"archived", "deleted", "trash", "trashed"}
+
+
+def plan_serviceops_datetime(value):
+    if not value:
+        return None
+    if isinstance(value, datetime):
+        return value
+
+    try:
+        return datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except ValueError:
+        return None
+
+
+def plan_serviceops_date(value):
+    if not value:
+        return None
+    if isinstance(value, datetime):
+        return value.date()
+    if isinstance(value, date):
+        return value
+
+    try:
+        return date.fromisoformat(str(value))
+    except ValueError:
+        return None
+
+
+def plan_serviceops_local_datetime(value, reference: datetime):
+    parsed = plan_serviceops_datetime(value)
+
+    if parsed is None:
+        return None
+    if parsed.tzinfo is None:
+        return parsed.replace(tzinfo=reference.tzinfo)
+
+    return parsed.astimezone(reference.tzinfo)
+
+
+def normalize_plan_serviceops_priority(ticket) -> str:
+    raw_priority = ticket.get("priority") or ticket.get("sla_level")
+    normalized = (raw_priority or "").strip().lower().replace("-", "_").replace(" ", "_")
+
+    if normalized in {"high", "critical", "urgent", "sla_urgent"}:
+        return "High"
+    if normalized == "low":
+        return "Low"
+
+    if not normalized and ticket.get("due_at"):
+        due_at = plan_serviceops_datetime(ticket.get("due_at"))
+        if due_at and due_at.date() <= datetime.now().astimezone().date():
+            return "High"
+
+    return "Medium"
+
+
+def plan_serviceops_sort_timestamp(value) -> float:
+    return value.timestamp() if value else 0
+
+
+def format_deadline_label(remaining_days: int) -> str:
+    if remaining_days < 0:
+        return f"Overdue {abs(remaining_days)} days"
+    if remaining_days == 0:
+        return "Today"
+
+    return f"D-{remaining_days}"
+
+
+def compute_remaining_days(deadline_date: date, today: date) -> int:
+    return (deadline_date - today).days
+
+
+def plan_serviceops_project_status(value: Optional[str]) -> str:
+    normalized = (value or "").strip().lower().replace("-", "_").replace(" ", "_")
+
+    if normalized in {"risk", "at_risk"}:
+        return "At Risk"
+    if normalized in {"delayed", "overdue"}:
+        return "Delayed"
+    if normalized in {"watch", "warning"}:
+        return "Watch"
+
+    return "On Track"
+
+
+def plan_serviceops_ticket_id(source_id) -> str:
+    return f"TCK-SVC-{int(source_id):03d}" if source_id is not None else "TCK-SVC-UNKNOWN"
+
+
+def plan_serviceops_due_time(due_at, now: datetime):
+    if due_at is None:
+        return None
+    if due_at.date() == now.date():
+        return "Today " + due_at.strftime("%H:%M")
+
+    return due_at.strftime("%Y-%m-%d %H:%M")
+
+
+def plan_serviceops_waiting_reason(ticket, status: str):
+    if ticket.get("blocked_reason"):
+        return ticket["blocked_reason"]
+    if (ticket.get("status") or "").strip().lower() == "pending_approval":
+        return "Waiting approval"
+    if status == "Blocked":
+        return "Waiting for follow-up"
+
+    return None
+
+
+def plan_serviceops_sla_label(due_at, now: datetime):
+    if due_at is None:
+        return None
+    if due_at < now:
+        return "Overdue"
+    if due_at.date() == now.date():
+        return "Today"
+
+    return due_at.date().isoformat()
+
+
+def build_plan_serviceops_dashboard(tickets, projects, role: str, generated_at: datetime, warnings):
+    viewer_user = "atn"
+    today = generated_at.date()
+    project_ids = {
+        (project.get("title") or "").strip().lower(): project.get("id")
+        for project in projects
+        if project.get("title")
+    }
+    today_candidates = []
+    team_candidates = []
+
+    for ticket in tickets:
+        source_status = ticket.get("status")
+        status = plan_serviceops_ticket_status(ticket)
+        if ticket.get("deleted_at") or is_archived_or_deleted_status(source_status) or status == "Done":
+            continue
+
+        due_at = plan_serviceops_local_datetime(ticket.get("due_at"), generated_at)
+        is_overdue = bool(due_at and due_at < generated_at)
+        is_due_today = bool(due_at and due_at.date() == today)
+        priority = normalize_plan_serviceops_priority(ticket)
+        assignee = ticket.get("assignee") or ticket.get("owner")
+        related_project = ticket.get("project")
+        created_at = plan_serviceops_local_datetime(ticket.get("created_at"), generated_at)
+        updated_at = plan_serviceops_local_datetime(ticket.get("updated_at"), generated_at)
+
+        if is_due_today or is_overdue:
+            if role in {"supervisor", "admin"} or not assignee or assignee == viewer_user:
+                today_candidates.append({
+                    "ticket_id": plan_serviceops_ticket_id(ticket.get("id")),
+                    "source_id": ticket.get("id"),
+                    "title": ticket.get("title"),
+                    "priority": priority,
+                    "status": status,
+                    "assignee": assignee,
+                    "due_time": plan_serviceops_due_time(due_at, generated_at),
+                    "due_at": due_at.isoformat() if due_at else None,
+                    "related_project": related_project,
+                    "related_project_id": project_ids.get((related_project or "").strip().lower()),
+                    "is_overdue": is_overdue,
+                    "source": "serviceops",
+                    "_due_at": due_at,
+                    "_created_at": created_at,
+                })
+
+        waiting_reason = plan_serviceops_waiting_reason(ticket, status)
+        if role != "viewer" and status in {"Pending", "Doing", "Blocked"} and (is_due_today or is_overdue or waiting_reason):
+            team_candidates.append({
+                "ticket_id": plan_serviceops_ticket_id(ticket.get("id")),
+                "source_id": ticket.get("id"),
+                "type": "Infra",
+                "title": ticket.get("title"),
+                "owner": ticket.get("owner"),
+                "status": status,
+                "waiting_reason": waiting_reason,
+                "sla": plan_serviceops_sla_label(due_at, generated_at),
+                "due_at": due_at.isoformat() if due_at else None,
+                "source": "serviceops",
+                "_is_overdue": is_overdue,
+                "_is_due_today": is_due_today,
+                "_priority": priority,
+                "_updated_at": updated_at,
+            })
+
+    max_datetime = datetime.max.replace(tzinfo=generated_at.tzinfo)
+    today_candidates.sort(key=lambda item: (
+        not item["is_overdue"],
+        PLAN_SERVICEOPS_PRIORITY_ORDER[item["priority"]],
+        item["_due_at"] or max_datetime,
+        -plan_serviceops_sort_timestamp(item["_created_at"]),
+    ))
+    team_candidates.sort(key=lambda item: (
+        item["status"] != "Blocked",
+        not item["_is_overdue"],
+        not item["_is_due_today"],
+        PLAN_SERVICEOPS_PRIORITY_ORDER[item["_priority"]],
+        -plan_serviceops_sort_timestamp(item["_updated_at"]),
+    ))
+
+    project_deadlines = []
+    for project in projects:
+        deadline = plan_serviceops_date(project.get("end_date"))
+        source_status = project.get("status")
+        if deadline is None or project.get("archived_at") or is_archived_or_deleted_status(source_status) or normalize_plan_serviceops_status(source_status) == "Done":
+            continue
+
+        remaining_days = compute_remaining_days(deadline, today)
+        if remaining_days < 0 or remaining_days > 30:
+            continue
+
+        display_status = plan_serviceops_project_status(source_status)
+        project_deadlines.append({
+            "project_id": project.get("id"),
+            "project_name": project.get("title"),
+            "owner": project.get("owner"),
+            "deadline": deadline.isoformat(),
+            "remaining_days": remaining_days,
+            "deadline_label": format_deadline_label(remaining_days),
+            "status": display_status,
+            "related_ticket_count": int(project.get("linked_tickets") or 0),
+            "source": "projectops",
+        })
+
+    project_deadlines.sort(key=lambda item: (
+        item["remaining_days"],
+        PLAN_SERVICEOPS_PROJECT_RISK_ORDER[item["status"]],
+        item["project_name"] or "",
+    ))
+    today_tickets = [
+        {key: value for key, value in item.items() if not key.startswith("_")}
+        for item in today_candidates[:10]
+    ]
+    team_tickets = [
+        {key: value for key, value in item.items() if not key.startswith("_")}
+        for item in team_candidates[:10]
+    ]
+    project_deadlines = project_deadlines[:10]
+    nearest_deadline = project_deadlines[0] if project_deadlines else None
+
+    return {
+        "generated_at": generated_at.isoformat(),
+        "viewer": {"role": role, "user": viewer_user, "scope": plan_serviceops_scope(role)},
+        "summary": {
+            "today_tickets": len(today_tickets),
+            "doing": sum(1 for item in today_tickets if item["status"] == "Doing"),
+            "overdue": sum(1 for item in today_tickets if item["is_overdue"]),
+            "nearest_deadline_days": nearest_deadline["remaining_days"] if nearest_deadline else 0,
+            "nearest_deadline_label": nearest_deadline["deadline_label"] if nearest_deadline else None,
+            "blocked_team_tickets": sum(1 for item in team_tickets if item["status"] == "Blocked"),
+        },
+        "today_tickets": today_tickets,
+        "team_tickets": team_tickets,
+        "project_deadlines": project_deadlines,
+        "warnings": warnings,
     }
 
 
@@ -2132,6 +2449,63 @@ def soc_summary():
         response["db_error"] = db_error
 
     return response
+
+
+@app.get("/api/plan-serviceops/dashboard")
+def plan_serviceops_dashboard(
+    demo_role: str = Header(default="viewer", alias="X-Demo-Role"),
+):
+    # Task #153 is a read-only aggregation API. It does not mutate ServiceOps or ProjectOps
+    # data, create tickets, update statuses, or write audit logs.
+    role = normalize_plan_serviceops_role(demo_role)
+    generated_at = datetime.now().astimezone()
+    tickets = []
+    projects = []
+    warnings = []
+
+    if engine is None:
+        warnings.extend([
+            {
+                "code": "serviceops_unavailable",
+                "message": PLAN_SERVICEOPS_WARNING_MESSAGES["serviceops_unavailable"],
+            },
+            {
+                "code": "projectops_unavailable",
+                "message": PLAN_SERVICEOPS_WARNING_MESSAGES["projectops_unavailable"],
+            },
+        ])
+    else:
+        try:
+            with engine.connect() as conn:
+                rows = conn.execute(text(f"""
+                    SELECT
+                        {SERVICEOPS_TICKET_COLUMNS}
+                    FROM serviceops_tickets
+                    WHERE deleted_at IS NULL
+                """)).mappings().all()
+            tickets = [dict(row) for row in rows]
+        except SQLAlchemyError:
+            warnings.append({
+                "code": "serviceops_unavailable",
+                "message": PLAN_SERVICEOPS_WARNING_MESSAGES["serviceops_unavailable"],
+            })
+
+        try:
+            with engine.connect() as conn:
+                rows = conn.execute(text(f"""
+                    SELECT
+                        {PROJECTOPS_PROJECT_COLUMNS}
+                    FROM projectops_projects
+                    WHERE archived_at IS NULL
+                """)).mappings().all()
+            projects = [dict(row) for row in rows]
+        except SQLAlchemyError:
+            warnings.append({
+                "code": "projectops_unavailable",
+                "message": PLAN_SERVICEOPS_WARNING_MESSAGES["projectops_unavailable"],
+            })
+
+    return build_plan_serviceops_dashboard(tickets, projects, role, generated_at, warnings)
 
 
 @app.get("/api/serviceops/summary")

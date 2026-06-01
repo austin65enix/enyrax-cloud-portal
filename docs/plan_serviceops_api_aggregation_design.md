@@ -391,3 +391,20 @@ Task #153：Plan_ServiceOPS Read-only API Prototype
 * No mutation
 * Add backend tests or curl checks
 * Do not modify frontend yet unless approved
+
+## Task #153 Read-only API Prototype
+
+* Added `GET /api/plan-serviceops/dashboard`.
+* API aggregates existing ServiceOps tickets and ProjectOps projects.
+* API remains read-only.
+* No DB migration.
+* No new table.
+* No mutation.
+* Frontend remains static demo in this task.
+* Future task can switch frontend to API with demo fallback.
+
+Task #153 reads existing ServiceOps and ProjectOps tables with `SELECT` queries only. It does not create tickets, update ticket status, update project status, write audit logs, or mutate ServiceOps or ProjectOps data.
+
+The prototype uses the server local timestamp for `generated_at` and the server local date for D-Day computation. A future task can pin the application timezone to `Asia/Taipei` if deployment environments need an explicit timezone policy.
+
+`X-Demo-Role` supports `viewer`, `operator`, `supervisor`, and `admin`. `preview` aliases to `viewer`, and unknown roles fall back to the limited `viewer` scope without changing existing authentication behavior.
