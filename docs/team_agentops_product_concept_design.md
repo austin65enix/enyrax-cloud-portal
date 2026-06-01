@@ -360,3 +360,15 @@ This helps enterprises reduce shadow AI risk and gives managers visibility into 
 * Demo fixtures support Agent Activity Timeline, Project Agent Contribution, Team Scorecard, and Human Review samples.
 * Safe metadata boundary remains unchanged.
 * No DB, backend, frontend, AgentOps parser, or production data changes.
+
+
+## Task #168 Read-only Fixture API Prototype
+
+* Added read-only fixture API endpoints for Team_AgentOps.
+* API reads safe demo fixtures from `data/team-agentops/`.
+* API exposes dashboard, runs, run detail, pending reviews, project contribution, and scorecard.
+* Team_AgentOps fixture API v1 remains read-only: it does not write files, write DB, create audit logs, or mutate AgentOps / ProjectOps / ServiceOps data.
+* No DB migration.
+* No mutation.
+* No frontend switch yet.
+* No raw prompt / response / raw session storage.

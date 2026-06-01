@@ -51,6 +51,68 @@ NORMALIZED_VULNERABILITIES_PATH = (
 )
 AGENT_RUNS_PATH = PROJECT_ROOT / "data" / "agentops" / "demo_agent_runs.json"
 AGENT_RUNS_PREVIEW_PATH = PROJECT_ROOT / "data" / "agentops" / "agent_runs_preview.json"
+TEAM_AGENTOPS_FIXTURE_DIR = PROJECT_ROOT / "data" / "team-agentops"
+TEAM_AGENTOPS_FIXTURE_FILENAMES = {
+    "demo_agent_runs.json",
+    "demo_agent_reviews.json",
+    "demo_agent_outputs.json",
+    "demo_project_contribution.json",
+    "demo_scorecard.json",
+}
+TEAM_AGENTOPS_FIXTURE_WARNING = {
+    "code": "fixture_unavailable",
+    "message": "Team_AgentOps fixture data is temporarily unavailable.",
+}
+TEAM_AGENTOPS_RUN_FIELDS = (
+    "run_uid",
+    "agent_name",
+    "agent_type",
+    "triggered_by",
+    "project_id",
+    "project_name",
+    "ticket_id",
+    "ticket_label",
+    "task_title",
+    "task_type",
+    "status",
+    "started_at",
+    "ended_at",
+    "duration_seconds",
+    "output_type",
+    "output_ref",
+    "output_summary",
+    "reviewer",
+    "review_status",
+    "review_required",
+    "token_estimate",
+    "cost_estimate",
+    "risk_level",
+)
+TEAM_AGENTOPS_OUTPUT_FIELDS = (
+    "agent_run_uid",
+    "output_type",
+    "output_ref",
+    "output_title",
+    "checksum",
+    "created_at",
+)
+TEAM_AGENTOPS_REVIEW_FIELDS = (
+    "review_uid",
+    "agent_run_uid",
+    "reviewer",
+    "decision",
+    "comment",
+    "evidence_ref",
+    "reviewed_at",
+)
+TEAM_AGENTOPS_SAFETY_BOUNDARY = {
+    "safe_metadata_only": True,
+    "no_prompt_response_storage": True,
+    "no_raw_sessions": True,
+    "no_credentials_or_secrets": True,
+    "not_employee_surveillance": True,
+    "operational_estimates_only": True,
+}
 AGENTOPS_LARGE_TOKEN_THRESHOLD = 10000000
 AGENTOPS_PREVIEW_WARNING = (
     "Preview telemetry is safety-reviewed metadata. Token totals may be estimated, "
@@ -1064,6 +1126,90 @@ load_agent_runs.source = "demo_agent_runs"
 load_agent_runs.source_mode = "demo"
 
 
+class TeamAgentOpsFixtureUnavailable(Exception):
+    pass
+
+
+def load_team_agentops_fixture(filename: str) -> dict:
+    if (
+        filename not in TEAM_AGENTOPS_FIXTURE_FILENAMES
+        or ".." in filename
+        or Path(filename).is_absolute()
+        or Path(filename).name != filename
+    ):
+        raise TeamAgentOpsFixtureUnavailable
+
+    try:
+        data = json.loads((TEAM_AGENTOPS_FIXTURE_DIR / filename).read_text())
+    except (FileNotFoundError, json.JSONDecodeError, OSError):
+        raise TeamAgentOpsFixtureUnavailable
+
+    if not isinstance(data, dict):
+        raise TeamAgentOpsFixtureUnavailable
+    return data
+
+
+def load_optional_team_agentops_fixture(filename: str, warnings: list) -> dict:
+    try:
+        return load_team_agentops_fixture(filename)
+    except TeamAgentOpsFixtureUnavailable:
+        if TEAM_AGENTOPS_FIXTURE_WARNING not in warnings:
+            warnings.append(dict(TEAM_AGENTOPS_FIXTURE_WARNING))
+        return {}
+
+
+def team_agentops_fixture_records(filename: str, warnings: list) -> list:
+    data = load_optional_team_agentops_fixture(filename, warnings)
+    records = data.get("records", [])
+    if not isinstance(records, list):
+        if TEAM_AGENTOPS_FIXTURE_WARNING not in warnings:
+            warnings.append(dict(TEAM_AGENTOPS_FIXTURE_WARNING))
+        return []
+    return [item for item in records if isinstance(item, dict)]
+
+
+def team_agentops_fixture_list(filename: str, key: str, warnings: list) -> list:
+    data = load_optional_team_agentops_fixture(filename, warnings)
+    items = data.get(key, [])
+    if not isinstance(items, list):
+        if TEAM_AGENTOPS_FIXTURE_WARNING not in warnings:
+            warnings.append(dict(TEAM_AGENTOPS_FIXTURE_WARNING))
+        return []
+    return [item for item in items if isinstance(item, dict)]
+
+
+def team_agentops_public_record(item: dict, fields) -> dict:
+    return {field: item.get(field) for field in fields}
+
+
+def team_agentops_int(item: dict, field: str) -> int:
+    try:
+        return int(item.get(field) or 0)
+    except (TypeError, ValueError):
+        return 0
+
+
+def team_agentops_time(value) -> str:
+    try:
+        return datetime.fromisoformat(str(value)).strftime("%H:%M")
+    except ValueError:
+        return ""
+
+
+def team_agentops_timeline_record(item: dict) -> dict:
+    return {
+        "run_uid": item.get("run_uid"),
+        "time": team_agentops_time(item.get("started_at")),
+        "agent_name": item.get("agent_name"),
+        "project_name": item.get("project_name"),
+        "task_title": item.get("task_title"),
+        "status": item.get("status"),
+        "review_status": item.get("review_status"),
+        "output_type": item.get("output_type"),
+        "output_ref": item.get("output_ref"),
+    }
+
+
 def agentops_int(item, field: str) -> int:
     try:
         return int(item.get(field) or 0)
@@ -1708,6 +1854,179 @@ def write_vulnerability_ticket_audit(db, action: str, entity_id, summary: str, a
             )
     except Exception as exc:
         print(f"Warning: failed to write vulnerability ServiceOps audit log: {exc}")
+
+
+# Team_AgentOps fixture API v1 is read-only. It reads safe demo fixtures only.
+# It does not write files or DB, create audit logs, store prompt / response,
+# or mutate AgentOps / ProjectOps / ServiceOps data.
+@app.get("/api/team-agentops/dashboard")
+def team_agentops_dashboard():
+    warnings = []
+    runs_data = load_optional_team_agentops_fixture("demo_agent_runs.json", warnings)
+    runs = team_agentops_fixture_records("demo_agent_runs.json", warnings)
+    projects = team_agentops_fixture_list(
+        "demo_project_contribution.json", "projects", warnings
+    )
+    scorecard = load_optional_team_agentops_fixture("demo_scorecard.json", warnings)
+    metrics = scorecard.get("metrics", {})
+    notes = scorecard.get("notes", [])
+    if not isinstance(metrics, dict):
+        metrics = {}
+    if not isinstance(notes, list):
+        notes = []
+
+    active_agents = {
+        item.get("agent_name")
+        for item in runs
+        if item.get("agent_name")
+        and item.get("status") in {"running", "done", "review_needed"}
+    }
+    pending_review = sum(
+        1
+        for item in runs
+        if item.get("review_status") == "pending"
+        or item.get("status") == "review_needed"
+    )
+    project_progress = [
+        team_agentops_int(item, "progress_percent")
+        for item in projects
+        if item.get("progress_percent") is not None
+    ]
+    project_impact_percent = (
+        round(sum(project_progress) / len(project_progress)) if project_progress else 0
+    )
+
+    return {
+        "generated_at": runs_data.get("generated_at") or now_utc(),
+        "source": "fixture",
+        "mode": "read_only",
+        "summary": {
+            "active_agents": len(active_agents),
+            "pending_review": pending_review,
+            "project_impact_percent": project_impact_percent,
+            "failed_runs": sum(1 for item in runs if item.get("status") == "failed"),
+            "usage_cost_tokens": sum(
+                team_agentops_int(item, "token_estimate") for item in runs
+            ),
+        },
+        "agent_activity_timeline": [
+            team_agentops_timeline_record(item)
+            for item in sorted(
+                runs, key=lambda item: str(item.get("started_at") or ""), reverse=True
+            )[:10]
+        ],
+        "project_contribution": projects,
+        "team_scorecard": {"metrics": metrics, "notes": notes},
+        "safety_boundary": dict(TEAM_AGENTOPS_SAFETY_BOUNDARY),
+        "warnings": warnings,
+    }
+
+
+@app.get("/api/team-agentops/runs")
+def list_team_agentops_runs(
+    status: Optional[str] = None,
+    review_status: Optional[str] = None,
+    project_id: Optional[int] = None,
+    agent_name: Optional[str] = None,
+):
+    warnings = []
+    runs = team_agentops_fixture_records("demo_agent_runs.json", warnings)
+    filtered = [
+        item
+        for item in runs
+        if (status is None or item.get("status") == status)
+        and (review_status is None or item.get("review_status") == review_status)
+        and (project_id is None or item.get("project_id") == project_id)
+        and (agent_name is None or item.get("agent_name") == agent_name)
+    ]
+    return {
+        "schema_version": "team_agentops_runs_api_v1",
+        "source": "fixture",
+        "mode": "read_only",
+        "records": [
+            team_agentops_public_record(item, TEAM_AGENTOPS_RUN_FIELDS)
+            for item in filtered
+        ],
+        "warnings": warnings,
+    }
+
+
+@app.get("/api/team-agentops/runs/{run_uid}")
+def get_team_agentops_run(run_uid: str):
+    warnings = []
+    runs = team_agentops_fixture_records("demo_agent_runs.json", warnings)
+    run = next((item for item in runs if item.get("run_uid") == run_uid), None)
+    if run is None:
+        raise HTTPException(status_code=404, detail="Team_AgentOps run not found.")
+
+    outputs = team_agentops_fixture_records("demo_agent_outputs.json", warnings)
+    reviews = team_agentops_fixture_records("demo_agent_reviews.json", warnings)
+    return {
+        "schema_version": "team_agentops_run_detail_api_v1",
+        "source": "fixture",
+        "mode": "read_only",
+        "run": team_agentops_public_record(run, TEAM_AGENTOPS_RUN_FIELDS),
+        "outputs": [
+            team_agentops_public_record(item, TEAM_AGENTOPS_OUTPUT_FIELDS)
+            for item in outputs
+            if item.get("agent_run_uid") == run_uid
+        ],
+        "reviews": [
+            team_agentops_public_record(item, TEAM_AGENTOPS_REVIEW_FIELDS)
+            for item in reviews
+            if item.get("agent_run_uid") == run_uid
+        ],
+        "warnings": warnings,
+    }
+
+
+@app.get("/api/team-agentops/reviews/pending")
+def list_team_agentops_pending_reviews():
+    warnings = []
+    runs = team_agentops_fixture_records("demo_agent_runs.json", warnings)
+    return {
+        "schema_version": "team_agentops_pending_reviews_api_v1",
+        "source": "fixture",
+        "mode": "read_only",
+        "records": [
+            team_agentops_public_record(item, TEAM_AGENTOPS_RUN_FIELDS)
+            for item in runs
+            if item.get("review_status") == "pending"
+            or item.get("status") == "review_needed"
+        ],
+        "warnings": warnings,
+    }
+
+
+@app.get("/api/team-agentops/projects/contribution")
+def list_team_agentops_project_contribution():
+    warnings = []
+    projects = team_agentops_fixture_list(
+        "demo_project_contribution.json", "projects", warnings
+    )
+    return {
+        "schema_version": "team_agentops_project_contribution_api_v1",
+        "source": "fixture",
+        "mode": "read_only",
+        "projects": projects,
+        "warnings": warnings,
+    }
+
+
+@app.get("/api/team-agentops/scorecard")
+def get_team_agentops_scorecard():
+    warnings = []
+    scorecard = load_optional_team_agentops_fixture("demo_scorecard.json", warnings)
+    metrics = scorecard.get("metrics", {})
+    notes = scorecard.get("notes", [])
+    return {
+        "schema_version": "team_agentops_scorecard_api_v1",
+        "source": "fixture",
+        "mode": "read_only",
+        "metrics": metrics if isinstance(metrics, dict) else {},
+        "notes": notes if isinstance(notes, list) else [],
+        "warnings": warnings,
+    }
 
 
 @app.get("/api/agentops/summary")

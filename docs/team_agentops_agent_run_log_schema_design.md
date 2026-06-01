@@ -305,3 +305,16 @@ Scope:
 * Fixtures align with the Team_AgentOps schema concept.
 * Fixtures do not contain raw prompts, responses, raw sessions, command output, file diff content, credentials, secrets, API keys, or full home paths.
 * Future tasks may use these fixtures for read-only API prototype or frontend demo data source.
+
+
+## Task #168 Read-only Fixture API Prototype
+
+* Added read-only fixture API endpoints for Team_AgentOps.
+* API reads safe demo fixtures from `data/team-agentops/`.
+* API exposes dashboard, runs, run detail, pending reviews, project contribution, and scorecard.
+* Runs supports exact filtering by `status`, `review_status`, `project_id`, and `agent_name`; it does not perform content search.
+* Team_AgentOps fixture API v1 remains read-only: it does not write files, write DB, create audit logs, or mutate AgentOps / ProjectOps / ServiceOps data.
+* No DB migration.
+* No mutation.
+* No frontend switch yet.
+* No raw prompt / response / raw session storage.
