@@ -345,3 +345,11 @@ This helps enterprises reduce shadow AI risk and gives managers visibility into 
 * Release remains static demo only。
 * No backend、DB、API、parser、ProjectOps、ServiceOps、AgentOps、or deployment changes were made。
 * Future work should start with release tag and then schema design。
+
+## Task #166 Agent Run Log Schema Design
+
+* Task #166 defines future safe metadata schema for Team_AgentOps agent runs.
+* It introduces conceptual tables for agent runs, reviews, and outputs.
+* It keeps prompt / response / raw sessions out of scope.
+* It prepares future read-only APIs and dashboard metrics.
+* No DB migration, backend, frontend, or parser changes were made.
