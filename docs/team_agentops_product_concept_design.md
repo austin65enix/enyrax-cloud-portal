@@ -410,3 +410,15 @@ This helps enterprises reduce shadow AI risk and gives managers visibility into 
 * Does not implement production authorization.
 * Does not add write APIs.
 * Safe metadata boundary remains unchanged.
+
+## Task #176 Frontend Demo Role Switcher
+
+* Task #176 adds a frontend demo role switcher to `/team-agentops/`.
+* The frontend sends `X-Demo-Role` to the read-only Team_AgentOps API.
+* Supported demo roles are viewer, operator, supervisor, and admin.
+* The page displays viewer metadata, visibility note, and demo-only `production_auth=false` boundary.
+* Role switching only changes fixture visibility.
+* It is not production authorization.
+* It does not create, update, approve, reject, or mutate agent records.
+* Safe metadata boundary remains unchanged.
+* No backend, DB, API, fixtures, parser, release, or deployment changes.
