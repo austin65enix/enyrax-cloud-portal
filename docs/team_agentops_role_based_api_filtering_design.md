@@ -263,3 +263,15 @@ Scope:
 * Keep all APIs read-only.
 * Do not implement production auth.
 * Do not add write API.
+
+## Task #175 Demo Role Filtering Prototype
+
+* Task #175 implements demo role filtering for the Team_AgentOps read-only fixture API.
+* Uses `X-Demo-Role` for viewer / operator / supervisor / admin.
+* Adds viewer metadata and visibility notes to API responses.
+* Applies endpoint-level role filtering and field masking.
+* Keeps APIs fixture-backed and read-only.
+* Does not implement production authorization.
+* Does not add write APIs.
+* Safe metadata boundary remains unchanged.
+* Supervisor run records may retain `triggered_by` only as demo fixture metadata; production policy must decide whether to mask it.

@@ -345,3 +345,14 @@ Scope:
 * It defines endpoint-level and field-level visibility.
 * It keeps safe metadata boundary unchanged.
 * No backend, frontend, DB, fixture, parser, or release changes were made.
+
+## Task #175 Demo Role Filtering Prototype
+
+* Task #175 implements demo role filtering for the Team_AgentOps read-only fixture API.
+* Uses `X-Demo-Role` for viewer / operator / supervisor / admin.
+* Adds viewer metadata and visibility notes to API responses.
+* Applies endpoint-level role filtering and field masking.
+* Keeps APIs fixture-backed and read-only.
+* Does not implement production authorization.
+* Does not add write APIs.
+* Safe metadata boundary remains unchanged.

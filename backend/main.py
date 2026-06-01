@@ -63,6 +63,31 @@ TEAM_AGENTOPS_FIXTURE_WARNING = {
     "code": "fixture_unavailable",
     "message": "Team_AgentOps fixture data is temporarily unavailable.",
 }
+TEAM_AGENTOPS_ALLOWED_ROLES = {"viewer", "operator", "supervisor", "admin"}
+TEAM_AGENTOPS_ROLE_SCOPES = {
+    "viewer": "limited",
+    "operator": "personal_plus_assigned",
+    "supervisor": "team",
+    "admin": "cross_team",
+}
+TEAM_AGENTOPS_VISIBILITY_NOTES = {
+    "viewer": "Limited aggregate view for viewer role.",
+    "operator": "Shows own and assigned project agent activity.",
+    "supervisor": "Shows team-level governance and review queue without raw AI content.",
+    "admin": "Shows cross-team safe metadata for governance.",
+}
+TEAM_AGENTOPS_SCORECARD_ROLE_NOTES = {
+    "viewer": "Viewer role receives aggregate-only governance metrics.",
+    "operator": "Operator role receives personal/team blended demo aggregate metrics.",
+    "supervisor": "Supervisor role receives team aggregate metrics without individual ranking.",
+    "admin": "Admin role receives cross-team aggregate governance metrics.",
+}
+TEAM_AGENTOPS_OPERATOR_USER = "atn"
+TEAM_AGENTOPS_OPERATOR_PROJECTS = {
+    "Plan_ServiceOPS API-backed Dashboard",
+    "Team_AgentOps Static Prototype",
+    "Tokyo Portal BackupOps",
+}
 TEAM_AGENTOPS_RUN_FIELDS = (
     "run_uid",
     "agent_name",
@@ -1182,6 +1207,88 @@ def team_agentops_public_record(item: dict, fields) -> dict:
     return {field: item.get(field) for field in fields}
 
 
+def get_team_agentops_demo_role(x_demo_role: Optional[str]) -> str:
+    role = (x_demo_role or "viewer").strip().lower()
+    return role if role in TEAM_AGENTOPS_ALLOWED_ROLES else "viewer"
+
+
+def team_agentops_viewer_metadata(x_demo_role: Optional[str]) -> dict:
+    requested_role = (x_demo_role or "").strip().lower()
+    role = get_team_agentops_demo_role(x_demo_role)
+    return {
+        "role": role,
+        "scope": TEAM_AGENTOPS_ROLE_SCOPES[role],
+        "role_source": (
+            "X-Demo-Role" if requested_role in TEAM_AGENTOPS_ALLOWED_ROLES else "fallback"
+        ),
+        "production_auth": False,
+    }
+
+
+def team_agentops_visibility_note(role: str) -> str:
+    return TEAM_AGENTOPS_VISIBILITY_NOTES[role]
+
+
+def team_agentops_run_is_visible(item: dict, role: str) -> bool:
+    if role == "viewer":
+        return True
+    if role == "operator":
+        return (
+            item.get("triggered_by") == TEAM_AGENTOPS_OPERATOR_USER
+            or item.get("project_name") in TEAM_AGENTOPS_OPERATOR_PROJECTS
+        )
+    return True
+
+
+def filter_team_agentops_runs_for_role(runs: list, role: str) -> list:
+    visible = [item for item in runs if team_agentops_run_is_visible(item, role)]
+    return visible[:2] if role == "viewer" else visible
+
+
+def mask_team_agentops_run_for_role(run: dict, role: str) -> dict:
+    item = team_agentops_public_record(run, TEAM_AGENTOPS_RUN_FIELDS)
+    if role == "viewer":
+        item.update(
+            {
+                "triggered_by": "hidden",
+                "ticket_id": None,
+                "ticket_label": None,
+                "reviewer": "hidden",
+                "token_estimate": None,
+                "cost_estimate": None,
+            }
+        )
+    elif role == "supervisor":
+        # Supervisor responses retain demo-only team identity metadata, but avoid
+        # exposing per-run cost estimates or creating individual rankings.
+        item.update({"token_estimate": None, "cost_estimate": None})
+    return item
+
+
+def filter_team_agentops_projects_for_role(projects: list, role: str) -> list:
+    if role == "operator":
+        return [
+            item
+            for item in projects
+            if item.get("project_name") in TEAM_AGENTOPS_OPERATOR_PROJECTS
+        ]
+    return projects
+
+
+def mask_team_agentops_project_for_role(project: dict, role: str) -> dict:
+    item = dict(project)
+    if role == "viewer":
+        linked_runs = item.pop("linked_agent_runs", [])
+        item["linked_agent_run_count"] = (
+            len(linked_runs) if isinstance(linked_runs, list) else 0
+        )
+    return item
+
+
+def team_agentops_scorecard_notes(notes: list, role: str) -> list:
+    return [*notes, TEAM_AGENTOPS_SCORECARD_ROLE_NOTES[role]]
+
+
 def team_agentops_int(item: dict, field: str) -> int:
     try:
         return int(item.get(field) or 0)
@@ -1860,12 +1967,19 @@ def write_vulnerability_ticket_audit(db, action: str, entity_id, summary: str, a
 # It does not write files or DB, create audit logs, store prompt / response,
 # or mutate AgentOps / ProjectOps / ServiceOps data.
 @app.get("/api/team-agentops/dashboard")
-def team_agentops_dashboard():
+def team_agentops_dashboard(x_demo_role: Optional[str] = Header(default=None)):
     warnings = []
+    viewer = team_agentops_viewer_metadata(x_demo_role)
+    role = viewer["role"]
     runs_data = load_optional_team_agentops_fixture("demo_agent_runs.json", warnings)
-    runs = team_agentops_fixture_records("demo_agent_runs.json", warnings)
-    projects = team_agentops_fixture_list(
-        "demo_project_contribution.json", "projects", warnings
+    runs = filter_team_agentops_runs_for_role(
+        team_agentops_fixture_records("demo_agent_runs.json", warnings), role
+    )
+    projects = filter_team_agentops_projects_for_role(
+        team_agentops_fixture_list(
+            "demo_project_contribution.json", "projects", warnings
+        ),
+        role,
     )
     scorecard = load_optional_team_agentops_fixture("demo_scorecard.json", warnings)
     metrics = scorecard.get("metrics", {})
@@ -1895,11 +2009,14 @@ def team_agentops_dashboard():
     project_impact_percent = (
         round(sum(project_progress) / len(project_progress)) if project_progress else 0
     )
+    masked_runs = [mask_team_agentops_run_for_role(item, role) for item in runs]
 
     return {
         "generated_at": runs_data.get("generated_at") or now_utc(),
         "source": "fixture",
         "mode": "read_only",
+        "viewer": viewer,
+        "visibility_note": team_agentops_visibility_note(role),
         "summary": {
             "active_agents": len(active_agents),
             "pending_review": pending_review,
@@ -1912,11 +2029,18 @@ def team_agentops_dashboard():
         "agent_activity_timeline": [
             team_agentops_timeline_record(item)
             for item in sorted(
-                runs, key=lambda item: str(item.get("started_at") or ""), reverse=True
+                masked_runs,
+                key=lambda item: str(item.get("started_at") or ""),
+                reverse=True,
             )[:10]
         ],
-        "project_contribution": projects,
-        "team_scorecard": {"metrics": metrics, "notes": notes},
+        "project_contribution": [
+            mask_team_agentops_project_for_role(item, role) for item in projects
+        ],
+        "team_scorecard": {
+            "metrics": metrics,
+            "notes": team_agentops_scorecard_notes(notes, role),
+        },
         "safety_boundary": dict(TEAM_AGENTOPS_SAFETY_BOUNDARY),
         "warnings": warnings,
     }
@@ -1928,9 +2052,14 @@ def list_team_agentops_runs(
     review_status: Optional[str] = None,
     project_id: Optional[int] = None,
     agent_name: Optional[str] = None,
+    x_demo_role: Optional[str] = Header(default=None),
 ):
     warnings = []
-    runs = team_agentops_fixture_records("demo_agent_runs.json", warnings)
+    viewer = team_agentops_viewer_metadata(x_demo_role)
+    role = viewer["role"]
+    runs = filter_team_agentops_runs_for_role(
+        team_agentops_fixture_records("demo_agent_runs.json", warnings), role
+    )
     filtered = [
         item
         for item in runs
@@ -1943,18 +2072,23 @@ def list_team_agentops_runs(
         "schema_version": "team_agentops_runs_api_v1",
         "source": "fixture",
         "mode": "read_only",
-        "records": [
-            team_agentops_public_record(item, TEAM_AGENTOPS_RUN_FIELDS)
-            for item in filtered
-        ],
+        "viewer": viewer,
+        "visibility_note": team_agentops_visibility_note(role),
+        "records": [mask_team_agentops_run_for_role(item, role) for item in filtered],
         "warnings": warnings,
     }
 
 
 @app.get("/api/team-agentops/runs/{run_uid}")
-def get_team_agentops_run(run_uid: str):
+def get_team_agentops_run(
+    run_uid: str, x_demo_role: Optional[str] = Header(default=None)
+):
     warnings = []
-    runs = team_agentops_fixture_records("demo_agent_runs.json", warnings)
+    viewer = team_agentops_viewer_metadata(x_demo_role)
+    role = viewer["role"]
+    runs = filter_team_agentops_runs_for_role(
+        team_agentops_fixture_records("demo_agent_runs.json", warnings), role
+    )
     run = next((item for item in runs if item.get("run_uid") == run_uid), None)
     if run is None:
         raise HTTPException(status_code=404, detail="Team_AgentOps run not found.")
@@ -1965,13 +2099,17 @@ def get_team_agentops_run(run_uid: str):
         "schema_version": "team_agentops_run_detail_api_v1",
         "source": "fixture",
         "mode": "read_only",
-        "run": team_agentops_public_record(run, TEAM_AGENTOPS_RUN_FIELDS),
+        "viewer": viewer,
+        "visibility_note": team_agentops_visibility_note(role),
+        "run": mask_team_agentops_run_for_role(run, role),
         "outputs": [
             team_agentops_public_record(item, TEAM_AGENTOPS_OUTPUT_FIELDS)
             for item in outputs
             if item.get("agent_run_uid") == run_uid
         ],
-        "reviews": [
+        "reviews": []
+        if role == "viewer"
+        else [
             team_agentops_public_record(item, TEAM_AGENTOPS_REVIEW_FIELDS)
             for item in reviews
             if item.get("agent_run_uid") == run_uid
@@ -1981,41 +2119,65 @@ def get_team_agentops_run(run_uid: str):
 
 
 @app.get("/api/team-agentops/reviews/pending")
-def list_team_agentops_pending_reviews():
+def list_team_agentops_pending_reviews(
+    x_demo_role: Optional[str] = Header(default=None),
+):
     warnings = []
-    runs = team_agentops_fixture_records("demo_agent_runs.json", warnings)
+    viewer = team_agentops_viewer_metadata(x_demo_role)
+    role = viewer["role"]
+    runs = filter_team_agentops_runs_for_role(
+        team_agentops_fixture_records("demo_agent_runs.json", warnings), role
+    )
+    pending = [
+        item
+        for item in runs
+        if item.get("review_status") == "pending"
+        or item.get("status") == "review_needed"
+    ]
     return {
         "schema_version": "team_agentops_pending_reviews_api_v1",
         "source": "fixture",
         "mode": "read_only",
-        "records": [
-            team_agentops_public_record(item, TEAM_AGENTOPS_RUN_FIELDS)
-            for item in runs
-            if item.get("review_status") == "pending"
-            or item.get("status") == "review_needed"
-        ],
+        "viewer": viewer,
+        "visibility_note": team_agentops_visibility_note(role),
+        "records": []
+        if role == "viewer"
+        else [mask_team_agentops_run_for_role(item, role) for item in pending],
         "warnings": warnings,
     }
 
 
 @app.get("/api/team-agentops/projects/contribution")
-def list_team_agentops_project_contribution():
+def list_team_agentops_project_contribution(
+    x_demo_role: Optional[str] = Header(default=None),
+):
     warnings = []
-    projects = team_agentops_fixture_list(
-        "demo_project_contribution.json", "projects", warnings
+    viewer = team_agentops_viewer_metadata(x_demo_role)
+    role = viewer["role"]
+    projects = filter_team_agentops_projects_for_role(
+        team_agentops_fixture_list(
+            "demo_project_contribution.json", "projects", warnings
+        ),
+        role,
     )
     return {
         "schema_version": "team_agentops_project_contribution_api_v1",
         "source": "fixture",
         "mode": "read_only",
-        "projects": projects,
+        "viewer": viewer,
+        "visibility_note": team_agentops_visibility_note(role),
+        "projects": [
+            mask_team_agentops_project_for_role(item, role) for item in projects
+        ],
         "warnings": warnings,
     }
 
 
 @app.get("/api/team-agentops/scorecard")
-def get_team_agentops_scorecard():
+def get_team_agentops_scorecard(x_demo_role: Optional[str] = Header(default=None)):
     warnings = []
+    viewer = team_agentops_viewer_metadata(x_demo_role)
+    role = viewer["role"]
     scorecard = load_optional_team_agentops_fixture("demo_scorecard.json", warnings)
     metrics = scorecard.get("metrics", {})
     notes = scorecard.get("notes", [])
@@ -2023,8 +2185,12 @@ def get_team_agentops_scorecard():
         "schema_version": "team_agentops_scorecard_api_v1",
         "source": "fixture",
         "mode": "read_only",
+        "viewer": viewer,
+        "visibility_note": team_agentops_visibility_note(role),
         "metrics": metrics if isinstance(metrics, dict) else {},
-        "notes": notes if isinstance(notes, list) else [],
+        "notes": team_agentops_scorecard_notes(notes, role)
+        if isinstance(notes, list)
+        else [TEAM_AGENTOPS_SCORECARD_ROLE_NOTES[role]],
         "warnings": warnings,
     }
 
