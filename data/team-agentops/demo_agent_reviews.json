@@ -1,0 +1,42 @@
+{
+  "schema_version": "team_agentops_demo_reviews_v1",
+  "generated_at": "2026-06-01T00:00:00+08:00",
+  "records": [
+    {
+      "review_uid": "tagent-review-20260601-001",
+      "agent_run_uid": "tagent-run-20260601-001",
+      "reviewer": "atn",
+      "decision": "approve",
+      "comment": "Approved after checking read-only API fallback behavior and HTTP validation.",
+      "evidence_ref": "docs/plan_serviceops_api_backed_dashboard_release_note.md",
+      "reviewed_at": "2026-06-01T11:00:00+08:00"
+    },
+    {
+      "review_uid": "tagent-review-20260601-002",
+      "agent_run_uid": "tagent-run-20260601-002",
+      "reviewer": "atn",
+      "decision": "approve",
+      "comment": "Approved after checking the dashboard aggregation contract.",
+      "evidence_ref": "plan-serviceops-api-validation-demo-002",
+      "reviewed_at": "2026-06-01T09:45:00+08:00"
+    },
+    {
+      "review_uid": "tagent-review-20260601-003",
+      "agent_run_uid": "tagent-run-20260601-003",
+      "reviewer": "atn",
+      "decision": "approve",
+      "comment": "Approved after reviewing backup hardening checks and validation coverage.",
+      "evidence_ref": "backup-report-demo-003",
+      "reviewed_at": "2026-06-01T08:20:00+08:00"
+    },
+    {
+      "review_uid": "tagent-review-20260601-004",
+      "agent_run_uid": "tagent-run-20260601-005",
+      "reviewer": "project-owner",
+      "decision": "rework",
+      "comment": "Revise the milestone wording to clarify the governance scope.",
+      "evidence_ref": "governance-copy-demo-005",
+      "reviewed_at": "2026-06-01T10:05:00+08:00"
+    }
+  ]
+}

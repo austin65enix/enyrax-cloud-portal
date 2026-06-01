@@ -1,0 +1,16 @@
+{
+  "schema_version": "team_agentops_demo_scorecard_v1",
+  "generated_at": "2026-06-01T00:00:00+08:00",
+  "metrics": {
+    "agent_usage_rate_percent": 76,
+    "review_pass_rate_percent": 84,
+    "rework_rate_percent": 12,
+    "cost_per_task_tokens": 3200,
+    "audit_coverage_percent": 91
+  },
+  "notes": [
+    "Demo governance metrics only.",
+    "Not employee surveillance scoring.",
+    "Token values are operational estimates, not billing-grade cost data."
+  ]
+}

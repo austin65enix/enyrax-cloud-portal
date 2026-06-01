@@ -297,3 +297,11 @@ Scope:
 * Do not use raw prompts / responses.
 * Do not use real credentials or secrets.
 * Keep demo data aligned with `/team-agentops/` static dashboard.
+
+## Task #167 Demo Data Fixture Design
+
+* Task #167 adds safe demo JSON fixtures under `data/team-agentops/`.
+* Fixtures include agent runs, reviews, outputs, project contribution, and scorecard.
+* Fixtures align with the Team_AgentOps schema concept.
+* Fixtures do not contain raw prompts, responses, raw sessions, command output, file diff content, credentials, secrets, API keys, or full home paths.
+* Future tasks may use these fixtures for read-only API prototype or frontend demo data source.

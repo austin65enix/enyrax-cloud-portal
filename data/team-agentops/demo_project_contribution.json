@@ -1,0 +1,84 @@
+{
+  "schema_version": "team_agentops_demo_project_contribution_v1",
+  "generated_at": "2026-06-01T00:00:00+08:00",
+  "projects": [
+    {
+      "project_id": 21,
+      "project_name": "Plan_ServiceOPS API-backed Dashboard",
+      "human_tasks": 6,
+      "agent_tasks": 9,
+      "progress_percent": 82,
+      "review_status": "approved",
+      "agent_contribution": [
+        "API aggregation design",
+        "Read-only API prototype",
+        "Frontend API fallback",
+        "Release note preparation"
+      ],
+      "linked_agent_runs": [
+        "tagent-run-20260601-001",
+        "tagent-run-20260601-002"
+      ]
+    },
+    {
+      "project_id": 52,
+      "project_name": "AgentOps Dashboard Governance",
+      "human_tasks": 5,
+      "agent_tasks": 4,
+      "progress_percent": 68,
+      "review_status": "rework",
+      "agent_contribution": [
+        "Milestone copy draft",
+        "Governance scope review"
+      ],
+      "linked_agent_runs": [
+        "tagent-run-20260601-005"
+      ]
+    },
+    {
+      "project_id": 34,
+      "project_name": "Tokyo Portal BackupOps",
+      "human_tasks": 3,
+      "agent_tasks": 5,
+      "progress_percent": 90,
+      "review_status": "approved",
+      "agent_contribution": [
+        "Backup hardening checks",
+        "Validation report"
+      ],
+      "linked_agent_runs": [
+        "tagent-run-20260601-003"
+      ]
+    },
+    {
+      "project_id": 45,
+      "project_name": "SOC Incident Workflow",
+      "human_tasks": 7,
+      "agent_tasks": 3,
+      "progress_percent": 64,
+      "review_status": "pending",
+      "agent_contribution": [
+        "Incident test scenario draft",
+        "Human review handoff"
+      ],
+      "linked_agent_runs": [
+        "tagent-run-20260601-004"
+      ]
+    },
+    {
+      "project_id": 61,
+      "project_name": "Team_AgentOps Static Prototype",
+      "human_tasks": 8,
+      "agent_tasks": 6,
+      "progress_percent": 88,
+      "review_status": "not_required",
+      "agent_contribution": [
+        "Screenshot checklist preparation",
+        "Static prototype review support"
+      ],
+      "linked_agent_runs": [
+        "tagent-run-20260601-006"
+      ]
+    }
+  ]
+}

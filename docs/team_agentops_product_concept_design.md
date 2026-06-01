@@ -353,3 +353,10 @@ This helps enterprises reduce shadow AI risk and gives managers visibility into 
 * It keeps prompt / response / raw sessions out of scope.
 * It prepares future read-only APIs and dashboard metrics.
 * No DB migration, backend, frontend, or parser changes were made.
+
+## Task #167 Demo Data Fixture Design
+
+* Task #167 provides safe demo fixture data for the Team_AgentOps static dashboard and future read-only APIs.
+* Demo fixtures support Agent Activity Timeline, Project Agent Contribution, Team Scorecard, and Human Review samples.
+* Safe metadata boundary remains unchanged.
+* No DB, backend, frontend, AgentOps parser, or production data changes.
