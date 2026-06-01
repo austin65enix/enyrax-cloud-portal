@@ -71,3 +71,9 @@ Cloudflare R2 is only the backup repository. A restore still requires:
 - Restore PostgreSQL dump.
 - Restore nginx / systemd configuration.
 - Restart services.
+
+## Related Backup Scripts
+
+For Tokyo Portal app and PostgreSQL backup deployment notes, see:
+
+- `docs/tokyo_portal_backup_deployment_notes.md`

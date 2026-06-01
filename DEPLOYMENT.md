@@ -144,3 +144,17 @@ Task #141 packages Tasks #130-#140 as release `v0.6.23-agentops-historical-snaps
 The release covers historical snapshots, trend integration, retention dry-run, and the Snapshot Retention Health dashboard summary. It preserves safety boundaries: no prompt / response or raw session content is stored.
 
 This release introduces no automatic prune. Future work must require dry-run reporting and explicit approval before any prune automation.
+
+## Tokyo Portal Backup Scripts
+
+Scripts:
+
+- `scripts/backup_app_to_r2.sh`
+- `scripts/backup_postgres_local.sh`
+- `scripts/upload_latest_postgres_to_r2.sh`
+
+Deployment notes:
+
+- `docs/tokyo_portal_backup_deployment_notes.md`
+
+Credentials are not stored in Git. Verify a manual run before cron scheduling. Test restores in staging before restoring production.
