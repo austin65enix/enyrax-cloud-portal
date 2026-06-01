@@ -316,3 +316,14 @@ This helps enterprises reduce shadow AI risk and gives managers visibility into 
 * Task #165：Team_AgentOps Project Contribution View
 * Task #166：Team_AgentOps Safety Boundary Review
 * Task #167：Team_AgentOps Release Note
+
+## Task #162 Static Dashboard Prototype
+
+* Added `/team-agentops/` static prototype。
+* Added Portal homepage card。
+* Prototype uses demo data only。
+* No backend、DB、API、AgentOps parser、ProjectOps、ServiceOps changes。
+* Dashboard includes KPI cards、activity timeline、project contribution、human review flow、team scorecard、shadow AI risk panel。
+* Safety boundary remains safe metadata only。
+* No raw prompt / response storage。
+* No employee surveillance scoring。
