@@ -430,3 +430,10 @@ It demonstrates my ability to translate operations needs into product modules, c
 * AI cost values are operational estimates.
 * AI governance modules store safe metadata only.
 * Production deployment would require auth, RBAC, audit policy, DB migration, backup / restore drill, and security review.
+
+
+## Related Rehearsal Notes
+
+For timing, pacing, and 3-minute delivery practice, see `docs/enyrax_3min_demo_rehearsal_notes.md`.
+
+若需要 3 分鐘展示節奏、轉場與演練筆記，請參考 `docs/enyrax_3min_demo_rehearsal_notes.md`。
