@@ -318,3 +318,14 @@ Scope:
 * No mutation.
 * No frontend switch yet.
 * No raw prompt / response / raw session storage.
+
+
+## Task #169 Frontend API Switch with Fixture Fallback
+
+* `/team-agentops/` now fetches `GET /api/team-agentops/dashboard`.
+* API success renders read-only fixture API data.
+* API failure falls back to local demo data.
+* API mode remains read-only.
+* Dashboard does not create, update, approve, reject, or mutate agent records.
+* Safety boundary remains safe metadata only.
+* No backend, DB, API, fixture, parser, or release changes.
