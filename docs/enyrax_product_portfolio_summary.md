@@ -352,3 +352,9 @@ This document does not include:
 * Task #174：ENYRAX Product Architecture Diagram
 * Task #175：ENYRAX Portfolio Release Note
 * Task #176：ENYRAX Demo Screenshot Checklist
+
+## Related Demo Script
+
+For a 3–5 minute interview walkthrough, see `docs/enyrax_interview_demo_script.md`.
+
+若需要 3～5 分鐘面試展示話術，請參考 `docs/enyrax_interview_demo_script.md`。
