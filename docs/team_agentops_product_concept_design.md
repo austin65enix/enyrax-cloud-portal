@@ -391,3 +391,11 @@ This helps enterprises reduce shadow AI risk and gives managers visibility into 
 * Scope remains fixture-backed, read-only, safe metadata only.
 * No backend behavior beyond read-only endpoints, no DB, no mutation, no parser changes, no deployment changes.
 * Future work should proceed to release tag and then role-based filtering / review write flow design.
+
+## Task #174 Role-based API Filtering Design
+
+* Task #174 defines role-based visibility rules for future Team_AgentOps APIs.
+* It covers viewer, operator, supervisor, and admin roles.
+* It defines endpoint-level and field-level visibility.
+* It keeps safe metadata boundary unchanged.
+* No backend, frontend, DB, fixture, parser, or release changes were made.
