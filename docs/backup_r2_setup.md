@@ -23,7 +23,7 @@ The upload script sends the latest matching archive from `/var/backups/enyrax` t
 enyrax-r2
 ```
 
-Do not put Cloudflare R2 access keys or secrets in the upload script. Store them only in the local `rclone` configuration.
+Do not put Cloudflare R2 access keys or secrets in the upload script. Store them only in the local `rclone` configuration. R2 backup scripts rely on the execution user host-local rclone config; do not commit that config. Backup scripts must not print credentials. Tokyo Portal app archives exclude `.env`, `backend/.env`, and local runtime files such as virtualenv directories and caches.
 
 Default upload settings:
 

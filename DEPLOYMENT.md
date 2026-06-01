@@ -157,4 +157,4 @@ Deployment notes:
 
 - `docs/tokyo_portal_backup_deployment_notes.md`
 
-Credentials are not stored in Git. Verify a manual run before cron scheduling. Test restores in staging before restoring production.
+Credentials are not stored in Git. The scripts use shell hardening, dependency checks, non-empty backup validation, and `DRY_RUN=1` previews. App archives exclude local secrets such as `.env` and `backend/.env`, `.git`, virtualenv directories, caches, and backup artifacts. Run `bash -n` and dry-run checks before cron scheduling. Do not expose backup logs publicly. Test restores in staging before restoring production.

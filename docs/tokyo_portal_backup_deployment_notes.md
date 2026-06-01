@@ -52,6 +52,16 @@ The current scripts define these values directly and do not implement environmen
 | `DATABASE_URL` | Do not print or commit the value. | PostgreSQL connection string loaded from `backend/.env` |
 | Timestamp format | `date +%Y%m%d_%H%M%S` | Backup file timestamp |
 
+## Hardening Behavior
+
+- All three scripts use `set -euo pipefail`, a conservative `IFS`, and required-command checks.
+- App archives exclude `.env`, `backend/.env`, `.git`, virtualenv directories, Python caches, local backup artifacts, logs, temporary paths, and `data/agentops/snapshots/retention_report.json`.
+- The app script verifies the completed archive listing before upload and aborts if excluded sensitive or local paths remain.
+- Created or uploaded backup files must exist and be non-empty.
+- The PostgreSQL local dump requires `DATABASE_URL` from `backend/.env`, but never prints its value. It writes a temporary file and moves it into place only after a non-empty dump succeeds.
+- R2 upload scripts rely on the execution user host-local rclone config and use normal `rclone copyto` verbosity. The former `-vv` flag was removed to reduce log exposure.
+- `DRY_RUN=1` performs dependency and configuration checks without creating an archive, invoking `pg_dump`, or uploading to R2. The PostgreSQL upload dry-run still selects and validates the latest local dump.
+
 ## Manual Verification Commands
 
 ### Check scripts
@@ -71,6 +81,16 @@ ls -la \
 bash -n scripts/backup_app_to_r2.sh
 bash -n scripts/backup_postgres_local.sh
 bash -n scripts/upload_latest_postgres_to_r2.sh
+```
+
+### Dry-run checks
+
+Run these before cron installation. They must not create backups or upload files. The PostgreSQL upload dry-run requires an existing non-empty local dump.
+
+```bash
+DRY_RUN=1 scripts/backup_app_to_r2.sh
+DRY_RUN=1 scripts/backup_postgres_local.sh
+DRY_RUN=1 scripts/upload_latest_postgres_to_r2.sh
 ```
 
 ### rclone remote check
@@ -109,7 +129,7 @@ cd /var/www/enyrax-portal
 sudo -E scripts/backup_app_to_r2.sh
 ```
 
-The app backup creates a tarball and uploads it to the R2 app prefix. The current tar options attempt to exclude `.git`, the repository-root `__pycache__`, and the repository-root `backups` path. Because those exclusions use absolute paths while tar archives from `-C "$APP_DIR"`, verify that they match the archived paths. They do not explicitly exclude `backend/.env` or all local secret and generated files. Review this before production scheduling.
+The app backup creates a tarball and uploads it to the R2 app prefix. Its tar exclusions are relative to `APP_DIR`, including `.env`, `backend/.env`, `.git`, virtualenv directories, caches, logs, temporary paths, and backup artifacts. Before upload, the script scans the archive listing and aborts if excluded sensitive or local paths remain.
 
 ## Post-run Verification
 
@@ -193,7 +213,7 @@ Record and monitor:
 - success / failure
 - non-zero exit codes
 
-Cron should monitor exit codes. A future task can connect failures to Status, AgentOps, or ServiceOps notifications.
+Cron should monitor exit codes. Backup logs can contain sensitive operational metadata and must not be exposed publicly. A future task can connect failures to Status, AgentOps, or ServiceOps notifications.
 
 ## Security Boundary
 
@@ -212,19 +232,18 @@ Cron should monitor exit codes. A future task can connect failures to Status, Ag
 
 ## Known Cautions
 
-- App archives may include local files unless excluded by tar options.
-- Verify whether `.env`, `backend/venv`, backups, logs, and generated artifacts are excluded. The current app script does not explicitly exclude all of these paths.
-- The current app script may archive `backend/.env`; review and harden exclusions before production scheduling.
-- Validate the current absolute-path tar exclusions against the paths stored in the archive.
+- App archive exclusions and the archive safety scan must remain aligned when local runtime paths change.
 - PostgreSQL dumps may contain sensitive data.
 - rclone remote identity depends on the execution user.
 - Cron has a smaller environment than an interactive shell.
 - R2 upload success does not equal restore readiness.
 - This document does not replace a full restore drill.
 
-## Future Tasks
+## Completed Hardening
 
 - Task #160: Tokyo Portal Backup Script Hardening
+
+## Future Tasks
 - Task #161: Tokyo Portal Restore Drill Plan
 - Task #162: Backup Monitoring / Status Integration
 - Task #163: Backup Retention Policy
