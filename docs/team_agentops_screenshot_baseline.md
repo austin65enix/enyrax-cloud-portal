@@ -153,3 +153,10 @@ Reviewer:
 Result:
 ```
 
+## Task #172 API-backed Dashboard Release Note
+
+* Task #172 packages Tasks #166-#170 as `v0.6.28-team-agentops-api-backed-dashboard`.
+* Release covers schema design, demo fixtures, read-only fixture API, frontend API fallback, and screenshot baseline checklist.
+* Scope remains fixture-backed, read-only, safe metadata only.
+* No backend behavior beyond read-only endpoints, no DB, no mutation, no parser changes, no deployment changes.
+* Future work should proceed to release tag and then role-based filtering / review write flow design.

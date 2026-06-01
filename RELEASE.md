@@ -1,5 +1,32 @@
 # ENYRAX Cloud Portal Release Notes
 
+## v0.6.28-team-agentops-api-backed-dashboard
+
+Team_AgentOps now supports an API-backed dashboard using safe demo fixtures and read-only Team_AgentOps endpoints.
+
+Highlights:
+
+- Added Team_AgentOps safe agent run schema design.
+- Added safe demo fixtures for agent runs, reviews, outputs, project contribution, and scorecard.
+- Added read-only fixture API endpoints under `/api/team-agentops/`.
+- Added `/team-agentops/` API DATA / DEMO FALLBACK frontend behavior.
+- Added dashboard API summary, timeline, project contribution, scorecard, warnings, and safety boundary rendering.
+- Added screenshot baseline checklist for desktop, tablet, mobile, API DATA, and DEMO FALLBACK states.
+- Preserved safe metadata boundary and no employee surveillance positioning.
+
+Scope boundary:
+
+- Fixture-backed only.
+- No production DB integration.
+- No DB migration.
+- No write API.
+- No mutation.
+- No AgentOps parser changes.
+- No raw prompt / response / session storage.
+- No deployment setting changes.
+
+---
+
 ## v0.6.27-team-agentops-static-prototype
 
 Team_AgentOps introduces the first static dashboard prototype for managing human-AI team collaboration, agent activity, project contribution, human review, and governance boundaries.
