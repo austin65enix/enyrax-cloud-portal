@@ -459,3 +459,13 @@ The prototype uses the server local timestamp for `generated_at` and the server 
 * Viewer empty state remains safe.
 * Dashboard remains read-only.
 * No backend, DB, API, ServiceOps, ProjectOps, release, or deployment changes.
+
+## Task #180 Attention Reason Visual QA
+
+* Task #180 validates `/plan-serviceops/` attention reason UI.
+* Supervisor role shows status + attention reason badges.
+* Viewer role empty state remains safe.
+* API DATA and DEMO FALLBACK both avoid `BLOCKED` as the primary badge.
+* Badge layout and responsive behavior were checked.
+* Dashboard remains read-only.
+* No backend, DB, API, ServiceOps, ProjectOps, release, or deployment changes.
