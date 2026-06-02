@@ -448,3 +448,14 @@ The prototype uses the server local timestamp for `generated_at` and the server 
 * API response now supports `status_label`, zh label, `attention_reason` label, `source_status`, `source_waiting_text`, and display badges.
 * This prepares Task #179 frontend UI update.
 * No DB, migration, ServiceOps source behavior, ProjectOps behavior, release, or deployment changes.
+
+## Task #179 Frontend Attention Reason UI Update
+
+* Task #179 updates `/plan-serviceops/` to render status + attention reason badges.
+* Team Attention Queue now uses `display_badge` / `display_badge_zh`.
+* `Blocked` is no longer the primary user-facing badge.
+* Source status may remain available as trace metadata.
+* API DATA and DEMO FALLBACK both support attention reason display.
+* Viewer empty state remains safe.
+* Dashboard remains read-only.
+* No backend, DB, API, ServiceOps, ProjectOps, release, or deployment changes.
