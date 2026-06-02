@@ -482,3 +482,14 @@ So 271ops does not replace consultants or certification processes. It reorganize
 * It does not claim ISO27001 certification, legal assurance, or audit approval.
 * No frontend, backend, DB, API, fixtures, deployment, or tag changes were made in this release note task.
 * Prepares Task #204 release tag.
+
+
+## Task #205 Evidence Collection Queue and Audit Calendar Design
+
+* Task #205 defines Collection Queue, Evidence Queue, Audit Calendar, and Monthly Control Tasks for 271ops.
+* Collection Queue tracks missing or pending evidence collection work.
+* Evidence Queue tracks collected evidence waiting for review or acceptance.
+* Audit Calendar organizes monthly, quarterly, semiannual, and annual governance tasks.
+* The design supports continuous ISO27001 readiness preparation without claiming certification, legal assurance, or audit approval.
+* No frontend, backend, DB, API, fixtures, release, deployment, or tag changes were made.
+* It prepares Task #206 and Task #207 demo fixture design.

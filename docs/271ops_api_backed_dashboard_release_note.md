@@ -225,3 +225,14 @@ This release is a fixture-backed demo dashboard. It is suitable for product demo
 * Task #208：271ops Access Review Workflow Design
 * Task #209：271ops Backup / Restore Evidence Integration Design
 * Task #210：271ops Release Package for Interview Demo
+
+
+## Task #205 Evidence Collection Queue and Audit Calendar Design
+
+* Task #205 defines Collection Queue, Evidence Queue, Audit Calendar, and Monthly Control Tasks for 271ops.
+* Collection Queue tracks missing or pending evidence collection work.
+* Evidence Queue tracks collected evidence waiting for review or acceptance.
+* Audit Calendar organizes monthly, quarterly, semiannual, and annual governance tasks.
+* The design supports continuous ISO27001 readiness preparation without claiming certification, legal assurance, or audit approval.
+* No frontend, backend, DB, API, fixtures, release, deployment, or tag changes were made.
+* It prepares Task #206 and Task #207 demo fixture design.
