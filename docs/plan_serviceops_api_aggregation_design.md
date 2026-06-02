@@ -430,3 +430,12 @@ The prototype uses the server local timestamp for `generated_at` and the server 
 * API mode disables status toggle.
 * Demo mode preserves local status toggle.
 * Release note prepared for `v0.6.26-plan-serviceops-api-backed-dashboard`.
+
+## Task #177 Status and Attention Reason Design
+
+* Task #177 separates main ticket status from attention reason.
+* Main status becomes Pending / In Progress / Done.
+* `Blocked` is no longer recommended as primary user-facing status.
+* Waiting approval / vendor / user / schedule / evidence / budget / risk conditions move to attention_reason.
+* This design improves supervisor visibility and protects operators by explaining why work is waiting.
+* No frontend, backend, DB, API, fixture, or release changes were made.
