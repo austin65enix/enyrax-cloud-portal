@@ -582,3 +582,15 @@ For timing, pacing, and 3-minute delivery practice, see `docs/enyrax_3min_demo_r
 * It does not add write API or provisioning actions.
 * It prepares Task #208 demo fixture design and Task #210 Access Review Queue API design.
 * No frontend, backend, DB, API, fixtures, release, deployment, or tag changes were made.
+
+
+## Task #208 Account Governance Demo Data Fixture Design
+
+* Task #208 adds safe demo fixtures for BPM Permission Requests, Access Review Items, and Access Lifecycle Events.
+* BPM Permission Request fixtures model access request and approval evidence using safe references only.
+* Access Review Items model periodic access review queue records.
+* Access Lifecycle Events model request, approval, provisioning, review, exception, and revocation events.
+* Fixtures use safe aliases, role labels, and short summaries only.
+* Fixtures do not contain real BPM form content, attachments, raw logs, credentials, passwords, API keys, private keys, tokens, SSH keys, raw prompt / response, full home paths, or sensitive personal data.
+* This prepares Account Governance read-only API design.
+* No frontend, backend, DB, API, release, deployment, or tag changes were made.
