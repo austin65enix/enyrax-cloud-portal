@@ -1,0 +1,67 @@
+{
+  "schema": "ops271_audit_checklist_v1",
+  "source": "demo_fixture",
+  "mode": "read_only",
+  "records": [
+    {
+      "check_uid": "271-check-001",
+      "control_area": "asset",
+      "item": "Asset owner assigned",
+      "item_zh": "資產負責人已指派",
+      "status": "ready",
+      "evidence_refs": ["271-evidence-005"],
+      "owner": "governance-owner",
+      "note": "Demo checklist item."
+    },
+    {
+      "check_uid": "271-check-002",
+      "control_area": "access",
+      "item": "Access review completed",
+      "item_zh": "權限覆核已完成",
+      "status": "partial",
+      "evidence_refs": ["271-evidence-003"],
+      "owner": "security-governance",
+      "note": "Demo checklist item."
+    },
+    {
+      "check_uid": "271-check-003",
+      "control_area": "backup_restore",
+      "item": "Backup restore drill verified",
+      "item_zh": "備份還原演練已驗證",
+      "status": "partial",
+      "evidence_refs": ["271-evidence-007"],
+      "owner": "infra-operations",
+      "note": "Demo checklist item."
+    },
+    {
+      "check_uid": "271-check-004",
+      "control_area": "incident",
+      "item": "Incident evidence linked",
+      "item_zh": "事件證據已連結",
+      "status": "ready",
+      "evidence_refs": ["271-evidence-001", "271-evidence-002"],
+      "owner": "soc-reviewer",
+      "note": "Demo checklist item."
+    },
+    {
+      "check_uid": "271-check-005",
+      "control_area": "risk",
+      "item": "Risk treatment owner assigned",
+      "item_zh": "風險處理負責角色已指派",
+      "status": "ready",
+      "evidence_refs": ["271-evidence-008"],
+      "owner": "security-governance",
+      "note": "Demo checklist item."
+    },
+    {
+      "check_uid": "271-check-006",
+      "control_area": "ai_governance",
+      "item": "AI governance boundary documented",
+      "item_zh": "AI 治理邊界已文件化",
+      "status": "partial",
+      "evidence_refs": ["271-evidence-006", "271-evidence-009"],
+      "owner": "ai-governance",
+      "note": "Demo checklist item."
+    }
+  ]
+}

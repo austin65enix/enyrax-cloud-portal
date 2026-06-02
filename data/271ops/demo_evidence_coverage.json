@@ -1,0 +1,62 @@
+{
+  "schema": "ops271_evidence_coverage_v1",
+  "source": "demo_fixture",
+  "mode": "read_only",
+  "records": [
+    {
+      "area": "incident_response",
+      "area_label": "Incident Response",
+      "area_label_zh": "事件處理",
+      "status": "ready",
+      "status_label": "Ready",
+      "status_label_zh": "已準備",
+      "evidence_count": 8,
+      "missing_count": 0,
+      "source_modules": ["SOC", "ServiceOps", "Audit Logs"]
+    },
+    {
+      "area": "backup_restore",
+      "area_label": "Backup & Restore",
+      "area_label_zh": "備份與還原",
+      "status": "partial",
+      "status_label": "Partial",
+      "status_label_zh": "部分準備",
+      "evidence_count": 6,
+      "missing_count": 3,
+      "source_modules": ["BackupOps", "Server_AgentOps", "Audit Logs"]
+    },
+    {
+      "area": "access_review",
+      "area_label": "Access Review",
+      "area_label_zh": "權限覆核",
+      "status": "partial",
+      "status_label": "Partial",
+      "status_label_zh": "部分準備",
+      "evidence_count": 5,
+      "missing_count": 4,
+      "source_modules": ["ProjectOps", "ServiceOps", "Audit Logs"]
+    },
+    {
+      "area": "vendor_approval",
+      "area_label": "Vendor & Approval",
+      "area_label_zh": "廠商與核准",
+      "status": "missing",
+      "status_label": "Missing",
+      "status_label_zh": "尚缺資料",
+      "evidence_count": 2,
+      "missing_count": 3,
+      "source_modules": ["Plan_ServiceOPS", "ServiceOps", "Audit Logs"]
+    },
+    {
+      "area": "ai_governance",
+      "area_label": "AI Governance",
+      "area_label_zh": "AI 治理",
+      "status": "partial",
+      "status_label": "Partial",
+      "status_label_zh": "部分準備",
+      "evidence_count": 4,
+      "missing_count": 2,
+      "source_modules": ["AgentOps", "Team_AgentOps", "Server_AgentOps"]
+    }
+  ]
+}

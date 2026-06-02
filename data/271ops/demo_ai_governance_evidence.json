@@ -1,0 +1,67 @@
+{
+  "schema": "ops271_ai_governance_evidence_v1",
+  "source": "demo_fixture",
+  "mode": "read_only",
+  "records": [
+    {
+      "ai_evidence_uid": "271-ai-evidence-001",
+      "source_module": "AgentOps",
+      "source_ref": "agentops-snapshot-demo-20260602",
+      "evidence_type": "snapshot_governance",
+      "title": "AgentOps generated snapshot review",
+      "title_zh": "AgentOps 產生資料檢查紀錄",
+      "status": "ready",
+      "review_status": "accepted",
+      "safe_metadata_only": true,
+      "raw_prompt_response_stored": false,
+      "raw_chat_history_stored": false,
+      "raw_session_stored": false,
+      "note": "Demo safe metadata reference only."
+    },
+    {
+      "ai_evidence_uid": "271-ai-evidence-002",
+      "source_module": "Team_AgentOps",
+      "source_ref": "team-agentops-review-demo-002",
+      "evidence_type": "human_review",
+      "title": "Team_AgentOps human review evidence",
+      "title_zh": "Team_AgentOps 人工覆核證據",
+      "status": "ready",
+      "review_status": "accepted",
+      "safe_metadata_only": true,
+      "raw_prompt_response_stored": false,
+      "raw_chat_history_stored": false,
+      "raw_session_stored": false,
+      "note": "Demo human review metadata reference only."
+    },
+    {
+      "ai_evidence_uid": "271-ai-evidence-003",
+      "source_module": "Server_AgentOps",
+      "source_ref": "server-agentops-run-demo-003",
+      "evidence_type": "automation_run",
+      "title": "Server_AgentOps automation run evidence",
+      "title_zh": "Server_AgentOps 自動化執行證據",
+      "status": "partial",
+      "review_status": "needs_update",
+      "safe_metadata_only": true,
+      "raw_prompt_response_stored": false,
+      "raw_chat_history_stored": false,
+      "raw_session_stored": false,
+      "note": "Demo automation metadata reference only."
+    },
+    {
+      "ai_evidence_uid": "271-ai-evidence-004",
+      "source_module": "Personal_AgentOps",
+      "source_ref": "personal-agentops-policy-demo-004",
+      "evidence_type": "policy_boundary",
+      "title": "Personal_AgentOps policy boundary planned",
+      "title_zh": "Personal_AgentOps 政策邊界規劃中",
+      "status": "planned",
+      "review_status": "pending",
+      "safe_metadata_only": true,
+      "raw_prompt_response_stored": false,
+      "raw_chat_history_stored": false,
+      "raw_session_stored": false,
+      "note": "Demo planned policy boundary reference only."
+    }
+  ]
+}

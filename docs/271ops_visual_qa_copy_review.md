@@ -88,3 +88,13 @@ No blocking visual or copy issues found.
 Task #197 visual QA and product copy review passed. 271ops static dashboard is ready for demo data fixture design.
 
 Task #197 視覺 QA 與產品文案檢查通過。271ops static dashboard 可進入 demo data fixture design。
+
+## Task #199 271ops Demo Data Fixture Design
+
+* Task #199 adds safe demo fixtures under `data/271ops/`.
+* Fixtures cover readiness summary, evidence coverage, risk register, access reviews, evidence queue, AI governance evidence, and audit checklist.
+* Fixtures use safe references and short summaries only.
+* Fixtures do not represent ISO27001 certification status.
+* Fixtures do not store secrets, raw logs, raw prompt / response, credentials, private keys, full home paths, or sensitive personal data.
+* This prepares Task #200 read-only fixture API prototype.
+* No frontend, backend, DB, API, release, or deployment changes were made.

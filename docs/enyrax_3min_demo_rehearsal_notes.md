@@ -250,4 +250,14 @@ I am not only trying to show that I can write code. I am trying to show that I c
 * Primary UI brand remains lowercase `271ops`.
 * The dashboard does not claim ISO27001 certification, legal assurance, or audit approval.
 * No backend, DB, API, fixtures, release, or deployment changes were made.
-* It prepares Task #198 demo data fixture design.
+* It prepares Task #199 demo data fixture design.
+
+## Task #199 271ops Demo Data Fixture Design
+
+* Task #199 adds safe demo fixtures under `data/271ops/`.
+* Fixtures cover readiness summary, evidence coverage, risk register, access reviews, evidence queue, AI governance evidence, and audit checklist.
+* Fixtures use safe references and short summaries only.
+* Fixtures do not represent ISO27001 certification status.
+* Fixtures do not store secrets, raw logs, raw prompt / response, credentials, private keys, full home paths, or sensitive personal data.
+* This prepares Task #200 read-only fixture API prototype.
+* No frontend, backend, DB, API, release, or deployment changes were made.

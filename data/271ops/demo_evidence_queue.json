@@ -1,0 +1,115 @@
+{
+  "schema": "ops271_evidence_queue_v1",
+  "source": "demo_fixture",
+  "mode": "read_only",
+  "records": [
+    {
+      "evidence_uid": "271-evidence-001",
+      "source_module": "SOC",
+      "source_ref": "SOC-INC-DEMO-001",
+      "evidence_type": "incident",
+      "title": "Suspicious SSH brute force remediation",
+      "title_zh": "SSH 暴力嘗試事件處理證據",
+      "summary": "Incident reviewed, ticket created, remediation tracked, verification evidence attached.",
+      "review_status": "accepted",
+      "safe_reference_only": true,
+      "sensitive_content_stored": false
+    },
+    {
+      "evidence_uid": "271-evidence-002",
+      "source_module": "ServiceOps",
+      "source_ref": "SVC-TKT-DEMO-014",
+      "evidence_type": "ticket",
+      "title": "Service remediation ticket closure",
+      "title_zh": "服務修復工單結案證據",
+      "summary": "Remediation workflow includes assignment, verification, and closure summary.",
+      "review_status": "accepted",
+      "safe_reference_only": true,
+      "sensitive_content_stored": false
+    },
+    {
+      "evidence_uid": "271-evidence-003",
+      "source_module": "Audit Logs",
+      "source_ref": "ACCESS-DEMO-003",
+      "evidence_type": "access_review",
+      "title": "Privileged account review worksheet",
+      "title_zh": "特權帳號覆核工作表",
+      "summary": "Role-level privileged access review is pending completion.",
+      "review_status": "needs_update",
+      "safe_reference_only": true,
+      "sensitive_content_stored": false
+    },
+    {
+      "evidence_uid": "271-evidence-004",
+      "source_module": "BackupOps",
+      "source_ref": "R2-BACKUP-DEMO-004",
+      "evidence_type": "backup",
+      "title": "R2 backup upload verification",
+      "title_zh": "R2 備份上傳驗證證據",
+      "summary": "Backup upload verification metadata is available for review.",
+      "review_status": "accepted",
+      "safe_reference_only": true,
+      "sensitive_content_stored": false
+    },
+    {
+      "evidence_uid": "271-evidence-005",
+      "source_module": "Server_AgentOps",
+      "source_ref": "SERVER-DEPLOY-DEMO-005",
+      "evidence_type": "deployment_check",
+      "title": "Server_AgentOps deployment check",
+      "title_zh": "Server_AgentOps 部署檢查證據",
+      "summary": "Automation run metadata records a completed deployment verification check.",
+      "review_status": "accepted",
+      "safe_reference_only": true,
+      "sensitive_content_stored": false
+    },
+    {
+      "evidence_uid": "271-evidence-006",
+      "source_module": "Team_AgentOps",
+      "source_ref": "TEAM-REVIEW-DEMO-006",
+      "evidence_type": "ai_governance",
+      "title": "Team_AgentOps human review",
+      "title_zh": "Team_AgentOps 人工覆核證據",
+      "summary": "Human review metadata records a governance checkpoint for an assisted workflow.",
+      "review_status": "accepted",
+      "safe_reference_only": true,
+      "sensitive_content_stored": false
+    },
+    {
+      "evidence_uid": "271-evidence-007",
+      "source_module": "BackupOps",
+      "source_ref": "RESTORE-DEMO-007",
+      "evidence_type": "restore_drill",
+      "title": "Backup restore drill worksheet",
+      "title_zh": "備份還原演練工作表",
+      "summary": "Restore drill verification evidence requires an updated review record.",
+      "review_status": "needs_update",
+      "safe_reference_only": true,
+      "sensitive_content_stored": false
+    },
+    {
+      "evidence_uid": "271-evidence-008",
+      "source_module": "Plan_ServiceOPS",
+      "source_ref": "VENDOR-APPROVAL-DEMO-008",
+      "evidence_type": "approval",
+      "title": "Vendor approval record",
+      "title_zh": "廠商核准紀錄",
+      "summary": "Vendor review record is queued for governance approval.",
+      "review_status": "pending",
+      "safe_reference_only": true,
+      "sensitive_content_stored": false
+    },
+    {
+      "evidence_uid": "271-evidence-009",
+      "source_module": "AgentOps",
+      "source_ref": "AI-POLICY-DEMO-009",
+      "evidence_type": "policy",
+      "title": "AI-assisted workflow review policy",
+      "title_zh": "AI 輔助流程覆核政策",
+      "summary": "Policy boundary draft is queued for governance review.",
+      "review_status": "pending",
+      "safe_reference_only": true,
+      "sensitive_content_stored": false
+    }
+  ]
+}

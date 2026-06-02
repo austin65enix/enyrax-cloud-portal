@@ -1,0 +1,28 @@
+{
+  "schema": "ops271_readiness_summary_v1",
+  "generated_at": "2026-06-02T00:00:00+08:00",
+  "source": "demo_fixture",
+  "mode": "read_only",
+  "product": "271ops",
+  "display_name": "271ops",
+  "subtitle": "ISO27001 Readiness & Security Governance",
+  "readiness_score": 68,
+  "readiness_score_note": "Demo readiness estimate only. Not an ISO27001 certification score.",
+  "summary": {
+    "open_risks": 7,
+    "missing_evidence": 12,
+    "access_reviews_pending": 9,
+    "backup_evidence_coverage_percent": 74,
+    "incident_evidence_coverage_percent": 81,
+    "vendor_approval_pending": 5,
+    "ai_governance_coverage_percent": 62
+  },
+  "boundary": {
+    "readiness_preparation_only": true,
+    "not_certification_score": true,
+    "not_legal_assurance": true,
+    "not_audit_approval": true,
+    "safe_references_only": true
+  },
+  "warnings": []
+}

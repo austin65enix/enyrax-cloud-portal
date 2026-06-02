@@ -401,12 +401,12 @@ So 271ops does not replace consultants or certification processes. It reorganize
 
 * Task #196：271ops Static Dashboard Prototype
 * Task #197：271ops Visual QA and Product Copy Review
-* Task #198：271ops Demo Data Fixture Design
-* Task #199：271ops Read-only Fixture API Prototype
-* Task #200：271ops Frontend API Switch with Fallback
-* Task #201：271ops Visual QA
-* Task #202：271ops Release Note
-* Task #203：271ops Release Tag
+* Task #199：271ops Demo Data Fixture Design
+* Task #200：271ops Read-only Fixture API Prototype
+* Task #201：271ops Frontend API Switch with Fallback
+* Task #202：271ops Visual QA
+* Task #203：271ops Release Note
+* Task #204：271ops Release Tag
 
 
 ## Task #196 271ops Static Dashboard Prototype
@@ -425,4 +425,14 @@ So 271ops does not replace consultants or certification processes. It reorganize
 * Primary UI brand remains lowercase `271ops`.
 * The dashboard does not claim ISO27001 certification, legal assurance, or audit approval.
 * No backend, DB, API, fixtures, release, or deployment changes were made.
-* It prepares Task #198 demo data fixture design.
+* It prepares Task #199 demo data fixture design.
+
+## Task #199 271ops Demo Data Fixture Design
+
+* Task #199 adds safe demo fixtures under `data/271ops/`.
+* Fixtures cover readiness summary, evidence coverage, risk register, access reviews, evidence queue, AI governance evidence, and audit checklist.
+* Fixtures use safe references and short summaries only.
+* Fixtures do not represent ISO27001 certification status.
+* Fixtures do not store secrets, raw logs, raw prompt / response, credentials, private keys, full home paths, or sensitive personal data.
+* This prepares Task #200 read-only fixture API prototype.
+* No frontend, backend, DB, API, release, or deployment changes were made.

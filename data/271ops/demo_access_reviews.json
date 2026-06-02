@@ -1,0 +1,59 @@
+{
+  "schema": "ops271_access_reviews_v1",
+  "source": "demo_fixture",
+  "mode": "read_only",
+  "records": [
+    {
+      "review_uid": "271-access-review-001",
+      "system": "Linux",
+      "system_label": "Linux sudo group",
+      "account_ref": "linux-admin-group",
+      "reviewer": "infra-supervisor",
+      "status": "pending",
+      "evidence_status": "missing",
+      "risk_level": "high",
+      "last_reviewed_at": null,
+      "evidence_ref": null,
+      "note": "Demo record. No real account details stored."
+    },
+    {
+      "review_uid": "271-access-review-002",
+      "system": "Directory Service",
+      "system_label": "AD disabled account verification",
+      "account_ref": "directory-disabled-aliases",
+      "reviewer": "identity-reviewer",
+      "status": "approved",
+      "evidence_status": "ready",
+      "risk_level": "low",
+      "last_reviewed_at": "2026-05-28T14:30:00+08:00",
+      "evidence_ref": "271-evidence-003",
+      "note": "Demo record. Review uses safe role aliases only."
+    },
+    {
+      "review_uid": "271-access-review-003",
+      "system": "Shared Service",
+      "system_label": "Shared account owner confirmation",
+      "account_ref": "shared-service-owner-alias",
+      "reviewer": "service-owner-reviewer",
+      "status": "exception",
+      "evidence_status": "partial",
+      "risk_level": "medium",
+      "last_reviewed_at": "2026-05-30T10:00:00+08:00",
+      "evidence_ref": "271-evidence-003",
+      "note": "Demo record. Owner role confirmation remains open."
+    },
+    {
+      "review_uid": "271-access-review-004",
+      "system": "SaaS",
+      "system_label": "SaaS admin account review",
+      "account_ref": "saas-admin-role-alias",
+      "reviewer": "application-supervisor",
+      "status": "revoke_needed",
+      "evidence_status": "missing",
+      "risk_level": "high",
+      "last_reviewed_at": "2026-06-01T09:15:00+08:00",
+      "evidence_ref": null,
+      "note": "Demo record. No real account details stored."
+    }
+  ]
+}

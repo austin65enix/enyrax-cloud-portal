@@ -1,0 +1,63 @@
+{
+  "schema": "ops271_risk_register_v1",
+  "source": "demo_fixture",
+  "mode": "read_only",
+  "records": [
+    {
+      "risk_uid": "271-risk-001",
+      "title": "Privileged account review not completed",
+      "title_zh": "特權帳號覆核尚未完成",
+      "category": "access",
+      "impact": "high",
+      "likelihood": "medium",
+      "risk_level": "high",
+      "owner": "security-governance",
+      "status": "in_progress",
+      "treatment": "mitigate",
+      "mitigation_note": "Review sudo and admin groups before formal readiness review.",
+      "linked_evidence_refs": ["271-evidence-003"]
+    },
+    {
+      "risk_uid": "271-risk-002",
+      "title": "Restore drill evidence incomplete",
+      "title_zh": "還原演練證據尚未完整",
+      "category": "backup_restore",
+      "impact": "high",
+      "likelihood": "medium",
+      "risk_level": "high",
+      "owner": "infra-operations",
+      "status": "in_progress",
+      "treatment": "mitigate",
+      "mitigation_note": "Complete restore drill review and attach verification metadata.",
+      "linked_evidence_refs": ["271-evidence-007"]
+    },
+    {
+      "risk_uid": "271-risk-003",
+      "title": "Vendor approval record missing",
+      "title_zh": "廠商核准紀錄尚缺",
+      "category": "vendor",
+      "impact": "medium",
+      "likelihood": "medium",
+      "risk_level": "medium",
+      "owner": "procurement-governance",
+      "status": "pending",
+      "treatment": "mitigate",
+      "mitigation_note": "Complete vendor review and record role-based approval.",
+      "linked_evidence_refs": ["271-evidence-008"]
+    },
+    {
+      "risk_uid": "271-risk-004",
+      "title": "AI-assisted workflow review policy pending",
+      "title_zh": "AI 輔助流程覆核政策尚待確認",
+      "category": "ai_governance",
+      "impact": "medium",
+      "likelihood": "medium",
+      "risk_level": "medium",
+      "owner": "ai-governance",
+      "status": "pending",
+      "treatment": "mitigate",
+      "mitigation_note": "Document human review boundaries for assisted workflows.",
+      "linked_evidence_refs": ["271-evidence-009"]
+    }
+  ]
+}
