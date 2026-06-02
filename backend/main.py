@@ -64,6 +64,9 @@ OPS271_FIXTURE_FILES = {
     "collection_queue": "demo_collection_queue.json",
     "audit_calendar_tasks": "demo_audit_calendar_tasks.json",
     "evidence_requirements": "demo_evidence_requirements.json",
+    "bpm_permission_requests": "demo_bpm_permission_requests.json",
+    "access_review_items": "demo_access_review_items.json",
+    "access_lifecycle_events": "demo_access_lifecycle_events.json",
 }
 OPS271_FIXTURE_WARNING = {
     "code": "fixture_unavailable",
@@ -2422,6 +2425,102 @@ def ops271_evidence_requirements(
             "required_frequency": required_frequency,
             "expected_evidence_type": expected_evidence_type,
             "minimum_review_status": minimum_review_status,
+        },
+    )
+
+
+# 271ops Access Review Queue APIs are fixture-backed and read-only. They connect
+# BPM permission request evidence, periodic access review items, and safe access
+# lifecycle events without exposing raw IAM data or mutating source systems.
+@app.get("/api/271ops/bpm-permission-requests")
+def ops271_bpm_permission_requests(
+    request_type: Optional[str] = None,
+    approval_status: Optional[str] = None,
+    evidence_status: Optional[str] = None,
+    system_ref: Optional[str] = None,
+    department_ref: Optional[str] = None,
+    approver_role: Optional[str] = None,
+):
+    return ops271_records_summary_response(
+        "bpm_permission_requests",
+        "approval_status",
+        ("approved", "pending", "rejected", "expired"),
+        {
+            "request_type": request_type,
+            "approval_status": approval_status,
+            "evidence_status": evidence_status,
+            "system_ref": system_ref,
+            "department_ref": department_ref,
+            "approver_role": approver_role,
+        },
+    )
+
+
+@app.get("/api/271ops/access-review-items")
+def ops271_access_review_items(
+    period: Optional[str] = None,
+    review_status: Optional[str] = None,
+    decision: Optional[str] = None,
+    evidence_status: Optional[str] = None,
+    attention_reason: Optional[str] = None,
+    account_type: Optional[str] = None,
+    system_ref: Optional[str] = None,
+    department_ref: Optional[str] = None,
+    reviewer: Optional[str] = None,
+):
+    response = ops271_records_summary_response(
+        "access_review_items",
+        "review_status",
+        ("pending", "approved", "exception", "needs_update", "revoke_needed", "revoked"),
+        {
+            "period": period,
+            "review_status": review_status,
+            "decision": decision,
+            "evidence_status": evidence_status,
+            "attention_reason": attention_reason,
+            "account_type": account_type,
+            "system_ref": system_ref,
+            "department_ref": department_ref,
+            "reviewer": reviewer,
+        },
+        include_period=True,
+    )
+    response["summary"].update(
+        count_ops271_records(
+            response["records"],
+            "decision",
+            ("keep", "reduce", "revoke", "exception", "needs_owner", "not_applicable"),
+        )
+    )
+    return response
+
+
+@app.get("/api/271ops/access-lifecycle-events")
+def ops271_access_lifecycle_events(
+    account_ref: Optional[str] = None,
+    event_type: Optional[str] = None,
+    source_module: Optional[str] = None,
+    source_ref: Optional[str] = None,
+    actor_role: Optional[str] = None,
+):
+    return ops271_records_summary_response(
+        "access_lifecycle_events",
+        "event_type",
+        (
+            "requested",
+            "approved",
+            "provisioned",
+            "reviewed",
+            "exception_granted",
+            "revoke_requested",
+            "revoked",
+        ),
+        {
+            "account_ref": account_ref,
+            "event_type": event_type,
+            "source_module": source_module,
+            "source_ref": source_ref,
+            "actor_role": actor_role,
         },
     )
 
