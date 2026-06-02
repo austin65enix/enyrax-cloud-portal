@@ -403,3 +403,15 @@ That is why I extend 271ops with Collection Queue and Audit Calendar. Collection
 * Task #211：271ops Evidence Control Mapping Design
 * Task #212：271ops Monthly Control Task Release Note
 * Task #213：271ops Monthly Control Task Release Tag
+
+
+## Task #206 Collection Queue Demo Data Fixture Design
+
+* Task #206 adds safe demo fixtures for Collection Queue, Audit Calendar Tasks, and Evidence Requirements.
+* Collection Queue tracks missing or pending evidence collection work.
+* Audit Calendar Tasks model monthly, quarterly, semiannual, and annual governance tasks.
+* Evidence Requirements define what proof is expected, how often, and which source modules are acceptable.
+* Fixtures use safe references and role labels only.
+* Fixtures do not contain real personal data, secrets, raw logs, raw prompt / response, raw command output, credentials, private keys, full home paths, or sensitive source content.
+* This prepares Task #207 read-only API prototype.
+* No frontend, backend, DB, API, release, deployment, or tag changes were made.

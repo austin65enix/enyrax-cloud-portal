@@ -236,3 +236,15 @@ This release is a fixture-backed demo dashboard. It is suitable for product demo
 * The design supports continuous ISO27001 readiness preparation without claiming certification, legal assurance, or audit approval.
 * No frontend, backend, DB, API, fixtures, release, deployment, or tag changes were made.
 * It prepares Task #206 and Task #207 demo fixture design.
+
+
+## Task #206 Collection Queue Demo Data Fixture Design
+
+* Task #206 adds safe demo fixtures for Collection Queue, Audit Calendar Tasks, and Evidence Requirements.
+* Collection Queue tracks missing or pending evidence collection work.
+* Audit Calendar Tasks model monthly, quarterly, semiannual, and annual governance tasks.
+* Evidence Requirements define what proof is expected, how often, and which source modules are acceptable.
+* Fixtures use safe references and role labels only.
+* Fixtures do not contain real personal data, secrets, raw logs, raw prompt / response, raw command output, credentials, private keys, full home paths, or sensitive source content.
+* This prepares Task #207 read-only API prototype.
+* No frontend, backend, DB, API, release, deployment, or tag changes were made.
