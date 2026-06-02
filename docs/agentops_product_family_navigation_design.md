@@ -243,3 +243,12 @@ Verified against the public deployment on 2026-06-02 after the `enyrax-api` rest
 * `admin` returned `team_count=9`, equal to the supervisor count.
 * Returned ticket statuses were `in_progress` and `pending`; no `blocked` status was exposed.
 * `warnings=[]` for viewer, operator, supervisor, admin, and unknown fallback.
+
+## Task #186 AgentOps Hub Static Prototype
+
+* Task #186 adds `/agentops-hub/` static prototype.
+* The Hub groups Server_AgentOps, Personal_AgentOps, Team_AgentOps, and existing AgentOps Dashboard.
+* It keeps existing `/agentops/` and `/team-agentops/` routes intact.
+* It updates Portal homepage entry.
+* It remains static frontend only.
+* No backend, DB, API, fixtures, release, or deployment changes were made.

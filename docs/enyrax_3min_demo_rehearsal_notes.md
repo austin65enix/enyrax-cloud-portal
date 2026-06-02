@@ -204,3 +204,12 @@ I am not only trying to show that I can write code. I am trying to show that I c
 * Recommended navigation keeps AgentOps as the top-level entry and groups submodules under an AgentOps Hub.
 * This avoids top navigation overload and prepares future Server / Personal AgentOps modules.
 * No frontend, backend, DB, API, release, or deployment changes were made.
+
+## Task #186 AgentOps Hub Static Prototype
+
+* Task #186 adds `/agentops-hub/` static prototype.
+* The Hub groups Server_AgentOps, Personal_AgentOps, Team_AgentOps, and existing AgentOps Dashboard.
+* It keeps existing `/agentops/` and `/team-agentops/` routes intact.
+* It updates Portal homepage entry.
+* It remains static frontend only.
+* No backend, DB, API, fixtures, release, or deployment changes were made.
