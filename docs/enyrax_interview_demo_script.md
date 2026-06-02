@@ -465,11 +465,22 @@ For timing, pacing, and 3-minute delivery practice, see `docs/enyrax_3min_demo_r
 * No frontend, backend, DB, API, release, or deployment changes were made.
 
 
-## Task #195 271Ops Product Concept Design
+## Task #195 271ops Product Concept Design
 
-* Task #195 defines 271Ops as the ISO27001 readiness and security governance preparation module.
+* Task #195 defines 271ops as the ISO27001 readiness and security governance preparation module.
 * It turns daily operations, incident handling, access review, backup evidence, and AI governance records into audit-ready governance evidence.
 * It does not replace consultants, auditors, certification bodies, or formal compliance decisions.
 * It integrates SOC, ServiceOps, ProjectOps, Plan_ServiceOPS, AgentOps, Team_AgentOps, Server_AgentOps, Audit Logs, Status, and Sync Gateway.
 * It prepares Task #196 static dashboard prototype.
 * No frontend, backend, DB, API, release, or deployment changes were made.
+
+
+## Task #196 271ops Static Dashboard Prototype
+
+* Task #196 adds `/271ops/` static dashboard prototype.
+* UI brand display is normalized to lowercase `271ops`.
+* The page presents ISO27001 readiness, governance evidence, risk register, access review, backup evidence, incident evidence, and AI governance evidence.
+* It updates Portal homepage entry.
+* It remains static frontend only.
+* It does not claim ISO27001 certification or audit approval.
+* No backend, DB, API, fixtures, release, or deployment changes were made.
