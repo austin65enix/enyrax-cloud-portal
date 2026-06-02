@@ -647,9 +647,25 @@ def project_row_to_dict(row):
 PLAN_SERVICEOPS_WARNING_MESSAGES = {
     "serviceops_unavailable": "ServiceOps ticket data is temporarily unavailable.",
     "projectops_unavailable": "Project deadline data is temporarily unavailable.",
+    "unknown_attention_reason": "A blocked source ticket could not be mapped to a specific attention reason.",
 }
 PLAN_SERVICEOPS_PRIORITY_ORDER = {"High": 0, "Medium": 1, "Low": 2}
 PLAN_SERVICEOPS_PROJECT_RISK_ORDER = {"Delayed": 0, "At Risk": 1, "Watch": 2, "On Track": 3}
+PLAN_SERVICEOPS_STATUS_LABELS = {
+    "pending": ("Pending", "待處理"),
+    "in_progress": ("In Progress", "處理中"),
+    "done": ("Done", "已完成"),
+}
+PLAN_SERVICEOPS_ATTENTION_REASON_LABELS = {
+    "none": ("None", "無"),
+    "waiting_approval": ("Waiting Approval", "等待核准"),
+    "waiting_vendor": ("Waiting Vendor", "等待廠商"),
+    "waiting_user_reply": ("Waiting User Reply", "等待使用者"),
+    "waiting_schedule": ("Waiting Schedule", "等待排程"),
+    "waiting_evidence": ("Waiting Evidence", "等待證據"),
+    "budget_attention": ("Budget Attention", "預算注意"),
+    "risk_attention": ("Risk Attention", "風險注意"),
+}
 
 
 def normalize_plan_serviceops_role(role: Optional[str]) -> str:
@@ -672,32 +688,54 @@ def plan_serviceops_scope(role: str) -> str:
     }[role]
 
 
-def normalize_plan_serviceops_status(value: Optional[str]) -> str:
-    normalized = (value or "").strip().lower().replace("-", "_").replace(" ", "_")
+def normalize_plan_serviceops_status(source_status: Optional[str]) -> dict:
+    normalized = (source_status or "").strip().lower().replace("-", "_").replace(" ", "_")
 
-    if normalized in {"blocked", "waiting", "pending_approval"}:
-        return "Blocked"
     if normalized in {"doing", "in_progress"}:
-        return "Doing"
-    if normalized in {"done", "closed", "completed", "complete"}:
-        return "Done"
-    if normalized in {"pending", "open", "not_started"}:
-        return "Pending"
+        status = "in_progress"
+    elif normalized in {"done", "closed", "completed", "complete"}:
+        status = "done"
+    else:
+        status = "pending"
 
-    return "Pending"
+    label, label_zh = PLAN_SERVICEOPS_STATUS_LABELS[status]
+    return {"status": status, "status_label": label, "status_label_zh": label_zh}
 
 
-def plan_serviceops_ticket_status(ticket) -> str:
-    statuses = [
-        normalize_plan_serviceops_status(ticket.get("status")),
-        normalize_plan_serviceops_status(ticket.get("progress_status")),
-    ]
+def map_plan_serviceops_attention_reason(source_status: Optional[str], waiting_text: Optional[str], title: Optional[str] = None) -> dict:
+    normalized_status = (source_status or "").strip().lower().replace("-", "_").replace(" ", "_")
+    searchable_text = " ".join(filter(None, [normalized_status, waiting_text])).lower()
+    risk_text = " ".join(filter(None, [searchable_text, title])).lower()
+    reason = "none"
+    if "approval" in searchable_text:
+        reason = "waiting_approval"
+    elif "vendor" in searchable_text:
+        reason = "waiting_vendor"
+    elif "user" in searchable_text:
+        reason = "waiting_user_reply"
+    elif any(keyword in searchable_text for keyword in ("maintenance window", "schedule")):
+        reason = "waiting_schedule"
+    elif "evidence" in searchable_text:
+        reason = "waiting_evidence"
+    elif any(keyword in searchable_text for keyword in ("budget", "cost center", "purchase")):
+        reason = "budget_attention"
+    elif any(keyword in risk_text for keyword in ("risk", "critical", "cve", "security")):
+        reason = "risk_attention"
+    warning = None
+    if normalized_status == "blocked" and reason == "none":
+        reason = "risk_attention"
+        warning = {"code": "unknown_attention_reason", "message": PLAN_SERVICEOPS_WARNING_MESSAGES["unknown_attention_reason"]}
+    label, label_zh = PLAN_SERVICEOPS_ATTENTION_REASON_LABELS[reason]
+    return {"attention_reason": reason, "attention_reason_label": label, "attention_reason_label_zh": label_zh, "warning": warning}
 
-    for status in ("Blocked", "Done", "Doing", "Pending"):
-        if status in statuses:
-            return status
 
-    return "Pending"
+def plan_serviceops_ticket_status(ticket) -> dict:
+    statuses = [normalize_plan_serviceops_status(ticket.get("status")), normalize_plan_serviceops_status(ticket.get("progress_status"))]
+    for status in ("done", "in_progress", "pending"):
+        for status_details in statuses:
+            if status_details["status"] == status:
+                return status_details
+    return normalize_plan_serviceops_status(None)
 
 
 def is_archived_or_deleted_status(value: Optional[str]) -> bool:
@@ -802,14 +840,11 @@ def plan_serviceops_due_time(due_at, now: datetime):
     return due_at.strftime("%Y-%m-%d %H:%M")
 
 
-def plan_serviceops_waiting_reason(ticket, status: str):
+def plan_serviceops_waiting_reason(ticket):
     if ticket.get("blocked_reason"):
         return ticket["blocked_reason"]
     if (ticket.get("status") or "").strip().lower() == "pending_approval":
         return "Waiting approval"
-    if status == "Blocked":
-        return "Waiting for follow-up"
-
     return None
 
 
@@ -837,8 +872,9 @@ def build_plan_serviceops_dashboard(tickets, projects, role: str, generated_at: 
 
     for ticket in tickets:
         source_status = ticket.get("status")
-        status = plan_serviceops_ticket_status(ticket)
-        if ticket.get("deleted_at") or is_archived_or_deleted_status(source_status) or status == "Done":
+        status_details = plan_serviceops_ticket_status(ticket)
+        status = status_details["status"]
+        if ticket.get("deleted_at") or is_archived_or_deleted_status(source_status) or status == "done":
             continue
 
         due_at = plan_serviceops_local_datetime(ticket.get("due_at"), generated_at)
@@ -857,7 +893,7 @@ def build_plan_serviceops_dashboard(tickets, projects, role: str, generated_at: 
                     "source_id": ticket.get("id"),
                     "title": ticket.get("title"),
                     "priority": priority,
-                    "status": status,
+                    "status": status_details["status_label"],
                     "assignee": assignee,
                     "due_time": plan_serviceops_due_time(due_at, generated_at),
                     "due_at": due_at.isoformat() if due_at else None,
@@ -869,8 +905,20 @@ def build_plan_serviceops_dashboard(tickets, projects, role: str, generated_at: 
                     "_created_at": created_at,
                 })
 
-        waiting_reason = plan_serviceops_waiting_reason(ticket, status)
-        if role != "viewer" and status in {"Pending", "Doing", "Blocked"} and (is_due_today or is_overdue or waiting_reason):
+        source_waiting_text = ticket.get("blocked_reason")
+        waiting_reason = plan_serviceops_waiting_reason(ticket)
+        attention_details = map_plan_serviceops_attention_reason(source_status, waiting_reason, ticket.get("title"))
+        if attention_details["warning"] and attention_details["warning"] not in warnings:
+            warnings.append(attention_details["warning"])
+        if role != "viewer" and status in {"pending", "in_progress"} and (is_due_today or is_overdue or waiting_reason):
+            attention_reason = attention_details["attention_reason"]
+            attention_label = attention_details["attention_reason_label"]
+            attention_label_zh = attention_details["attention_reason_label_zh"]
+            display_badge = status_details["status_label"]
+            display_badge_zh = status_details["status_label_zh"]
+            if attention_reason != "none":
+                display_badge += f" · {attention_label}"
+                display_badge_zh += f" · {attention_label_zh}"
             team_candidates.append({
                 "ticket_id": plan_serviceops_ticket_id(ticket.get("id")),
                 "source_id": ticket.get("id"),
@@ -878,6 +926,15 @@ def build_plan_serviceops_dashboard(tickets, projects, role: str, generated_at: 
                 "title": ticket.get("title"),
                 "owner": ticket.get("owner"),
                 "status": status,
+                "status_label": status_details["status_label"],
+                "status_label_zh": status_details["status_label_zh"],
+                "attention_reason": attention_reason,
+                "attention_reason_label": attention_label,
+                "attention_reason_label_zh": attention_label_zh,
+                "source_status": source_status,
+                "source_waiting_text": source_waiting_text,
+                "display_badge": display_badge,
+                "display_badge_zh": display_badge_zh,
                 "waiting_reason": waiting_reason,
                 "sla": plan_serviceops_sla_label(due_at, generated_at),
                 "due_at": due_at.isoformat() if due_at else None,
@@ -896,7 +953,7 @@ def build_plan_serviceops_dashboard(tickets, projects, role: str, generated_at: 
         -plan_serviceops_sort_timestamp(item["_created_at"]),
     ))
     team_candidates.sort(key=lambda item: (
-        item["status"] != "Blocked",
+        item["attention_reason"] == "none",
         not item["_is_overdue"],
         not item["_is_due_today"],
         PLAN_SERVICEOPS_PRIORITY_ORDER[item["_priority"]],
@@ -907,7 +964,7 @@ def build_plan_serviceops_dashboard(tickets, projects, role: str, generated_at: 
     for project in projects:
         deadline = plan_serviceops_date(project.get("end_date"))
         source_status = project.get("status")
-        if deadline is None or project.get("archived_at") or is_archived_or_deleted_status(source_status) or normalize_plan_serviceops_status(source_status) == "Done":
+        if deadline is None or project.get("archived_at") or is_archived_or_deleted_status(source_status) or normalize_plan_serviceops_status(source_status)["status"] == "done":
             continue
 
         remaining_days = compute_remaining_days(deadline, today)
@@ -952,7 +1009,7 @@ def build_plan_serviceops_dashboard(tickets, projects, role: str, generated_at: 
             "overdue": sum(1 for item in today_tickets if item["is_overdue"]),
             "nearest_deadline_days": nearest_deadline["remaining_days"] if nearest_deadline else 0,
             "nearest_deadline_label": nearest_deadline["deadline_label"] if nearest_deadline else None,
-            "blocked_team_tickets": sum(1 for item in team_tickets if item["status"] == "Blocked"),
+            "blocked_team_tickets": sum(1 for item in team_tickets if item["attention_reason"] != "none"),
         },
         "today_tickets": today_tickets,
         "team_tickets": team_tickets,

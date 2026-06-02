@@ -463,3 +463,12 @@ The first API prototype keeps the personal work queue UI unchanged. The dashboar
 * Waiting approval / vendor / user / schedule / evidence / budget / risk conditions move to attention_reason.
 * This design improves supervisor visibility and protects operators by explaining why work is waiting.
 * No frontend, backend, DB, API, fixture, or release changes were made.
+
+## Task #178 Attention Reason Demo Data Update
+
+* Task #178 updates Plan_ServiceOPS demo / aggregation response semantics.
+* Blocked source status is normalized to Pending.
+* Waiting / blocking reasons are exposed as `attention_reason`.
+* API response now supports `status_label`, zh label, `attention_reason` label, `source_status`, `source_waiting_text`, and display badges.
+* This prepares Task #179 frontend UI update.
+* No DB, migration, ServiceOps source behavior, ProjectOps behavior, release, or deployment changes.

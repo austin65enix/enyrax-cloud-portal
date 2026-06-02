@@ -241,3 +241,12 @@ This protects operators by showing why a ticket cannot move forward.
 * Task #180：Plan_ServiceOPS API Attention Reason Mapping
 * Task #181：Plan_ServiceOPS Role-based Attention Queue Design
 * Task #182：Plan_ServiceOPS Release Note
+
+## Task #178 Attention Reason Demo Data Update
+
+* Task #178 updates Plan_ServiceOPS demo / aggregation response semantics.
+* Blocked source status is normalized to Pending.
+* Waiting / blocking reasons are exposed as `attention_reason`.
+* API response now supports `status_label`, zh label, `attention_reason` label, `source_status`, `source_waiting_text`, and display badges.
+* This prepares Task #179 frontend UI update.
+* No DB, migration, ServiceOps source behavior, ProjectOps behavior, release, or deployment changes.
