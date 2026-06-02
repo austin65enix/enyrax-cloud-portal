@@ -375,3 +375,12 @@ For a 3–5 minute interview walkthrough, see `docs/enyrax_interview_demo_script
 * It updates Portal homepage entry.
 * It remains static frontend only.
 * No backend, DB, API, fixtures, release, or deployment changes were made.
+
+## Task #187 Server_AgentOps Product Concept Design
+
+* Task #187 defines Server_AgentOps as the server-side AI and automation run governance module.
+* It covers Codex runs, parser jobs, snapshot jobs, backup jobs, deployment checks, release checks, and scheduled tasks.
+* It stores safe metadata only.
+* It does not replace Status, BackupOps, AuditOps, or general observability.
+* It prepares Task #188 static dashboard prototype.
+* No frontend, backend, DB, API, release, or deployment changes were made.

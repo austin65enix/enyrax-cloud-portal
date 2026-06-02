@@ -226,10 +226,13 @@ AgentOps family 的目標是讓 AI Agent 使用可觀察、可審核、可治理
 
 * Task #186：AgentOps Hub Static Prototype
 * Task #187：Server_AgentOps Product Concept Design
-* Task #188：Personal_AgentOps Product Concept Design
-* Task #189：AgentOps Top Navigation Refinement
-* Task #190：AgentOps Product Family Release Note
-* Task #191：AgentOps Hub Release Tag
+* Task #188：Server_AgentOps Static Dashboard Prototype
+* Task #189：Server_AgentOps Demo Data Fixture Design
+* Task #190：Server_AgentOps Read-only Fixture API Prototype
+* Task #191：Server_AgentOps Frontend API Switch with Fallback
+* Task #192：Server_AgentOps Visual QA
+* Task #193：Server_AgentOps Release Note
+* Task #194：Server_AgentOps Release Tag
 
 ## Appendix: Task #184 API Restart Verification
 
@@ -252,3 +255,12 @@ Verified against the public deployment on 2026-06-02 after the `enyrax-api` rest
 * It updates Portal homepage entry.
 * It remains static frontend only.
 * No backend, DB, API, fixtures, release, or deployment changes were made.
+
+## Task #187 Server_AgentOps Product Concept Design
+
+* Task #187 defines Server_AgentOps as the server-side AI and automation run governance module.
+* It covers Codex runs, parser jobs, snapshot jobs, backup jobs, deployment checks, release checks, and scheduled tasks.
+* It stores safe metadata only.
+* It does not replace Status, BackupOps, AuditOps, or general observability.
+* It prepares Task #188 static dashboard prototype.
+* No frontend, backend, DB, API, release, or deployment changes were made.
