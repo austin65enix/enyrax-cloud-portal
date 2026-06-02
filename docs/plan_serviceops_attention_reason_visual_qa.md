@@ -110,3 +110,10 @@ No blocking visual issues found.
 Task #180 visual QA passed. Plan_ServiceOPS attention reason UI is ready for release note preparation.
 
 Task #180 視覺 QA 通過。Plan_ServiceOPS attention reason UI 可進入 release note 整理。
+
+## Task #181 Attention Reason Release Note
+
+* Task #181 packages Tasks #177-#180 as `v0.6.29-plan-serviceops-attention-reason-ui`.
+* Release covers design, aggregation response shape, frontend badge UI, fallback behavior, and visual QA.
+* Plan_ServiceOPS no longer uses `Blocked` as the primary user-facing badge.
+* Scope remains read-only dashboard semantics; no DB, write API, ServiceOps / ProjectOps source behavior, release tag, or deployment changes.

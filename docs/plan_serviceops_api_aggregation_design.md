@@ -469,3 +469,10 @@ The prototype uses the server local timestamp for `generated_at` and the server 
 * Badge layout and responsive behavior were checked.
 * Dashboard remains read-only.
 * No backend, DB, API, ServiceOps, ProjectOps, release, or deployment changes.
+
+## Task #181 Attention Reason Release Note
+
+* Task #181 packages Tasks #177-#180 as `v0.6.29-plan-serviceops-attention-reason-ui`.
+* Release covers design, aggregation response shape, frontend badge UI, fallback behavior, and visual QA.
+* Plan_ServiceOPS no longer uses `Blocked` as the primary user-facing badge.
+* Scope remains read-only dashboard semantics; no DB, write API, ServiceOps / ProjectOps source behavior, release tag, or deployment changes.

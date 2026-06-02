@@ -1,5 +1,29 @@
 # ENYRAX Cloud Portal Release Notes
 
+## v0.6.29-plan-serviceops-attention-reason-ui
+
+Plan_ServiceOPS now separates ticket progress status from attention reasons. User-facing badges no longer rely on `Blocked` as the primary status. Team Attention Queue now displays clearer bilingual badges such as `Pending · Waiting Approval / 待處理 · 等待核准` and `In Progress · Waiting Vendor / 處理中 · 等待廠商`.
+
+Highlights:
+
+- Added Plan_ServiceOPS status and attention reason design.
+- Normalized blocked source status into Pending for Plan_ServiceOPS display.
+- Added attention_reason fields with bilingual labels.
+- Added display_badge and display_badge_zh for Team Attention Queue.
+- Updated frontend badge rendering for API DATA and DEMO FALLBACK.
+- Preserved source_status as trace metadata.
+- Added visual QA for supervisor, viewer empty state, fallback, mobile badge wrapping, and read-only behavior.
+
+Scope boundary:
+
+- No DB migration.
+- No ServiceOps / ProjectOps source behavior change.
+- No write API.
+- No approval workflow mutation.
+- No deployment config change.
+
+---
+
 ## v0.6.28-team-agentops-api-backed-dashboard
 
 Team_AgentOps now supports an API-backed dashboard using safe demo fixtures and read-only Team_AgentOps endpoints.
