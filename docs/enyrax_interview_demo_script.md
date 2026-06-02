@@ -594,3 +594,14 @@ For timing, pacing, and 3-minute delivery practice, see `docs/enyrax_3min_demo_r
 * Fixtures do not contain real BPM form content, attachments, raw logs, credentials, passwords, API keys, private keys, tokens, SSH keys, raw prompt / response, full home paths, or sensitive personal data.
 * This prepares Account Governance read-only API design.
 * No frontend, backend, DB, API, release, deployment, or tag changes were made.
+
+
+## Task #209 Collection Queue Read-only API Prototype
+
+* Task #209 adds read-only fixture API endpoints for Collection Queue, Audit Calendar Tasks, and Evidence Requirements.
+* API reads safe demo fixtures from `data/271ops/`.
+* Endpoints return shared metadata, records, summaries, and warnings.
+* Exact-match filters are supported for status, control area, attention reason, frequency, owner, reviewer, period, expected evidence type, and minimum review status.
+* APIs are fixture-backed, read-only, and do not represent ISO27001 certification, legal assurance, or audit approval.
+* No frontend, DB, fixture, release, deployment, or tag changes were made.
+* It prepares Task #210 Access Review Queue Read-only API Prototype.

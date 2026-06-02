@@ -61,6 +61,9 @@ OPS271_FIXTURE_FILES = {
     "evidence_queue": "demo_evidence_queue.json",
     "ai_governance_evidence": "demo_ai_governance_evidence.json",
     "audit_checklist": "demo_audit_checklist.json",
+    "collection_queue": "demo_collection_queue.json",
+    "audit_calendar_tasks": "demo_audit_calendar_tasks.json",
+    "evidence_requirements": "demo_evidence_requirements.json",
 }
 OPS271_FIXTURE_WARNING = {
     "code": "fixture_unavailable",
@@ -1375,6 +1378,43 @@ def ops271_records_response(filename: str, filters: Optional[dict] = None) -> di
     return response
 
 
+def count_ops271_records(records: list, field: str, values: tuple) -> dict:
+    summary = {value: 0 for value in values}
+    for item in records:
+        value = item.get(field)
+        if value in summary:
+            summary[value] += 1
+    return summary
+
+
+def ops271_records_summary_response(
+    filename: str,
+    summary_field: str,
+    summary_values: tuple,
+    filters: Optional[dict] = None,
+    include_period: bool = False,
+) -> dict:
+    warnings = []
+    data = load_optional_ops271_fixture(filename, warnings)
+    raw_records = data.get("records", [])
+    if not isinstance(raw_records, list):
+        if OPS271_FIXTURE_WARNING not in warnings:
+            warnings.append(dict(OPS271_FIXTURE_WARNING))
+        raw_records = []
+    records = filter_ops271_records(
+        [item for item in raw_records if isinstance(item, dict)], filters or {}
+    )
+    response = ops271_response_metadata(warnings)
+    if include_period and data.get("period") is not None:
+        response["period"] = data.get("period")
+    response["records"] = records
+    response["summary"] = {
+        "total": len(records),
+        **count_ops271_records(records, summary_field, summary_values),
+    }
+    return response
+
+
 def load_team_agentops_fixture(filename: str) -> dict:
     if (
         filename not in TEAM_AGENTOPS_FIXTURE_FILENAMES
@@ -2287,6 +2327,102 @@ def ops271_audit_checklist(
 ):
     return ops271_records_response(
         "audit_checklist", {"status": status, "control_area": control_area}
+    )
+
+
+# 271ops Collection Queue APIs are fixture-backed and read-only. Audit Calendar
+# supports readiness planning, not certification proof. Evidence Requirements
+# define expected proof, not formal legal control mapping. These APIs return
+# safe references, role labels, due dates, statuses, and short summaries only.
+@app.get("/api/271ops/collection-queue")
+def ops271_collection_queue(
+    status: Optional[str] = None,
+    control_area: Optional[str] = None,
+    attention_reason: Optional[str] = None,
+    frequency: Optional[str] = None,
+    owner: Optional[str] = None,
+    reviewer: Optional[str] = None,
+):
+    return ops271_records_summary_response(
+        "collection_queue",
+        "status",
+        (
+            "pending",
+            "collecting",
+            "blocked",
+            "submitted",
+            "overdue",
+            "not_applicable",
+            "no_event_this_month",
+        ),
+        {
+            "status": status,
+            "control_area": control_area,
+            "attention_reason": attention_reason,
+            "frequency": frequency,
+            "owner": owner,
+            "reviewer": reviewer,
+        },
+    )
+
+
+@app.get("/api/271ops/audit-calendar-tasks")
+def ops271_audit_calendar_tasks(
+    status: Optional[str] = None,
+    frequency: Optional[str] = None,
+    control_area: Optional[str] = None,
+    period: Optional[str] = None,
+    owner: Optional[str] = None,
+    reviewer: Optional[str] = None,
+):
+    response = ops271_records_summary_response(
+        "audit_calendar_tasks",
+        "frequency",
+        ("monthly", "quarterly", "semiannual", "annual"),
+        {
+            "status": status,
+            "frequency": frequency,
+            "control_area": control_area,
+            "period": period,
+            "owner": owner,
+            "reviewer": reviewer,
+        },
+        include_period=True,
+    )
+    response["summary"].update(
+        count_ops271_records(
+            response["records"],
+            "status",
+            (
+                "scheduled",
+                "due_soon",
+                "in_progress",
+                "completed",
+                "overdue",
+                "skipped",
+            ),
+        )
+    )
+    return response
+
+
+@app.get("/api/271ops/evidence-requirements")
+def ops271_evidence_requirements(
+    control_area: Optional[str] = None,
+    required_frequency: Optional[str] = None,
+    expected_evidence_type: Optional[str] = None,
+    minimum_review_status: Optional[str] = None,
+):
+    return ops271_records_summary_response(
+        "evidence_requirements",
+        "required_frequency",
+        ("monthly", "quarterly", "semiannual", "annual", "ad_hoc"),
+        {
+            "control_area": control_area,
+            "required_frequency": required_frequency,
+            "expected_evidence_type": expected_evidence_type,
+            "minimum_review_status": minimum_review_status,
+        },
     )
 
 
