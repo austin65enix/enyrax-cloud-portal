@@ -243,3 +243,11 @@ I am not only trying to show that I can write code. I am trying to show that I c
 * It remains static frontend only.
 * It does not claim ISO27001 certification or audit approval.
 * No backend, DB, API, fixtures, release, or deployment changes were made.
+
+## Task #197 271ops Visual QA and Product Copy Review
+
+* Task #197 validates `/271ops/` visual layout, homepage entry, lowercase naming, ISO27001 readiness boundary, safety boundary, responsive behavior, and static-only behavior.
+* Primary UI brand remains lowercase `271ops`.
+* The dashboard does not claim ISO27001 certification, legal assurance, or audit approval.
+* No backend, DB, API, fixtures, release, or deployment changes were made.
+* It prepares Task #198 demo data fixture design.

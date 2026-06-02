@@ -400,12 +400,13 @@ So 271ops does not replace consultants or certification processes. It reorganize
 ## Future Tasks
 
 * Task #196：271ops Static Dashboard Prototype
-* Task #197：271ops Demo Data Fixture Design
-* Task #198：271ops Read-only Fixture API Prototype
-* Task #199：271ops Frontend API Switch with Fallback
-* Task #200：271ops Visual QA
-* Task #201：271ops Release Note
-* Task #202：271ops Release Tag
+* Task #197：271ops Visual QA and Product Copy Review
+* Task #198：271ops Demo Data Fixture Design
+* Task #199：271ops Read-only Fixture API Prototype
+* Task #200：271ops Frontend API Switch with Fallback
+* Task #201：271ops Visual QA
+* Task #202：271ops Release Note
+* Task #203：271ops Release Tag
 
 
 ## Task #196 271ops Static Dashboard Prototype
@@ -417,3 +418,11 @@ So 271ops does not replace consultants or certification processes. It reorganize
 * It remains static frontend only.
 * It does not claim ISO27001 certification or audit approval.
 * No backend, DB, API, fixtures, release, or deployment changes were made.
+
+## Task #197 271ops Visual QA and Product Copy Review
+
+* Task #197 validates `/271ops/` visual layout, homepage entry, lowercase naming, ISO27001 readiness boundary, safety boundary, responsive behavior, and static-only behavior.
+* Primary UI brand remains lowercase `271ops`.
+* The dashboard does not claim ISO27001 certification, legal assurance, or audit approval.
+* No backend, DB, API, fixtures, release, or deployment changes were made.
+* It prepares Task #198 demo data fixture design.
