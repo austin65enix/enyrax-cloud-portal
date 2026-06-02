@@ -285,3 +285,14 @@ I am not only trying to show that I can write code. I am trying to show that I c
 * Boundary remains readiness preparation only: no ISO27001 certification claim, no legal assurance, no audit approval, and safe references only.
 * It adds no mutation API, create / update / approve / reject action, upload, localStorage write, backend change, DB change, script change, release, or deployment change.
 * This prepares Task #202 271ops Visual QA.
+
+
+## Task #202 271ops API-backed Dashboard Visual QA
+
+* Task #202 validates `/271ops/` after the frontend API switch.
+* API DATA renders from `GET /api/271ops/dashboard`.
+* DEMO FALLBACK renders on fetch, HTTP, JSON, or schema failures.
+* Responsive layout, copy boundary, certification boundary, accessibility, and no-mutation behavior were checked.
+* Dashboard remains read-only and does not claim ISO27001 certification, legal assurance, or audit approval.
+* No backend, DB, API, fixtures, release, or deployment changes were made.
+* Prepares Task #203 release note.
