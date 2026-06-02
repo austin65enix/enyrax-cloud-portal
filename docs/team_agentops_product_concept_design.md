@@ -422,3 +422,11 @@ This helps enterprises reduce shadow AI risk and gives managers visibility into 
 * It does not create, update, approve, reject, or mutate agent records.
 * Safe metadata boundary remains unchanged.
 * No backend, DB, API, fixtures, parser, release, or deployment changes.
+
+## AgentOps Product Family Navigation
+
+* Task #185 defines AgentOps as an AI Agent Governance product family.
+* The family includes Server_AgentOps, Personal_AgentOps, and Team_AgentOps.
+* Recommended navigation keeps AgentOps as the top-level entry and groups submodules under an AgentOps Hub.
+* This avoids top navigation overload and prepares future Server / Personal AgentOps modules.
+* No frontend, backend, DB, API, release, or deployment changes were made.

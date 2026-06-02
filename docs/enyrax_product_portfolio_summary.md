@@ -358,3 +358,11 @@ This document does not include:
 For a 3–5 minute interview walkthrough, see `docs/enyrax_interview_demo_script.md`.
 
 若需要 3～5 分鐘面試展示話術，請參考 `docs/enyrax_interview_demo_script.md`。
+
+## AgentOps Product Family Navigation
+
+* Task #185 defines AgentOps as an AI Agent Governance product family.
+* The family includes Server_AgentOps, Personal_AgentOps, and Team_AgentOps.
+* Recommended navigation keeps AgentOps as the top-level entry and groups submodules under an AgentOps Hub.
+* This avoids top navigation overload and prepares future Server / Personal AgentOps modules.
+* No frontend, backend, DB, API, release, or deployment changes were made.

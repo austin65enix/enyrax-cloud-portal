@@ -437,3 +437,11 @@ It demonstrates my ability to translate operations needs into product modules, c
 For timing, pacing, and 3-minute delivery practice, see `docs/enyrax_3min_demo_rehearsal_notes.md`.
 
 若需要 3 分鐘展示節奏、轉場與演練筆記，請參考 `docs/enyrax_3min_demo_rehearsal_notes.md`。
+
+## AgentOps Product Family Navigation
+
+* Task #185 defines AgentOps as an AI Agent Governance product family.
+* The family includes Server_AgentOps, Personal_AgentOps, and Team_AgentOps.
+* Recommended navigation keeps AgentOps as the top-level entry and groups submodules under an AgentOps Hub.
+* This avoids top navigation overload and prepares future Server / Personal AgentOps modules.
+* No frontend, backend, DB, API, release, or deployment changes were made.

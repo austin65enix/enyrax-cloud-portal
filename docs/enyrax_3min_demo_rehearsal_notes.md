@@ -196,3 +196,11 @@ AI 工具很容易只留下個人的 chat history。AgentOps 把執行狀態、r
 This project brings together my experience in IT operations, security incident handling, project coordination, and modern AI agent tools.
 
 I am not only trying to show that I can write code. I am trying to show that I can break down complex enterprise workflows into modules, define data boundaries and responsibility flows, and turn them into a platform that can be operated, demonstrated, and continuously improved.
+
+## AgentOps Product Family Navigation
+
+* Task #185 defines AgentOps as an AI Agent Governance product family.
+* The family includes Server_AgentOps, Personal_AgentOps, and Team_AgentOps.
+* Recommended navigation keeps AgentOps as the top-level entry and groups submodules under an AgentOps Hub.
+* This avoids top navigation overload and prepares future Server / Personal AgentOps modules.
+* No frontend, backend, DB, API, release, or deployment changes were made.

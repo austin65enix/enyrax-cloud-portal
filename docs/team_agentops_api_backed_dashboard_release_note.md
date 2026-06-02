@@ -243,3 +243,11 @@ This release does not include:
 * Task #176: Team_AgentOps Project Contribution API Refinement
 * Task #177: Team_AgentOps Screenshot PNG Baseline
 * Task #178: Team_AgentOps DB-backed Schema Migration Plan
+
+## AgentOps Product Family Navigation
+
+* Task #185 defines AgentOps as an AI Agent Governance product family.
+* The family includes Server_AgentOps, Personal_AgentOps, and Team_AgentOps.
+* Recommended navigation keeps AgentOps as the top-level entry and groups submodules under an AgentOps Hub.
+* This avoids top navigation overload and prepares future Server / Personal AgentOps modules.
+* No frontend, backend, DB, API, release, or deployment changes were made.
