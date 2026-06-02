@@ -199,3 +199,12 @@ git tag v0.6.29-plan-serviceops-attention-reason-ui
 * Task #185：Plan_ServiceOPS Approval Workflow Design
 * Task #186：Plan_ServiceOPS Evidence / Closure Integration Design
 * Task #187：Plan_ServiceOPS Screenshot Baseline
+
+## Task #183 Role-based Attention Queue Design
+
+* Task #183 defines role-based visibility for Plan_ServiceOPS Team Attention Queue.
+* It covers viewer, operator, supervisor, and admin.
+* It defines endpoint-level and field-level visibility.
+* It keeps `attention_reason` as a waiting / coordination explanation, not a blame label.
+* It prepares Task #184 role-aware API prototype.
+* No frontend, backend, DB, API, ServiceOps, ProjectOps, release, or deployment changes were made.

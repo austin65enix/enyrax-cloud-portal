@@ -476,3 +476,12 @@ The prototype uses the server local timestamp for `generated_at` and the server 
 * Release covers design, aggregation response shape, frontend badge UI, fallback behavior, and visual QA.
 * Plan_ServiceOPS no longer uses `Blocked` as the primary user-facing badge.
 * Scope remains read-only dashboard semantics; no DB, write API, ServiceOps / ProjectOps source behavior, release tag, or deployment changes.
+
+## Task #183 Role-based Attention Queue Design
+
+* Task #183 defines role-based visibility for Plan_ServiceOPS Team Attention Queue.
+* It covers viewer, operator, supervisor, and admin.
+* It defines endpoint-level and field-level visibility.
+* It keeps `attention_reason` as a waiting / coordination explanation, not a blame label.
+* It prepares Task #184 role-aware API prototype.
+* No frontend, backend, DB, API, ServiceOps, ProjectOps, release, or deployment changes were made.
