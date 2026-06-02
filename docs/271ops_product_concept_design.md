@@ -436,3 +436,15 @@ So 271ops does not replace consultants or certification processes. It reorganize
 * Fixtures do not store secrets, raw logs, raw prompt / response, credentials, private keys, full home paths, or sensitive personal data.
 * This prepares Task #200 read-only fixture API prototype.
 * No frontend, backend, DB, API, release, or deployment changes were made.
+
+
+## Task #200 271ops Read-only Fixture API Prototype
+
+* Task #200 adds read-only fixture API endpoints for 271ops.
+* API reads `data/271ops/` safe demo fixtures.
+* It adds a dashboard aggregation endpoint and individual fixture endpoints.
+* Product display name remains lowercase `271ops`.
+* Responses return safe references and short summaries only.
+* It does not add DB, migration, write API, production auth, release, or deployment changes.
+* It does not claim ISO27001 certification, legal assurance, or audit approval.
+* It prepares a future frontend API switch with fallback.

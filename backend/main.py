@@ -52,6 +52,27 @@ NORMALIZED_VULNERABILITIES_PATH = (
 AGENT_RUNS_PATH = PROJECT_ROOT / "data" / "agentops" / "demo_agent_runs.json"
 AGENT_RUNS_PREVIEW_PATH = PROJECT_ROOT / "data" / "agentops" / "agent_runs_preview.json"
 TEAM_AGENTOPS_FIXTURE_DIR = PROJECT_ROOT / "data" / "team-agentops"
+OPS271_FIXTURE_DIR = PROJECT_ROOT / "data" / "271ops"
+OPS271_FIXTURE_FILES = {
+    "readiness_summary": "demo_readiness_summary.json",
+    "evidence_coverage": "demo_evidence_coverage.json",
+    "risk_register": "demo_risk_register.json",
+    "access_reviews": "demo_access_reviews.json",
+    "evidence_queue": "demo_evidence_queue.json",
+    "ai_governance_evidence": "demo_ai_governance_evidence.json",
+    "audit_checklist": "demo_audit_checklist.json",
+}
+OPS271_FIXTURE_WARNING = {
+    "code": "fixture_unavailable",
+    "message": "271ops fixture data is temporarily unavailable.",
+}
+OPS271_BOUNDARY = {
+    "readiness_preparation_only": True,
+    "not_certification_score": True,
+    "not_legal_assurance": True,
+    "not_audit_approval": True,
+    "safe_references_only": True,
+}
 TEAM_AGENTOPS_FIXTURE_FILENAMES = {
     "demo_agent_runs.json",
     "demo_agent_reviews.json",
@@ -1285,6 +1306,75 @@ class TeamAgentOpsFixtureUnavailable(Exception):
     pass
 
 
+class Ops271FixtureUnavailable(Exception):
+    pass
+
+
+def ops271_response_metadata(warnings: Optional[list] = None) -> dict:
+    return {
+        "source": "fixture",
+        "mode": "read_only",
+        "product": "271ops",
+        "display_name": "271ops",
+        "production_data": False,
+        "certification_claim": False,
+        "warnings": warnings if warnings is not None else [],
+    }
+
+
+def load_ops271_fixture(filename: str) -> dict:
+    fixture_filename = OPS271_FIXTURE_FILES.get(filename)
+    if fixture_filename is None:
+        raise Ops271FixtureUnavailable
+
+    try:
+        data = json.loads((OPS271_FIXTURE_DIR / fixture_filename).read_text())
+    except (FileNotFoundError, json.JSONDecodeError, OSError):
+        raise Ops271FixtureUnavailable
+
+    if not isinstance(data, dict):
+        raise Ops271FixtureUnavailable
+    return data
+
+
+def load_optional_ops271_fixture(filename: str, warnings: list) -> dict:
+    try:
+        return load_ops271_fixture(filename)
+    except Ops271FixtureUnavailable:
+        if OPS271_FIXTURE_WARNING not in warnings:
+            warnings.append(dict(OPS271_FIXTURE_WARNING))
+        return {}
+
+
+def ops271_fixture_records(filename: str, warnings: list) -> list:
+    data = load_optional_ops271_fixture(filename, warnings)
+    records = data.get("records", [])
+    if not isinstance(records, list):
+        if OPS271_FIXTURE_WARNING not in warnings:
+            warnings.append(dict(OPS271_FIXTURE_WARNING))
+        return []
+    return [item for item in records if isinstance(item, dict)]
+
+
+def filter_ops271_records(records: list, filters: dict) -> list:
+    active_filters = {
+        field: value for field, value in filters.items() if value is not None
+    }
+    return [
+        item
+        for item in records
+        if all(item.get(field) == value for field, value in active_filters.items())
+    ]
+
+
+def ops271_records_response(filename: str, filters: Optional[dict] = None) -> dict:
+    warnings = []
+    records = ops271_fixture_records(filename, warnings)
+    response = ops271_response_metadata(warnings)
+    response["records"] = filter_ops271_records(records, filters or {})
+    return response
+
+
 def load_team_agentops_fixture(filename: str) -> dict:
     if (
         filename not in TEAM_AGENTOPS_FIXTURE_FILENAMES
@@ -2091,6 +2181,113 @@ def write_vulnerability_ticket_audit(db, action: str, entity_id, summary: str, a
             )
     except Exception as exc:
         print(f"Warning: failed to write vulnerability ServiceOps audit log: {exc}")
+
+
+# 271ops fixture API v1 is read-only and returns safe references and short summaries only.
+# It does not represent ISO27001 certification status, provide legal assurance, or
+# replace consultants, auditors, certification bodies, or formal compliance decisions.
+# It does not store or return secrets, raw logs, raw prompt / response, raw session,
+# credentials, private keys, or sensitive personal data.
+@app.get("/api/271ops/dashboard")
+def ops271_dashboard():
+    warnings = []
+    readiness_summary = load_optional_ops271_fixture("readiness_summary", warnings)
+    summary = readiness_summary.get("summary", {})
+    if not isinstance(summary, dict):
+        if OPS271_FIXTURE_WARNING not in warnings:
+            warnings.append(dict(OPS271_FIXTURE_WARNING))
+        summary = {}
+    response = ops271_response_metadata(warnings)
+    response.update(
+        {
+            "generated_at": readiness_summary.get("generated_at"),
+            "readiness_summary": readiness_summary,
+            "evidence_coverage": ops271_fixture_records("evidence_coverage", warnings),
+            "risk_register": ops271_fixture_records("risk_register", warnings),
+            "access_reviews": ops271_fixture_records("access_reviews", warnings),
+            "evidence_queue": ops271_fixture_records("evidence_queue", warnings),
+            "ai_governance_evidence": ops271_fixture_records(
+                "ai_governance_evidence", warnings
+            ),
+            "audit_checklist": ops271_fixture_records("audit_checklist", warnings),
+            "summary": {
+                "readiness_score": readiness_summary.get("readiness_score"),
+                **summary,
+            },
+            "boundary": dict(OPS271_BOUNDARY),
+        }
+    )
+    return response
+
+
+@app.get("/api/271ops/readiness-summary")
+def ops271_readiness_summary():
+    warnings = []
+    response = load_optional_ops271_fixture("readiness_summary", warnings)
+    response.update(ops271_response_metadata(warnings))
+    if warnings:
+        response.setdefault("records", [])
+    return response
+
+
+@app.get("/api/271ops/evidence-coverage")
+def ops271_evidence_coverage():
+    return ops271_records_response("evidence_coverage")
+
+
+@app.get("/api/271ops/risk-register")
+def ops271_risk_register(
+    status: Optional[str] = None,
+    risk_level: Optional[str] = None,
+    category: Optional[str] = None,
+):
+    return ops271_records_response(
+        "risk_register",
+        {"status": status, "risk_level": risk_level, "category": category},
+    )
+
+
+@app.get("/api/271ops/access-reviews")
+def ops271_access_reviews(
+    status: Optional[str] = None,
+    system: Optional[str] = None,
+    evidence_status: Optional[str] = None,
+):
+    return ops271_records_response(
+        "access_reviews",
+        {"status": status, "system": system, "evidence_status": evidence_status},
+    )
+
+
+@app.get("/api/271ops/evidence-queue")
+def ops271_evidence_queue(
+    review_status: Optional[str] = None,
+    evidence_type: Optional[str] = None,
+    source_module: Optional[str] = None,
+):
+    return ops271_records_response(
+        "evidence_queue",
+        {
+            "review_status": review_status,
+            "evidence_type": evidence_type,
+            "source_module": source_module,
+        },
+    )
+
+
+@app.get("/api/271ops/ai-governance-evidence")
+def ops271_ai_governance_evidence():
+    return ops271_records_response("ai_governance_evidence")
+
+
+@app.get("/api/271ops/audit-checklist")
+def ops271_audit_checklist(
+    status: Optional[str] = None,
+    control_area: Optional[str] = None,
+):
+    return ops271_records_response(
+        "audit_checklist", {"status": status, "control_area": control_area}
+    )
 
 
 # Team_AgentOps fixture API v1 is read-only. It reads safe demo fixtures only.
