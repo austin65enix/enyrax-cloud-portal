@@ -208,3 +208,16 @@ git tag v0.6.29-plan-serviceops-attention-reason-ui
 * It keeps `attention_reason` as a waiting / coordination explanation, not a blame label.
 * It prepares Task #184 role-aware API prototype.
 * No frontend, backend, DB, API, ServiceOps, ProjectOps, release, or deployment changes were made.
+
+## Task #184 Role-based Attention Queue API Prototype
+
+* Task #184 implements demo role filtering for the Plan_ServiceOPS read-only dashboard API.
+* Uses `X-Demo-Role` for `viewer` / `operator` / `supervisor` / `admin`; missing or unknown values fall back to `viewer`.
+* Adds `viewer` metadata, `visibility_note`, and `attention_reason_distribution`.
+* Applies role-based `team_tickets` filtering: viewer receives aggregate-only attention distribution, operator receives personal / assigned demo scope, supervisor receives team scope, and admin receives cross-team safe metadata scope.
+* Viewer 只看有限摘要，Team Attention 明細預設隱藏。
+* `X-Demo-Role` is demo-only. It is not production authorization.
+* The API remains read-only. It does not implement a write API, approval / reject action, DB migration, or ServiceOps / ProjectOps source-data mutation.
+* Plan_ServiceOPS is daily operations planning, not employee surveillance or performance scoring.
+* `attention_reason` explains waiting conditions. It is not a blame label.
+* This prototype prepares a future frontend role display refinement.

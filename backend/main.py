@@ -666,26 +666,74 @@ PLAN_SERVICEOPS_ATTENTION_REASON_LABELS = {
     "budget_attention": ("Budget Attention", "預算注意"),
     "risk_attention": ("Risk Attention", "風險注意"),
 }
+PLAN_SERVICEOPS_ALLOWED_ROLES = {"viewer", "operator", "supervisor", "admin"}
+PLAN_SERVICEOPS_ROLE_SCOPES = {
+    "viewer": "limited",
+    "operator": "personal_plus_assigned",
+    "supervisor": "team",
+    "admin": "cross_team",
+}
+PLAN_SERVICEOPS_VISIBILITY_NOTES = {
+    "viewer": "Limited aggregate view. Team attention details are hidden for viewer role.",
+    "operator": "Shows personal and assigned attention items for operator role.",
+    "supervisor": "Shows team attention queue for supervisor role.",
+    "admin": "Shows cross-team attention metadata for admin role.",
+}
+PLAN_SERVICEOPS_OPERATOR_USERS = {"atn", "operator@enyrax.local"}
+PLAN_SERVICEOPS_OPERATOR_PROJECTS = {"ERP Upgrade", "IAM Review", "Wazuh Rollout"}
 
 
-def normalize_plan_serviceops_role(role: Optional[str]) -> str:
+def get_plan_serviceops_demo_role(role: Optional[str]) -> str:
+    # X-Demo-Role is demo-only routing metadata, not production authorization.
     normalized = (role or "viewer").strip().lower()
 
-    if normalized == "preview":
-        return "viewer"
-    if normalized not in ROLE_LEVELS:
-        return "viewer"
+    return normalized if normalized in PLAN_SERVICEOPS_ALLOWED_ROLES else "viewer"
 
-    return normalized
+
+def plan_serviceops_role_source(role: Optional[str]) -> str:
+    normalized = (role or "").strip().lower()
+
+    return "X-Demo-Role" if normalized in PLAN_SERVICEOPS_ALLOWED_ROLES else "fallback"
 
 
 def plan_serviceops_scope(role: str) -> str:
-    return {
-        "viewer": "limited",
-        "operator": "personal",
-        "supervisor": "team",
-        "admin": "cross-team",
-    }[role]
+    return PLAN_SERVICEOPS_ROLE_SCOPES[role]
+
+
+def plan_serviceops_operator_can_view_team_ticket(ticket: dict) -> bool:
+    assignee = (ticket.get("_assignee") or "").strip().lower()
+    owner = (ticket.get("owner") or "").strip().lower()
+    related_project = (ticket.get("_related_project") or "").strip()
+    operator_users = {user.lower() for user in PLAN_SERVICEOPS_OPERATOR_USERS}
+
+    return assignee in operator_users or owner in operator_users or related_project in PLAN_SERVICEOPS_OPERATOR_PROJECTS
+
+
+def mask_plan_serviceops_team_ticket_for_role(ticket: dict, role: str) -> dict:
+    safe_ticket = {key: value for key, value in ticket.items() if not key.startswith("_")}
+    if role == "viewer":
+        hidden_fields = {
+            "ticket_id",
+            "source_id",
+            "owner",
+            "source_waiting_text",
+            "waiting_reason",
+            "due_at",
+            "source",
+            "source_status",
+        }
+        return {key: value for key, value in safe_ticket.items() if key not in hidden_fields}
+
+    return safe_ticket
+
+
+def plan_serviceops_attention_reason_distribution(tickets) -> dict:
+    distribution = {reason: 0 for reason in PLAN_SERVICEOPS_ATTENTION_REASON_LABELS}
+    for ticket in tickets:
+        reason = ticket.get("attention_reason", "none")
+        distribution[reason if reason in distribution else "none"] += 1
+
+    return distribution
 
 
 def normalize_plan_serviceops_status(source_status: Optional[str]) -> dict:
@@ -859,7 +907,7 @@ def plan_serviceops_sla_label(due_at, now: datetime):
     return due_at.date().isoformat()
 
 
-def build_plan_serviceops_dashboard(tickets, projects, role: str, generated_at: datetime, warnings):
+def build_plan_serviceops_dashboard(tickets, projects, role: str, role_source: str, generated_at: datetime, warnings):
     viewer_user = "atn"
     today = generated_at.date()
     project_ids = {
@@ -887,7 +935,7 @@ def build_plan_serviceops_dashboard(tickets, projects, role: str, generated_at: 
         updated_at = plan_serviceops_local_datetime(ticket.get("updated_at"), generated_at)
 
         if is_due_today or is_overdue:
-            if role in {"supervisor", "admin"} or not assignee or assignee == viewer_user:
+            if role in {"supervisor", "admin"} or assignee in PLAN_SERVICEOPS_OPERATOR_USERS:
                 today_candidates.append({
                     "ticket_id": plan_serviceops_ticket_id(ticket.get("id")),
                     "source_id": ticket.get("id"),
@@ -910,7 +958,7 @@ def build_plan_serviceops_dashboard(tickets, projects, role: str, generated_at: 
         attention_details = map_plan_serviceops_attention_reason(source_status, waiting_reason, ticket.get("title"))
         if attention_details["warning"] and attention_details["warning"] not in warnings:
             warnings.append(attention_details["warning"])
-        if role != "viewer" and status in {"pending", "in_progress"} and (is_due_today or is_overdue or waiting_reason):
+        if status in {"pending", "in_progress"} and (is_due_today or is_overdue or waiting_reason):
             attention_reason = attention_details["attention_reason"]
             attention_label = attention_details["attention_reason_label"]
             attention_label_zh = attention_details["attention_reason_label_zh"]
@@ -939,6 +987,8 @@ def build_plan_serviceops_dashboard(tickets, projects, role: str, generated_at: 
                 "sla": plan_serviceops_sla_label(due_at, generated_at),
                 "due_at": due_at.isoformat() if due_at else None,
                 "source": "serviceops",
+                "_assignee": ticket.get("assignee"),
+                "_related_project": related_project,
                 "_is_overdue": is_overdue,
                 "_is_due_today": is_due_today,
                 "_priority": priority,
@@ -989,31 +1039,54 @@ def build_plan_serviceops_dashboard(tickets, projects, role: str, generated_at: 
         PLAN_SERVICEOPS_PROJECT_RISK_ORDER[item["status"]],
         item["project_name"] or "",
     ))
+    if role == "viewer":
+        today_candidates = []
+
     today_tickets = [
         {key: value for key, value in item.items() if not key.startswith("_")}
         for item in today_candidates[:10]
     ]
+    visible_team_candidates = team_candidates
+    if role == "operator":
+        visible_team_candidates = [
+            item for item in team_candidates
+            if plan_serviceops_operator_can_view_team_ticket(item)
+        ]
+    elif role == "viewer":
+        visible_team_candidates = []
+
+    distribution_candidates = team_candidates if role == "viewer" else visible_team_candidates
     team_tickets = [
-        {key: value for key, value in item.items() if not key.startswith("_")}
-        for item in team_candidates[:10]
+        mask_plan_serviceops_team_ticket_for_role(item, role)
+        for item in visible_team_candidates[:10]
     ]
+    attention_reason_distribution = plan_serviceops_attention_reason_distribution(distribution_candidates[:10])
     project_deadlines = project_deadlines[:10]
     nearest_deadline = project_deadlines[0] if project_deadlines else None
 
     return {
         "generated_at": generated_at.isoformat(),
-        "viewer": {"role": role, "user": viewer_user, "scope": plan_serviceops_scope(role)},
+        "viewer": {
+            "role": role,
+            "user": viewer_user,
+            "scope": plan_serviceops_scope(role),
+            "role_source": role_source,
+            "production_auth": False,
+        },
+        "visibility_note": PLAN_SERVICEOPS_VISIBILITY_NOTES[role],
         "summary": {
             "today_tickets": len(today_tickets),
             "doing": sum(1 for item in today_tickets if item["status"] == "Doing"),
             "overdue": sum(1 for item in today_tickets if item["is_overdue"]),
             "nearest_deadline_days": nearest_deadline["remaining_days"] if nearest_deadline else 0,
             "nearest_deadline_label": nearest_deadline["deadline_label"] if nearest_deadline else None,
-            "blocked_team_tickets": sum(1 for item in team_tickets if item["attention_reason"] != "none"),
+            "blocked_team_tickets": sum(1 for item in distribution_candidates[:10] if item["attention_reason"] != "none"),
+            "team_attention_visible_count": len(team_tickets),
         },
         "today_tickets": today_tickets,
         "team_tickets": team_tickets,
         "project_deadlines": project_deadlines,
+        "attention_reason_distribution": attention_reason_distribution,
         "warnings": warnings,
     }
 
@@ -2995,11 +3068,13 @@ def soc_summary():
 
 @app.get("/api/plan-serviceops/dashboard")
 def plan_serviceops_dashboard(
-    demo_role: str = Header(default="viewer", alias="X-Demo-Role"),
+    demo_role: Optional[str] = Header(default=None, alias="X-Demo-Role"),
 ):
-    # Task #153 is a read-only aggregation API. It does not mutate ServiceOps or ProjectOps
-    # data, create tickets, update statuses, or write audit logs.
-    role = normalize_plan_serviceops_role(demo_role)
+    # Task #184 remains a read-only prototype: no write API, approval / reject action,
+    # DB migration, ServiceOps / ProjectOps mutation, employee surveillance, or scoring.
+    # Plan_ServiceOPS supports daily planning; attention_reason is not a blame label.
+    role = get_plan_serviceops_demo_role(demo_role)
+    role_source = plan_serviceops_role_source(demo_role)
     generated_at = datetime.now().astimezone()
     tickets = []
     projects = []
@@ -3047,7 +3122,7 @@ def plan_serviceops_dashboard(
                 "message": PLAN_SERVICEOPS_WARNING_MESSAGES["projectops_unavailable"],
             })
 
-    return build_plan_serviceops_dashboard(tickets, projects, role, generated_at, warnings)
+    return build_plan_serviceops_dashboard(tickets, projects, role, role_source, generated_at, warnings)
 
 
 @app.get("/api/serviceops/summary")
