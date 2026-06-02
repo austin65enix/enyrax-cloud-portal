@@ -12,9 +12,10 @@
 <body>
   <main class="wrap">
     <section class="hero">
-      <div><span class="kicker">Governance / Readiness</span> <span class="badge static">STATIC DEMO</span><h1>271ops</h1><h2>ISO27001 Readiness &amp; Security Governance</h2><p class="hero-copy">ISO27001 準備與資安治理落地</p><p class="hero-copy">271ops helps organizations turn daily operations, security incidents, access reviews, backup verification, and AI Agent governance into audit-ready security governance evidence.</p><p class="hero-copy">271ops 協助企業把日常維運、資安事件、權限覆核、備份驗證與 AI Agent 治理整理成可稽核的資安治理證據。</p><nav class="quick-nav" aria-label="271ops quick links"><a href="/">Back to Portal</a><a href="/soc/">SOC</a><a href="/serviceops/">ServiceOps</a><a href="/projectops/">ProjectOps</a><a href="/plan-serviceops/">Plan_ServiceOPS</a><a href="/agentops-hub/">AgentOps Hub</a><a href="/audit/">Audit Logs</a><a href="/status/">Status</a></nav></div>
+      <div><span class="kicker">Governance / Readiness</span> <span class="badge" id="mode-badge">API DATA / API 資料</span><h1>271ops</h1><h2>ISO27001 Readiness &amp; Security Governance</h2><p class="hero-copy">ISO27001 準備與資安治理落地</p><p class="hero-copy">271ops helps organizations turn daily operations, security incidents, access reviews, backup verification, and AI Agent governance into audit-ready security governance evidence.</p><p class="hero-copy">271ops 協助企業把日常維運、資安事件、權限覆核、備份驗證與 AI Agent 治理整理成可稽核的資安治理證據。</p><nav class="quick-nav" aria-label="271ops quick links"><a href="/">Back to Portal</a><a href="/soc/">SOC</a><a href="/serviceops/">ServiceOps</a><a href="/projectops/">ProjectOps</a><a href="/plan-serviceops/">Plan_ServiceOPS</a><a href="/agentops-hub/">AgentOps Hub</a><a href="/audit/">Audit Logs</a><a href="/status/">Status</a></nav></div>
       <aside class="boundary"><h3>Readiness Boundary / 準備度邊界</h3><p>271ops is a readiness and governance preparation module. It does not replace consultants, auditors, certification bodies, or formal compliance decisions.</p><p>271ops 是準備度與治理證據整理模組，不取代顧問、稽核員、驗證機構或正式合規決策。</p></aside>
     </section>
+    <p id="fallback-note" hidden style="margin:14px 0 0;border:1px solid rgba(255,184,107,.38);border-radius:14px;padding:11px 13px;color:var(--orange);background:rgba(255,184,107,.08);font-size:12px;line-height:1.55">Using local demo fallback because the 271ops API is unavailable or returned invalid data.<br />因 271ops API 無法使用或資料格式不完整，目前使用本機 Demo 備援資料。</p>
 
     <section class="kpis" aria-label="271ops KPI cards">
       <article class="kpi"><div class="kpi-label">Readiness Score / 準備度</div><div class="kpi-value">68%</div></article>
@@ -70,7 +71,103 @@
     </div></section>
 
     <section class="boundary boundary-full"><h3>Safety / Compliance Boundary / 安全與合規邊界</h3><p>271ops supports readiness preparation and evidence organization. It does not claim ISO27001 certification, legal assurance, or audit approval.</p><p>271ops 支援準備度與證據整理，不宣稱取得 ISO27001 認證、法律保證或稽核通過。</p><ul><li>No secrets.</li><li>No raw logs by default.</li><li>No raw prompt / response.</li><li>Safe references only.</li><li>Formal decisions remain with management, auditors, consultants, and certified professionals.</li></ul></section>
-    <footer>ENYRAX Cloud Portal · 271ops · ISO27001 Readiness &amp; Security Governance · Static frontend prototype</footer>
+    <footer>ENYRAX Cloud Portal · 271ops · ISO27001 Readiness &amp; Security Governance · API-backed read-only dashboard</footer>
   </main>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const demoFallback = {
+        product: "271ops", mode: "read_only", certification_claim: false,
+        summary: {readiness_score: 68, open_risks: 7, missing_evidence: 12, access_reviews_pending: 9, backup_evidence_coverage_percent: 74, incident_evidence_coverage_percent: 81, vendor_approval_pending: 5, ai_governance_coverage_percent: 62},
+        evidence_coverage: [
+          {area_label:"Incident Response",area_label_zh:"事件處理",status:"ready",status_label:"Ready",evidence_count:8},
+          {area_label:"Backup & Restore",area_label_zh:"備份與還原",status:"partial",status_label:"Partial",evidence_count:6},
+          {area_label:"Access Review",area_label_zh:"權限覆核",status:"partial",status_label:"Partial",evidence_count:5},
+          {area_label:"Vendor & Approval",area_label_zh:"廠商與核准",status:"missing",status_label:"Missing",evidence_count:2},
+          {area_label:"AI Governance",area_label_zh:"AI 治理",status:"partial",status_label:"Partial",evidence_count:4}
+        ],
+        risk_register: [
+          {title:"Privileged account review not completed",risk_level:"high",owner:"security-governance",status:"in_progress",mitigation_note:"Review sudo and admin groups before formal readiness review."},
+          {title:"Restore drill evidence incomplete",risk_level:"high",owner:"infra-operations",status:"in_progress",mitigation_note:"Complete restore drill review and attach verification metadata."},
+          {title:"Vendor approval record missing",risk_level:"medium",owner:"procurement-governance",status:"pending",mitigation_note:"Complete vendor review and record role-based approval."},
+          {title:"AI-assisted workflow review policy pending",risk_level:"medium",owner:"ai-governance",status:"pending",mitigation_note:"Document human review boundaries for assisted workflows."}
+        ],
+        access_reviews: [
+          {system_label:"Linux sudo group",system:"Linux",reviewer:"infra-supervisor",status:"pending",evidence_status:"missing"},
+          {system_label:"AD disabled account verification",system:"Directory Service",reviewer:"identity-reviewer",status:"approved",evidence_status:"ready"},
+          {system_label:"Shared account owner confirmation",system:"Shared Service",reviewer:"service-owner-reviewer",status:"exception",evidence_status:"partial"},
+          {system_label:"SaaS admin account review",system:"SaaS",reviewer:"application-supervisor",status:"revoke_needed",evidence_status:"missing"}
+        ],
+        evidence_queue: [
+          {title:"Suspicious SSH brute force remediation",source_module:"SOC",review_status:"accepted",summary:"Incident reviewed, ticket created, remediation tracked, verification evidence attached."},
+          {title:"Service remediation ticket closure",source_module:"ServiceOps",review_status:"accepted",summary:"Remediation workflow includes assignment, verification, and closure summary."},
+          {title:"Privileged account review worksheet",source_module:"Audit Logs",review_status:"needs_update",summary:"Role-level privileged access review is pending completion."},
+          {title:"R2 backup upload verification",source_module:"BackupOps",review_status:"accepted",summary:"Backup upload verification metadata is available for review."},
+          {title:"Server_AgentOps deployment check",source_module:"Server_AgentOps",review_status:"accepted",summary:"Automation run metadata records a completed deployment verification check."},
+          {title:"Team_AgentOps human review",source_module:"Team_AgentOps",review_status:"accepted",summary:"Human review metadata records a governance checkpoint for an assisted workflow."},
+          {title:"Backup restore drill worksheet",source_module:"BackupOps",review_status:"needs_update",summary:"Restore drill verification evidence requires an updated review record."},
+          {title:"Vendor approval record",source_module:"Plan_ServiceOPS",review_status:"pending",summary:"Vendor review record is queued for governance approval."},
+          {title:"AI-assisted workflow review policy",source_module:"AgentOps",review_status:"pending",summary:"Policy boundary draft is queued for governance review."}
+        ],
+        ai_governance_evidence: [
+          {title:"AgentOps generated snapshot review",source_module:"AgentOps",status:"ready",note:"Demo safe metadata reference only."},
+          {title:"Team_AgentOps human review evidence",source_module:"Team_AgentOps",status:"ready",note:"Demo human review metadata reference only."},
+          {title:"Server_AgentOps automation run evidence",source_module:"Server_AgentOps",status:"partial",note:"Demo automation metadata reference only."},
+          {title:"Personal_AgentOps policy boundary planned",source_module:"Personal_AgentOps",status:"planned",note:"Demo planned policy boundary reference only."}
+        ],
+        audit_checklist: [
+          {item:"Asset owner assigned",status:"ready"},{item:"Access review completed",status:"partial"},{item:"Backup restore drill verified",status:"partial"},
+          {item:"Incident evidence linked",status:"ready"},{item:"Risk treatment owner assigned",status:"ready"},{item:"AI governance boundary documented",status:"partial"}
+        ],
+        boundary: {readiness_preparation_only:true,not_certification_score:true,not_legal_assurance:true,not_audit_approval:true,safe_references_only:true}
+      };
+
+      const arrays = ["evidence_coverage", "risk_register", "access_reviews", "evidence_queue", "ai_governance_evidence", "audit_checklist"];
+      const esc = value => String(value ?? "").replace(/[&<>]/g, char => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[char]));
+      const statusClass = status => ["ready","approved","accepted"].includes(status) ? "ready" : ["missing","high","revoke_needed"].includes(status) ? "missing" : status === "medium" ? "medium" : "partial";
+      const label = value => esc(String(value ?? "unknown").replaceAll("_", " "));
+      const pill = (status, text = status) => `<span class="pill ${statusClass(status)}">${label(text)}</span>`;
+      const panel = title => [...document.querySelectorAll(".panel")].find(item => item.querySelector("h2")?.textContent.includes(title));
+      const list = title => panel(title).querySelector(".list");
+      const headPill = title => panel(title).querySelector(".panel-head > .pill");
+
+      function isValidOps271Dashboard(data) {
+        return data && data.product === "271ops" && data.mode === "read_only" && data.certification_claim === false &&
+          data.summary && typeof data.summary.readiness_score === "number" && arrays.every(key => Array.isArray(data[key]));
+      }
+
+      function renderDashboard(data, isFallback) {
+        const summary = data.summary;
+        document.getElementById("mode-badge").textContent = isFallback ? "DEMO FALLBACK / DEMO 備援" : "API DATA / API 資料";
+        document.getElementById("mode-badge").classList.toggle("static", isFallback);
+        document.getElementById("fallback-note").hidden = !isFallback;
+        document.querySelector(".kpis").innerHTML = [
+          ["Readiness Score / 準備度", `${summary.readiness_score}%`], ["Open Risks / 未關閉風險", summary.open_risks], ["Missing Evidence / 缺漏證據", summary.missing_evidence],
+          ["Access Reviews Pending / 待覆核權限", summary.access_reviews_pending], ["Backup Evidence Coverage / 備份證據覆蓋", `${summary.backup_evidence_coverage_percent}%`],
+          ["Incident Evidence Coverage / 事件證據覆蓋", `${summary.incident_evidence_coverage_percent}%`], ["Vendor / Approval Pending / 廠商 / 核准待處理", summary.vendor_approval_pending],
+          ["AI Governance Coverage / AI 治理覆蓋", `${summary.ai_governance_coverage_percent}%`]
+        ].map(([name,value]) => `<article class="kpi"><div class="kpi-label">${esc(name)}</div><div class="kpi-value">${esc(value)}</div></article>`).join("");
+        panel("Readiness Overview").querySelector(".overview").innerHTML = [[`${summary.readiness_score}%`,"Readiness Score"],[`${summary.backup_evidence_coverage_percent}%`,"Backup Evidence Coverage"],[summary.open_risks,"Open Risks"],[summary.missing_evidence,"Missing Evidence"]].map(([value,name]) => `<div><strong>${esc(value)}</strong><span>${esc(name)}</span></div>`).join("");
+        panel("Evidence Coverage Matrix").querySelector("tbody").innerHTML = data.evidence_coverage.map(item => `<tr><td>${esc(item.area_label)}</td><td>${esc(item.area_label_zh)}</td><td>${pill(item.status, item.status_label || item.status)}</td><td>${esc(item.evidence_count)}</td></tr>`).join("");
+        headPill("Open Risk Register").textContent = `${data.risk_register.length} RISKS`;
+        list("Open Risk Register").innerHTML = data.risk_register.map(item => `<article class="item"><div class="item-top"><h3>${esc(item.title)}</h3>${pill(item.risk_level)}</div><div class="meta"><span>Owner: ${esc(item.owner)}</span><span>Status: ${label(item.status)}</span></div><p>Mitigation: ${esc(item.mitigation_note)}</p></article>`).join("");
+        headPill("Access Review Queue").textContent = `${data.access_reviews.length} REVIEWS`;
+        list("Access Review Queue").innerHTML = data.access_reviews.map(item => `<article class="item"><h3>${esc(item.system_label)}</h3><div class="meta"><span>System: ${esc(item.system)}</span><span>Reviewer: ${esc(item.reviewer)}</span><span>Status: ${label(item.status)}</span><span>Evidence: ${label(item.evidence_status)}</span></div></article>`).join("");
+        headPill("Evidence Queue").textContent = `${data.evidence_queue.length} ITEMS`;
+        list("Evidence Queue").innerHTML = data.evidence_queue.map(item => `<article class="item"><h3>${esc(item.title)}</h3><div class="meta"><span>Source: ${esc(item.source_module)}</span><span>Status: ${label(item.review_status)}</span></div><p>${esc(item.summary)}</p></article>`).join("");
+        headPill("AI Governance Evidence").textContent = `${data.ai_governance_evidence.length} SAFE REFERENCES`;
+        list("AI Governance Evidence").innerHTML = data.ai_governance_evidence.map(item => `<article class="item"><h3>${esc(item.title)}</h3><div class="meta"><span>Source: ${esc(item.source_module)}</span><span>Status: ${label(item.status)}</span></div><p>${esc(item.note)}</p></article>`).join("");
+        panel("Audit Checklist").querySelector(".checks").innerHTML = data.audit_checklist.map(item => `<div class="check"><span>${esc(item.item)}</span>${pill(item.status)}</div>`).join("");
+        document.querySelector(".boundary-full").innerHTML = `<h3>Safety / Compliance Boundary / 安全與合規邊界</h3><p>271ops supports readiness preparation and evidence organization. It does not claim ISO27001 certification, legal assurance, or audit approval.</p><p>271ops 支援準備度與證據整理，不宣稱取得 ISO27001 認證、法律保證或稽核通過。</p><ul><li>Readiness preparation only: ${esc(data.boundary?.readiness_preparation_only === true)}</li><li>Not a certification score: ${esc(data.boundary?.not_certification_score === true)}</li><li>No legal assurance or audit approval.</li><li>No raw prompt / response.</li><li>Safe references only: ${esc(data.boundary?.safe_references_only === true)}</li></ul>`;
+      }
+
+      fetch('/api/271ops/dashboard')
+        .then(response => { if (!response.ok) throw new Error("271ops API HTTP error"); return response.json(); })
+        .then(data => { if (!isValidOps271Dashboard(data)) throw new Error("271ops API schema invalid"); renderDashboard(data, false); })
+        .catch(() => renderDashboard(demoFallback, true));
+    })();
+  </script>
 </body>
 </html>

@@ -514,3 +514,15 @@ For timing, pacing, and 3-minute delivery practice, see `docs/enyrax_3min_demo_r
 * It does not add DB, migration, write API, production auth, release, or deployment changes.
 * It does not claim ISO27001 certification, legal assurance, or audit approval.
 * It prepares a future frontend API switch with fallback.
+
+
+## Task #201 271ops Frontend API Switch with Demo Fallback
+
+* Task #201 upgrades `/271ops/` from a static dashboard to an API-backed read-only dashboard.
+* Frontend fetches only `GET /api/271ops/dashboard` and renders KPI cards, evidence coverage, risk register, access reviews, evidence queue, AI governance evidence, audit checklist, and the safety / compliance boundary from active data.
+* Valid API responses display `API DATA / API 資料`.
+* HTTP errors, invalid JSON, or invalid schema use local demo fallback and display `DEMO FALLBACK / DEMO 備援` with a fallback note.
+* Schema validation requires `product === "271ops"`, `mode === "read_only"`, `certification_claim === false`, numeric `summary.readiness_score`, and all six dashboard arrays.
+* Boundary remains readiness preparation only: no ISO27001 certification claim, no legal assurance, no audit approval, and safe references only.
+* It adds no mutation API, create / update / approve / reject action, upload, localStorage write, backend change, DB change, script change, release, or deployment change.
+* This prepares Task #202 271ops Visual QA.
