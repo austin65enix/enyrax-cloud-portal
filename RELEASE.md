@@ -1,5 +1,31 @@
 # ENYRAX Cloud Portal Release Notes
 
+## v0.6.30-271ops-api-backed-dashboard
+
+271ops now has an API-backed readiness and security governance dashboard. The module uses safe demo fixtures and read-only API endpoints to present readiness summary, evidence coverage, risk register, access reviews, evidence queue, AI governance evidence, and audit checklist data.
+
+Highlights:
+
+- Added lowercase `271ops` product naming for UI clarity.
+- Added `/271ops/` static dashboard and Portal homepage entry.
+- Added safe demo fixtures under `data/271ops/`.
+- Added read-only fixture API endpoints under `/api/271ops/`.
+- Added frontend API DATA / DEMO FALLBACK rendering.
+- Added schema validation and local fallback to avoid blank pages.
+- Added API-backed visual QA covering API success, fallback, responsive behavior, copy boundary, accessibility, and no-mutation behavior.
+- Preserved readiness / governance boundary: no ISO27001 certification claim, no legal assurance, and no audit approval claim.
+
+Scope boundary:
+
+- Fixture-backed demo only.
+- No DB migration.
+- No write API.
+- No production compliance evidence.
+- No consultant, auditor, or certification body replacement.
+- No deployment config change.
+
+---
+
 ## v0.6.29-plan-serviceops-attention-reason-ui
 
 Plan_ServiceOPS now separates ticket progress status from attention reasons. User-facing badges no longer rely on `Blocked` as the primary status. Team Attention Queue now displays clearer bilingual badges such as `Pending · Waiting Approval / 待處理 · 等待核准` and `In Progress · Waiting Vendor / 處理中 · 等待廠商`.

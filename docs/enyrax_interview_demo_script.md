@@ -537,3 +537,14 @@ For timing, pacing, and 3-minute delivery practice, see `docs/enyrax_3min_demo_r
 * Dashboard remains read-only and does not claim ISO27001 certification, legal assurance, or audit approval.
 * No backend, DB, API, fixtures, release, or deployment changes were made.
 * Prepares Task #203 release note.
+
+
+## Task #203 271ops API-backed Dashboard Release Note
+
+* Task #203 packages Tasks #195-#202 as `v0.6.30-271ops-api-backed-dashboard`.
+* Release covers product concept, static dashboard, visual QA, demo fixtures, read-only fixture API, frontend API switch, fallback behavior, and API-backed visual QA.
+* 271ops remains lowercase in UI.
+* It remains fixture-backed and read-only.
+* It does not claim ISO27001 certification, legal assurance, or audit approval.
+* No frontend, backend, DB, API, fixtures, deployment, or tag changes were made in this release note task.
+* Prepares Task #204 release tag.
