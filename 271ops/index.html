@@ -95,6 +95,21 @@
       <section class="boundary" style="margin-top:16px"><h3>Identity Lifecycle Safety Boundary / 身分生命週期安全邊界</h3><p>Read-only Access Verify layer. Safe metadata only. It does not mutate identity systems or approve access.</p><p>唯讀 Access Verify 層，只呈現安全 metadata，不異動身分系統，也不核准權限。</p><ul class="safety-list"><li>Read-only Access Verify layer</li><li>No AD mutation</li><li>No LDAP mutation</li><li>No IAM mutation</li><li>No SaaS permission mutation</li><li>No approve / reject action</li><li>No upload control</li><li>No edit / delete action</li><li>No password / credential / API key / private key</li><li>No raw logs / raw BPM form body / raw attachment content</li><li>Safe metadata only</li></ul></section>
     </section>
 
+
+    <section class="panel account-governance" id="access-review-campaign-governance"><div class="panel-head"><div><div class="section-kicker">Access Review Campaign</div><h2>Access Review Campaign / 權限覆核活動</h2><p class="copy">Read-only Access Verify for scheduled access review campaigns, reviewer progress, remediation references, and audit evidence packages.<br />以唯讀 Access Verify 呈現定期權限覆核活動、覆核進度、補救工單引用與稽核證據包。</p></div><div class="account-status"><span class="badge" id="campaign-mode-badge">ACCESS REVIEW CAMPAIGN API DATA / 權限覆核活動 API 資料</span></div></div>
+      <p id="campaign-fallback-note" class="warning-strip account-note" hidden>Using local Access Review Campaign demo fallback because one or more campaign APIs are unavailable, invalid, or empty.<br />因一個或多個權限覆核活動 API 無法使用、格式不完整或資料為空，目前使用本機 Demo 備援資料。</p>
+      <p id="campaign-warnings-strip" class="warning-strip account-note" hidden></p>
+      <section class="account-kpis" id="campaign-summary-cards" aria-label="Access Review Campaign Summary Cards"></section>
+      <section style="margin-top:16px"><div class="section-kicker">Campaign Breakdown</div><h2>Campaign Breakdown / 活動分類</h2><div class="account-grid" id="campaign-breakdown"></div></section>
+      <section style="margin-top:16px"><div class="section-kicker">Risk Breakdown</div><h2>Risk Breakdown / 風險分類</h2><div class="account-grid" id="campaign-risk-breakdown"></div></section>
+      <section style="margin-top:16px"><div class="section-kicker">Reviewer Progress</div><h2>Reviewer Progress / 覆核者進度</h2><div class="account-grid" id="campaign-reviewer-progress"></div></section>
+      <section style="margin-top:16px"><div class="section-kicker">Top Attention Items</div><h2>Top Attention Items / 優先關注項目</h2><div class="account-grid" id="campaign-attention-items"></div></section>
+      <section style="margin-top:16px"><div class="section-kicker">Recent Campaigns</div><h2>Recent Campaigns / 近期覆核活動</h2><div class="account-grid" id="campaign-recent-campaigns"></div></section>
+      <section style="margin-top:16px"><div class="section-kicker">Remediation Queue Preview</div><h2>Remediation Queue Preview / 補救佇列預覽</h2><div class="account-grid" id="campaign-remediation-queue"></div></section>
+      <section style="margin-top:16px"><div class="section-kicker">Evidence Package Preview</div><h2>Evidence Package Preview / 證據包預覽</h2><div class="account-grid" id="campaign-evidence-packages"></div></section>
+      <section class="boundary" style="margin-top:16px"><h3>Access Review Campaign Safety Boundary / 權限覆核活動安全邊界</h3><p>Read-only Access Verify layer. Safe metadata only. It does not mutate identity systems, approve access, upload content, or edit permissions.</p><p>唯讀 Access Verify 層，只呈現安全 metadata，不異動身分系統、不核准權限、不上傳內容，也不編輯權限。</p><ul class="safety-list"><li>Read-only Access Verify layer</li><li>No AD mutation</li><li>No LDAP mutation</li><li>No IAM mutation</li><li>No SaaS permission mutation</li><li>No approve / reject action implemented</li><li>No upload control</li><li>No edit / delete action</li><li>No password / credential / API key / private key</li><li>No raw logs / raw BPM form body / raw attachment content</li><li>Safe metadata only</li></ul></section>
+    </section>
+
     <section class="boundary boundary-full"><h3>Safety / Compliance Boundary / 安全與合規邊界</h3><p>271ops supports readiness preparation and evidence organization. It does not claim ISO27001 certification, legal assurance, or audit approval.</p><p>271ops 支援準備度與證據整理，不宣稱取得 ISO27001 認證、法律保證或稽核通過。</p><ul><li>No secrets.</li><li>No raw logs by default.</li><li>No raw prompt / response.</li><li>Safe references only.</li><li>Formal decisions remain with management, auditors, consultants, and certified professionals.</li></ul></section>
     <footer>ENYRAX Cloud Portal · 271ops · ISO27001 Readiness &amp; Security Governance · API-backed read-only dashboard</footer>
   </main>
@@ -170,6 +185,17 @@
       identityLifecycleFallback.exceptions.records = identityLifecycleFallback.events.records.filter(item => item.event_type === "Exception" || item.exception_expiry_date);
       identityLifecycleFallback.reviews.records = identityLifecycleFallback.events.records.filter(item => ["Joiner","Mover","Reviewer","Leaver"].includes(item.event_type)).slice(0, 4);
       identityLifecycleFallback.evidencePackages.records = identityLifecycleFallback.events.records.filter(item => item.evidence_ref).slice(0, 3);
+
+      const campaignFallbackMetadata = {source:"local_demo",mode:"demo_fallback",product:"271ops",display_name:"271Ops Access Review Campaign",production_data:false,warnings:[]};
+      const campaignFallback = {
+        dashboard: {...campaignFallbackMetadata, summary:{total_campaigns:4,active_campaigns:3,overdue_items:1,high_risk_items:3,exception_items:1,remediation_open:2,evidence_packages_completed:1}, campaign_breakdown:[{campaign_type:"Quarterly Access Review",campaign_count:1,active_count:1,completed_count:0},{campaign_type:"Privileged Access Review",campaign_count:1,active_count:1,completed_count:0},{campaign_type:"Department Access Review",campaign_count:1,active_count:1,completed_count:0},{campaign_type:"SaaS Access Review",campaign_count:1,active_count:1,completed_count:0},{campaign_type:"Exception Access Review",campaign_count:1,active_count:1,completed_count:0},{campaign_type:"Leaver Follow-up Review",campaign_count:1,active_count:0,completed_count:1}], risk_breakdown:[{risk_level:"Critical",item_count:0},{risk_level:"High",item_count:4},{risk_level:"Medium",item_count:1},{risk_level:"Low",item_count:2}], reviewer_progress:[{reviewer:"Demo Reviewer A",assigned_items:1,completed_items:1,overdue_items:0,status:"Completed"},{reviewer:"Demo Reviewer B",assigned_items:1,completed_items:0,overdue_items:1,status:"Overdue"},{reviewer:"Demo Reviewer F",assigned_items:1,completed_items:0,overdue_items:0,status:"ReviewRequired"}], top_attention_items:[{review_item_id:"ARI-DEMO-002",campaign_id:"ARC-DEMO-2026Q2-002",title:"Privileged admin access review overdue",risk_level:"High",status:"Overdue",notes:"Admin privileged access is pending reviewer decision."},{review_item_id:"ARI-DEMO-003",campaign_id:"ARC-DEMO-2026Q2-001",title:"Department transfer stale access review",risk_level:"High",status:"RemediationOpen",notes:"Role mismatch after transfer has a ServiceOps remediation reference."},{review_item_id:"ARI-DEMO-006",campaign_id:"ARC-DEMO-2026Q2-003",title:"Exception access review expiring soon",risk_level:"High",status:"ReviewRequired",notes:"Exception access needs renewal or removal decision."}], recent_campaigns:[{campaign_id:"ARC-DEMO-2026Q2-001",campaign_name:"2026 Q2 Quarterly Access Review",campaign_type:"Quarterly Access Review",period:"2026-Q2",status:"Review Open",due_date:"2026-06-21",risk_level:"Medium"},{campaign_id:"ARC-DEMO-2026Q2-002",campaign_name:"2026 Q2 Privileged Admin Access Review",campaign_type:"Privileged Access Review",period:"2026-Q2",status:"Overdue",due_date:"2026-05-31",risk_level:"High"},{campaign_id:"ARC-DEMO-2026Q2-004",campaign_name:"2026 Q2 Completed Evidence Campaign",campaign_type:"Leaver Follow-up Review",period:"2026-Q2",status:"Completed",due_date:"2026-06-02",risk_level:"Low"}], safety_boundary:{read_only:true,mutation_allowed:false,safe_metadata_only:true}},
+        campaigns: {...campaignFallbackMetadata, count:3, records:[]}, active: {...campaignFallbackMetadata, count:2, records:[]}, overdueItems: {...campaignFallbackMetadata, count:1, records:[]},
+        remediationQueue: {...campaignFallbackMetadata, count:3, records:[{remediation_id:"REM-DEMO-ARC-001",serviceops_ticket_ref:"SVC-DEMO-ARC-001",requested_action:"Change Access",target_system_ref:"DIR-DEMO-AD",status:"Open",risk_level:"High"},{remediation_id:"REM-DEMO-ARC-002",serviceops_ticket_ref:"SVC-DEMO-ARC-002",requested_action:"Remove Access",target_system_ref:"SaaS-DEMO-CRM",status:"Open",risk_level:"Medium"},{remediation_id:"REM-DEMO-ARC-003",serviceops_ticket_ref:"SVC-DEMO-ARC-003",requested_action:"Remove Access",target_system_ref:"DIR-DEMO-AD",status:"Verified",risk_level:"Low"}]},
+        evidencePackages: {...campaignFallbackMetadata, count:4, records:[{evidence_package_ref:"EVD-271OPS-ARC-001",campaign_id:"ARC-DEMO-2026Q2-001",audit_report_ref:"AUD-271OPS-ARC-001",package_status:"InProgress",included_items:7,completed_items:3},{evidence_package_ref:"EVD-271OPS-ARC-002",campaign_id:"ARC-DEMO-2026Q2-002",audit_report_ref:"",package_status:"Partial",included_items:3,completed_items:1},{evidence_package_ref:"EVD-271OPS-ARC-004",campaign_id:"ARC-DEMO-2026Q2-004",audit_report_ref:"AUD-271OPS-ARC-004",package_status:"Completed",included_items:2,completed_items:2}]}
+      };
+      campaignFallback.campaigns.records = campaignFallback.dashboard.recent_campaigns;
+      campaignFallback.active.records = campaignFallback.dashboard.recent_campaigns.filter(item => item.status !== "Completed");
+      campaignFallback.overdueItems.records = campaignFallback.dashboard.top_attention_items.filter(item => item.status === "Overdue");
 
       const accountGovernanceFallback = {
         bpmPermissionRequests: {...accountFallbackMetadata, summary:{total:6,approved:5,pending:1,rejected:0,expired:0}, records:[
@@ -323,6 +349,49 @@
         document.getElementById("identity-evidence-packages").innerHTML = bundle.evidencePackages.records.map(item => `<article class="account-card"><h3>${esc(item.evidence_package_id || item.evidence_ref)}</h3>${renderFields([["serviceops_ticket_ref",item.serviceops_ticket_ref],["bpm_request_ref",item.bpm_request_ref],["verification_status",item.verification_status],["risk_level",item.risk_level],["notes",item.notes]])}</article>`).join("");
       }
 
+      function isValidCampaignDashboard(data) {
+        const summaryKeys = ["total_campaigns","active_campaigns","overdue_items","high_risk_items","exception_items","remediation_open","evidence_packages_completed"];
+        return data && data.product === "271ops" && data.mode === "read_only" && data.summary && summaryKeys.every(key => Number.isFinite(Number(data.summary[key]))) && Array.isArray(data.campaign_breakdown) && Array.isArray(data.risk_breakdown) && Array.isArray(data.reviewer_progress) && Array.isArray(data.top_attention_items) && Array.isArray(data.recent_campaigns);
+      }
+
+      function isValidCampaignRecordsResponse(data) {
+        return data && data.product === "271ops" && data.mode === "read_only" && Array.isArray(data.records) && data.records.length > 0;
+      }
+
+      function isValidCampaignBundle(bundle) {
+        return isValidCampaignDashboard(bundle.dashboard) && isValidCampaignRecordsResponse(bundle.campaigns) && isValidCampaignRecordsResponse(bundle.active) && isValidCampaignRecordsResponse(bundle.overdueItems) && isValidCampaignRecordsResponse(bundle.remediationQueue) && isValidCampaignRecordsResponse(bundle.evidencePackages);
+      }
+
+      function renderCampaignWarnings(bundle) {
+        const warnings = [...endpointWarnings("campaign-dashboard", bundle.dashboard), ...endpointWarnings("campaigns", bundle.campaigns), ...endpointWarnings("active-campaigns", bundle.active), ...endpointWarnings("overdue-items", bundle.overdueItems), ...endpointWarnings("remediation-queue", bundle.remediationQueue), ...endpointWarnings("evidence-packages", bundle.evidencePackages)];
+        const strip = document.getElementById("campaign-warnings-strip");
+        strip.hidden = warnings.length === 0;
+        strip.innerHTML = warnings.length ? warnings.map(item => `<div>${esc(item)}</div>`).join("") : "";
+      }
+
+      function renderCampaignCards(targetId, records, titleKey, fields) {
+        document.getElementById(targetId).innerHTML = records.map(item => `<article class="account-card"><h3>${esc(item[titleKey] || item.title || item.campaign_id || item.remediation_id || item.evidence_package_ref)}</h3>${renderFields(fields.map(([name, key]) => [name, item[key]]))}</article>`).join("");
+      }
+
+      function renderAccessReviewCampaign(bundle, isFallback) {
+        const dashboard = bundle.dashboard;
+        const summary = dashboard.summary || {};
+        const badge = document.getElementById("campaign-mode-badge");
+        badge.textContent = isFallback ? "ACCESS REVIEW CAMPAIGN DEMO FALLBACK / 權限覆核活動 DEMO 備援" : "ACCESS REVIEW CAMPAIGN API DATA / 權限覆核活動 API 資料";
+        badge.classList.toggle("static", isFallback);
+        document.getElementById("campaign-fallback-note").hidden = !isFallback;
+        renderCampaignWarnings(bundle);
+        document.getElementById("campaign-summary-cards").innerHTML = [["Total Campaigns", summary.total_campaigns], ["Active Campaigns", summary.active_campaigns], ["Overdue Items", summary.overdue_items], ["High Risk Items", summary.high_risk_items], ["Exception Items", summary.exception_items], ["Remediation Open", summary.remediation_open], ["Evidence Packages Completed", summary.evidence_packages_completed]].map(([name, value]) => `<article class="kpi"><div class="kpi-label">${esc(name)}</div><div class="kpi-value">${esc(value ?? 0)}</div></article>`).join("");
+        document.getElementById("campaign-breakdown").innerHTML = dashboard.campaign_breakdown.map(item => `<article class="account-card"><h3>${esc(item.campaign_type)}</h3>${renderFields([["campaign_count",item.campaign_count],["active_count",item.active_count],["completed_count",item.completed_count]])}</article>`).join("");
+        document.getElementById("campaign-risk-breakdown").innerHTML = dashboard.risk_breakdown.map(item => `<article class="account-card"><h3>${esc(item.risk_level)}</h3><div class="kpi-value">${esc(item.item_count ?? 0)}</div></article>`).join("");
+        document.getElementById("campaign-reviewer-progress").innerHTML = dashboard.reviewer_progress.map(item => { const assigned = Number(item.assigned_items ?? item.assigned_count ?? 0); const completed = Number(item.completed_items ?? item.completed_count ?? 0); const rate = assigned > 0 ? `${Math.round((completed / assigned) * 100)}%` : "0%"; return `<article class="account-card"><h3>${esc(item.reviewer)}</h3>${renderFields([["assigned_count",assigned],["completed_count",completed],["overdue_count",item.overdue_items ?? item.overdue_count ?? 0],["completion_rate",rate],["status",item.status]])}</article>`; }).join("");
+        renderCampaignCards("campaign-attention-items", dashboard.top_attention_items, "title", [["review_item_id","review_item_id"],["campaign_id","campaign_id"],["status","status"],["risk_level","risk_level"],["notes","notes"]]);
+        renderCampaignCards("campaign-recent-campaigns", dashboard.recent_campaigns, "campaign_name", [["campaign_id","campaign_id"],["campaign_type","campaign_type"],["period","period"],["status","status"],["due_date","due_date"],["risk_level","risk_level"]]);
+        renderCampaignCards("campaign-remediation-queue", bundle.remediationQueue.records, "remediation_id", [["serviceops_ticket_ref","serviceops_ticket_ref"],["requested_action","requested_action"],["target_system_ref","target_system_ref"],["status","status"],["risk_level","risk_level"]]);
+        renderCampaignCards("campaign-evidence-packages", bundle.evidencePackages.records, "evidence_package_ref", [["campaign_id","campaign_id"],["audit_report_ref","audit_report_ref"],["package_status","package_status"],["included_items","included_items"],["completed_items","completed_items"]]);
+      }
+
+
       function renderDashboard(data, isFallback) {
         const summary = data.summary;
         document.getElementById("mode-badge").textContent = isFallback ? "DEMO FALLBACK / DEMO 備援" : "API DATA / API 資料";
@@ -360,11 +429,21 @@
         return fetch(url, {method: "GET"}).then(response => { if (!response.ok) throw new Error("271ops Identity Lifecycle API HTTP error"); return response.json(); });
       }
 
+      function fetchCampaignEndpoint(url) {
+        return fetch(url, {method: "GET"}).then(response => { if (!response.ok) throw new Error("271ops Access Review Campaign API HTTP error"); return response.json(); });
+      }
+
       Promise.all([fetchIdentityEndpoint('/api/271ops/identity-lifecycle/dashboard'), fetchIdentityEndpoint('/api/271ops/identity-lifecycle/events'), fetchIdentityEndpoint('/api/271ops/identity-lifecycle/queue'), fetchIdentityEndpoint('/api/271ops/identity-lifecycle/exceptions'), fetchIdentityEndpoint('/api/271ops/identity-lifecycle/reviews'), fetchIdentityEndpoint('/api/271ops/identity-lifecycle/evidence-packages')]).then(([dashboard, events, queue, exceptions, reviews, evidencePackages]) => {
         const bundle = {dashboard, events, queue, exceptions, reviews, evidencePackages};
         if (!isValidIdentityBundle(bundle)) throw new Error("271ops Identity Lifecycle API schema invalid");
         renderIdentityLifecycle(bundle, false);
       }).catch(() => renderIdentityLifecycle(identityLifecycleFallback, true));
+
+      Promise.all([fetchCampaignEndpoint('/api/271ops/access-review-campaigns/dashboard'), fetchCampaignEndpoint('/api/271ops/access-review-campaigns'), fetchCampaignEndpoint('/api/271ops/access-review-campaigns/active'), fetchCampaignEndpoint('/api/271ops/access-review-campaigns/overdue-items'), fetchCampaignEndpoint('/api/271ops/access-review-campaigns/remediation-queue'), fetchCampaignEndpoint('/api/271ops/access-review-campaigns/evidence-packages')]).then(([dashboard, campaigns, active, overdueItems, remediationQueue, evidencePackages]) => {
+        const bundle = {dashboard, campaigns, active, overdueItems, remediationQueue, evidencePackages};
+        if (!isValidCampaignBundle(bundle)) throw new Error("271ops Access Review Campaign API schema invalid");
+        renderAccessReviewCampaign(bundle, false);
+      }).catch(() => renderAccessReviewCampaign(campaignFallback, true));
 
       fetch('/api/271ops/dashboard')
         .then(response => { if (!response.ok) throw new Error("271ops API HTTP error"); return response.json(); })
