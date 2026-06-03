@@ -15,6 +15,7 @@ Highlights:
 - Added frontend API DATA / DEMO FALLBACK rendering.
 - Added schema validation and local fallback to avoid blank pages.
 - Added API-backed visual QA covering API success, fallback, responsive behavior, copy boundary, accessibility, and no-mutation behavior.
+- Added Identity Lifecycle Governance release note coverage for Task #214-#219, including JML, review, exception tracking, evidence packages, read-only fixture API, frontend API DATA / DEMO FALLBACK behavior, and visual QA limitations.
 - Preserved readiness / governance boundary: no ISO27001 certification claim, no legal assurance, and no audit approval claim.
 
 Scope boundary:
