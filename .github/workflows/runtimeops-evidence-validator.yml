@@ -1,0 +1,51 @@
+name: RuntimeOps Evidence Validator
+
+on:
+  pull_request:
+    paths:
+      - "data/runtimeops/lab-evidence/**"
+      - "scripts/validate_runtimeops_evidence.py"
+      - ".github/workflows/runtimeops-evidence-validator.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "data/runtimeops/lab-evidence/**"
+      - "scripts/validate_runtimeops_evidence.py"
+      - ".github/workflows/runtimeops-evidence-validator.yml"
+
+jobs:
+  runtimeops-evidence-validator:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.x
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Compile validator
+        run: python3 -m py_compile scripts/validate_runtimeops_evidence.py
+
+      - name: JSON parse
+        run: python3 -m json.tool data/runtimeops/lab-evidence/demo_runtimeops_safe_evidence_examples.json >/dev/null
+
+      - name: Validate default
+        run: python3 scripts/validate_runtimeops_evidence.py data/runtimeops/lab-evidence/demo_runtimeops_safe_evidence_examples.json
+
+      - name: Validate strict
+        run: python3 scripts/validate_runtimeops_evidence.py data/runtimeops/lab-evidence/demo_runtimeops_safe_evidence_examples.json --strict
+
+      - name: Validate Python filter
+        run: python3 scripts/validate_runtimeops_evidence.py data/runtimeops/lab-evidence/demo_runtimeops_safe_evidence_examples.json --runtime-family Python --strict
+
+      - name: Validate .NET filter
+        run: python3 scripts/validate_runtimeops_evidence.py data/runtimeops/lab-evidence/demo_runtimeops_safe_evidence_examples.json --runtime-family .NET --strict
+
+      - name: Validate JSON output
+        run: python3 scripts/validate_runtimeops_evidence.py data/runtimeops/lab-evidence/demo_runtimeops_safe_evidence_examples.json --json-output
