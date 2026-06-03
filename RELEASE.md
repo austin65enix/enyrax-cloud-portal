@@ -4,6 +4,8 @@
 
 271ops now has an API-backed readiness and security governance dashboard. The module uses safe demo fixtures and read-only API endpoints to present readiness summary, evidence coverage, risk register, access reviews, evidence queue, AI governance evidence, and audit checklist data.
 
+Task #213 adds the Account Governance release note for the Task #211 frontend and Task #212 QA work. Account Governance adds a read-only Identity Governance Readiness / Access Verify view to `/271ops/`, covering BPM Permission Requests, Access Review Queue, and Access Lifecycle Events without AD, LDAP, IAM, or SaaS permission mutation.
+
 Highlights:
 
 - Added lowercase `271ops` product naming for UI clarity.
