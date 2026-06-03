@@ -79,6 +79,36 @@ OPS271_BOUNDARY = {
     "not_audit_approval": True,
     "safe_references_only": True,
 }
+OPS271_IDENTITY_LIFECYCLE_FIXTURE_DIR = OPS271_FIXTURE_DIR / "identity-lifecycle"
+OPS271_IDENTITY_LIFECYCLE_FIXTURE_FILES = {
+    "events": "demo_identity_lifecycle_events.json",
+    "queue": "demo_identity_lifecycle_queue.json",
+    "exceptions": "demo_identity_lifecycle_exceptions.json",
+    "reviews": "demo_identity_lifecycle_reviews.json",
+    "evidence_packages": "demo_identity_lifecycle_evidence_packages.json",
+}
+OPS271_IDENTITY_LIFECYCLE_SAFETY_BOUNDARY = {
+    "read_only": True,
+    "mutation_allowed": False,
+    "safe_metadata_only": True,
+    "no_ad_mutation": True,
+    "no_ldap_mutation": True,
+    "no_iam_mutation": True,
+    "no_saas_permission_mutation": True,
+    "no_approve_reject_action": True,
+    "no_upload": True,
+    "no_edit_delete": True,
+    "excludes": [
+        "passwords",
+        "credentials",
+        "api_keys",
+        "private_keys",
+        "raw_logs",
+        "raw_bpm_form_body",
+        "raw_attachment_content",
+        "full_hr_personal_data",
+    ],
+}
 TEAM_AGENTOPS_FIXTURE_FILENAMES = {
     "demo_agent_runs.json",
     "demo_agent_reviews.json",
@@ -1418,6 +1448,130 @@ def ops271_records_summary_response(
     return response
 
 
+
+def ops271_identity_lifecycle_warning(code: str, fixture_key: Optional[str] = None) -> dict:
+    messages = {
+        "fixture_unavailable": "271ops identity lifecycle fixture is temporarily unavailable.",
+        "fixture_invalid_json": "271ops identity lifecycle fixture JSON is invalid.",
+        "fixture_invalid_schema": "271ops identity lifecycle fixture schema is invalid.",
+        "fixture_empty": "271ops identity lifecycle fixture has no records.",
+    }
+    warning = {"code": code, "message": messages.get(code, messages["fixture_unavailable"])}
+    if fixture_key:
+        warning["fixture"] = fixture_key
+    return warning
+
+
+def append_unique_warning(warnings: list, warning: dict) -> None:
+    if warning not in warnings:
+        warnings.append(warning)
+
+
+def ops271_identity_lifecycle_metadata(warnings: Optional[list] = None) -> dict:
+    return {
+        "source": "fixture",
+        "mode": "read_only",
+        "product": "271ops",
+        "display_name": "271ops Identity Lifecycle",
+        "production_data": False,
+        "generated_at": now_utc(),
+        "warnings": warnings if warnings is not None else [],
+    }
+
+
+def load_ops271_identity_lifecycle_fixture(fixture_key: str, warnings: list) -> dict:
+    fixture_filename = OPS271_IDENTITY_LIFECYCLE_FIXTURE_FILES.get(fixture_key)
+    if fixture_filename is None:
+        append_unique_warning(
+            warnings, ops271_identity_lifecycle_warning("fixture_unavailable", fixture_key)
+        )
+        return {}
+
+    try:
+        data = json.loads(
+            (OPS271_IDENTITY_LIFECYCLE_FIXTURE_DIR / fixture_filename).read_text()
+        )
+    except FileNotFoundError:
+        append_unique_warning(
+            warnings, ops271_identity_lifecycle_warning("fixture_unavailable", fixture_key)
+        )
+        return {}
+    except json.JSONDecodeError:
+        append_unique_warning(
+            warnings, ops271_identity_lifecycle_warning("fixture_invalid_json", fixture_key)
+        )
+        return {}
+    except OSError:
+        append_unique_warning(
+            warnings, ops271_identity_lifecycle_warning("fixture_unavailable", fixture_key)
+        )
+        return {}
+
+    if not isinstance(data, dict):
+        append_unique_warning(
+            warnings, ops271_identity_lifecycle_warning("fixture_invalid_schema", fixture_key)
+        )
+        return {}
+
+    records = data.get("records", [])
+    if not isinstance(records, list):
+        append_unique_warning(
+            warnings, ops271_identity_lifecycle_warning("fixture_invalid_schema", fixture_key)
+        )
+        return {}
+    if not records:
+        append_unique_warning(
+            warnings, ops271_identity_lifecycle_warning("fixture_empty", fixture_key)
+        )
+    return data
+
+
+def ops271_identity_lifecycle_records(fixture_key: str, warnings: list) -> list:
+    data = load_ops271_identity_lifecycle_fixture(fixture_key, warnings)
+    records = data.get("records", [])
+    if not isinstance(records, list):
+        return []
+    return [item for item in records if isinstance(item, dict)]
+
+
+def ops271_identity_lifecycle_list_response(fixture_key: str) -> dict:
+    warnings = []
+    records = ops271_identity_lifecycle_records(fixture_key, warnings)
+    response = ops271_identity_lifecycle_metadata(warnings)
+    response.update(
+        {
+            "count": len(records),
+            "records": records,
+            "safety_boundary": dict(OPS271_IDENTITY_LIFECYCLE_SAFETY_BOUNDARY),
+        }
+    )
+    return response
+
+
+def count_records_by_field(records: list, field: str) -> dict:
+    counts = {}
+    for item in records:
+        value = item.get(field) or "Unknown"
+        counts[value] = counts.get(value, 0) + 1
+    return counts
+
+
+def ops271_identity_attention_rank(item: dict) -> tuple:
+    risk_order = {"Critical": 0, "High": 1, "Medium": 2, "Low": 3}
+    status_order = {
+        "Failed": 0,
+        "Mismatch": 1,
+        "Overdue": 2,
+        "ReviewRequired": 3,
+        "Verified": 4,
+    }
+    return (
+        risk_order.get(item.get("risk_level"), 9),
+        status_order.get(item.get("verification_status"), 9),
+        str(item.get("review_due_date") or "9999-12-31"),
+    )
+
+
 def load_team_agentops_fixture(filename: str) -> dict:
     if (
         filename not in TEAM_AGENTOPS_FIXTURE_FILENAMES
@@ -2523,6 +2677,97 @@ def ops271_access_lifecycle_events(
             "actor_role": actor_role,
         },
     )
+
+
+# 271ops Identity Lifecycle APIs are fixture-backed and read-only. They present
+# safe JML, review, exception, and evidence package metadata without mutating
+# AD, LDAP, IAM, SaaS, BPM, ServiceOps, or production identity systems.
+@app.get("/api/271ops/identity-lifecycle/events")
+def ops271_identity_lifecycle_events():
+    return ops271_identity_lifecycle_list_response("events")
+
+
+@app.get("/api/271ops/identity-lifecycle/queue")
+def ops271_identity_lifecycle_queue():
+    return ops271_identity_lifecycle_list_response("queue")
+
+
+@app.get("/api/271ops/identity-lifecycle/exceptions")
+def ops271_identity_lifecycle_exceptions():
+    return ops271_identity_lifecycle_list_response("exceptions")
+
+
+@app.get("/api/271ops/identity-lifecycle/reviews")
+def ops271_identity_lifecycle_reviews():
+    return ops271_identity_lifecycle_list_response("reviews")
+
+
+@app.get("/api/271ops/identity-lifecycle/evidence-packages")
+def ops271_identity_lifecycle_evidence_packages():
+    return ops271_identity_lifecycle_list_response("evidence_packages")
+
+
+@app.get("/api/271ops/identity-lifecycle/dashboard")
+def ops271_identity_lifecycle_dashboard():
+    warnings = []
+    events = ops271_identity_lifecycle_records("events", warnings)
+    queue = ops271_identity_lifecycle_records("queue", warnings)
+    exceptions = ops271_identity_lifecycle_records("exceptions", warnings)
+    reviews = ops271_identity_lifecycle_records("reviews", warnings)
+    evidence_packages = ops271_identity_lifecycle_records("evidence_packages", warnings)
+    event_queue_records = events + queue
+    attention_source = queue + exceptions + reviews
+    attention_statuses = {"Failed", "Mismatch", "Overdue", "ReviewRequired"}
+    top_attention_items = sorted(
+        [
+            item
+            for item in attention_source
+            if item.get("risk_level") in {"Critical", "High"}
+            or item.get("verification_status") in attention_statuses
+        ],
+        key=ops271_identity_attention_rank,
+    )[:6]
+    recent_events = sorted(
+        events, key=lambda item: str(item.get("effective_date") or ""), reverse=True
+    )[:6]
+
+    response = ops271_identity_lifecycle_metadata(warnings)
+    response.update(
+        {
+            "summary": {
+                "total_events": len(events),
+                "queue_open": len(queue),
+                "critical_findings": sum(
+                    1 for item in event_queue_records if item.get("risk_level") == "Critical"
+                ),
+                "high_risk_findings": sum(
+                    1 for item in event_queue_records if item.get("risk_level") == "High"
+                ),
+                "overdue_reviews": sum(
+                    1
+                    for item in reviews
+                    if item.get("verification_status") == "Overdue"
+                ),
+                "expiring_exceptions": sum(
+                    1
+                    for item in exceptions
+                    if item.get("verification_status") == "ReviewRequired"
+                    and item.get("exception_expiry_date")
+                ),
+                "completed_evidence_packages": sum(
+                    1
+                    for item in evidence_packages
+                    if item.get("verification_status") == "Verified"
+                ),
+            },
+            "lifecycle_breakdown": count_records_by_field(events, "event_type"),
+            "risk_breakdown": count_records_by_field(events, "risk_level"),
+            "recent_events": recent_events,
+            "top_attention_items": top_attention_items,
+            "safety_boundary": dict(OPS271_IDENTITY_LIFECYCLE_SAFETY_BOUNDARY),
+        }
+    )
+    return response
 
 
 # Team_AgentOps fixture API v1 is read-only. It reads safe demo fixtures only.
