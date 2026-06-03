@@ -169,3 +169,16 @@ Expected public API values:
 * Task #213: 271ops Evidence Control Mapping Design
 * Task #214: 271ops Account Governance Release Note
 * Task #215: 271ops Account Governance Release Tag
+
+## Task #211 Account Governance Frontend Prototype
+
+* Task #211 adds Account Governance frontend sections to `/271ops/`.
+* It fetches BPM Permission Requests, Access Review Items, and Access Lifecycle Events from read-only APIs.
+* It renders Account Governance API DATA when all three APIs are valid.
+* It falls back to local Account Governance demo data when any API fails, returns non-200, invalid JSON, or invalid schema.
+* It displays BPM Permission Requests, Access Review Queue, Access Lifecycle Events, BPM / ServiceOps / IAM mapping, KPI cards, warnings, and safety boundary.
+* It remains read-only.
+* It does not directly change IAM, AD, LDAP, or SaaS permissions.
+* It does not store raw BPM forms, raw attachments, credentials, secrets, keys, raw logs, or sensitive personal data.
+* No backend, DB, API, fixture, release, deployment, or tag changes were made.
+* It prepares Task #212 visual QA and release note preparation.

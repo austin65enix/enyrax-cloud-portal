@@ -464,3 +464,16 @@ The idea is to treat BPM IT permission requests as safe evidence references, the
 * Fixtures do not contain real BPM form content, attachments, raw logs, credentials, passwords, API keys, private keys, tokens, SSH keys, raw prompt / response, full home paths, or sensitive personal data.
 * This prepares Account Governance read-only API design.
 * No frontend, backend, DB, API, release, deployment, or tag changes were made.
+
+## Task #211 Account Governance Frontend Prototype
+
+* Task #211 adds Account Governance frontend sections to `/271ops/`.
+* It fetches BPM Permission Requests, Access Review Items, and Access Lifecycle Events from read-only APIs.
+* It renders Account Governance API DATA when all three APIs are valid.
+* It falls back to local Account Governance demo data when any API fails, returns non-200, invalid JSON, or invalid schema.
+* It displays BPM Permission Requests, Access Review Queue, Access Lifecycle Events, BPM / ServiceOps / IAM mapping, KPI cards, warnings, and safety boundary.
+* It remains read-only.
+* It does not directly change IAM, AD, LDAP, or SaaS permissions.
+* It does not store raw BPM forms, raw attachments, credentials, secrets, keys, raw logs, or sensitive personal data.
+* No backend, DB, API, fixture, release, deployment, or tag changes were made.
+* It prepares Task #212 visual QA and release note preparation.
