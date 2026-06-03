@@ -1,0 +1,64 @@
+{
+  "schema": "ops271_exception_evidence_packages_v1",
+  "source": "demo_fixture",
+  "mode": "read_only",
+  "product": "271ops",
+  "records": [
+    {
+      "evidence_package_ref": "EVD-271OPS-EXC-PKG-001",
+      "exception_id": "EXC-DEMO-001",
+      "audit_report_ref": "AUD-271OPS-EXC-001",
+      "package_status": "InProgress",
+      "generated_at": "2026-06-03T11:00:00+08:00",
+      "included_items": 4,
+      "completed_items": 2,
+      "pending_items": 2,
+      "remediation_ticket_count": 1,
+      "decision_count": 1,
+      "safety_summary": "Safe exception, approval, ticket, and evidence references only.",
+      "notes": "Temporary access package waits for revoke or renew decision."
+    },
+    {
+      "evidence_package_ref": "EVD-271OPS-EXC-PKG-004",
+      "exception_id": "EXC-DEMO-004",
+      "audit_report_ref": null,
+      "package_status": "RemediationOpen",
+      "generated_at": "2026-06-03T11:05:00+08:00",
+      "included_items": 5,
+      "completed_items": 2,
+      "pending_items": 3,
+      "remediation_ticket_count": 1,
+      "decision_count": 1,
+      "safety_summary": "Expired active exception package contains safe metadata only.",
+      "notes": "Package remains open until remediation verification is complete."
+    },
+    {
+      "evidence_package_ref": "EVD-271OPS-EXC-PKG-005",
+      "exception_id": "EXC-DEMO-005",
+      "audit_report_ref": null,
+      "package_status": "RemediationOpen",
+      "generated_at": "2026-06-03T11:10:00+08:00",
+      "included_items": 5,
+      "completed_items": 2,
+      "pending_items": 3,
+      "remediation_ticket_count": 1,
+      "decision_count": 1,
+      "safety_summary": "Leaver delay package contains safe references only.",
+      "notes": "Leaver cleanup evidence is pending verification."
+    },
+    {
+      "evidence_package_ref": "EVD-271OPS-EXC-PKG-007",
+      "exception_id": "EXC-DEMO-007",
+      "audit_report_ref": "AUD-271OPS-EXC-007",
+      "package_status": "Completed",
+      "generated_at": "2026-06-03T11:15:00+08:00",
+      "included_items": 6,
+      "completed_items": 6,
+      "pending_items": 0,
+      "remediation_ticket_count": 1,
+      "decision_count": 1,
+      "safety_summary": "Completed exception package includes safe closure and audit report references only.",
+      "notes": "Exception closed with evidence package and no raw evidence content."
+    }
+  ]
+}

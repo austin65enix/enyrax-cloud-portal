@@ -1,0 +1,115 @@
+{
+  "schema": "ops271_exception_dashboard_v1",
+  "source": "demo_fixture",
+  "mode": "read_only",
+  "product": "271ops",
+  "display_name": "271Ops Exception Governance",
+  "production_data": false,
+  "generated_at": "2026-06-03T11:20:00+08:00",
+  "warnings": [],
+  "summary": {
+    "total_exceptions": 7,
+    "active_exceptions": 6,
+    "expiring_soon": 1,
+    "expired_active": 1,
+    "privileged_exceptions": 3,
+    "emergency_over_sla": 1,
+    "remediation_open": 2,
+    "evidence_packages_completed": 1
+  },
+  "exception_type_breakdown": [
+    {"exception_type": "Temporary Access Exception", "count": 1},
+    {"exception_type": "Emergency Access Exception", "count": 1},
+    {"exception_type": "Privileged Access Exception", "count": 1},
+    {"exception_type": "Policy Exception", "count": 1},
+    {"exception_type": "Leaver Delay Exception", "count": 1},
+    {"exception_type": "Review Extension Exception", "count": 1},
+    {"exception_type": "Segregation of Duties Exception", "count": 1}
+  ],
+  "risk_breakdown": [
+    {"risk_level": "Critical", "count": 2},
+    {"risk_level": "High", "count": 3},
+    {"risk_level": "Medium", "count": 1},
+    {"risk_level": "Low", "count": 1}
+  ],
+  "status_breakdown": [
+    {"status": "ExpiringSoon", "count": 1},
+    {"status": "OverSLA", "count": 1},
+    {"status": "ReviewOverdue", "count": 1},
+    {"status": "ExpiredActive", "count": 1},
+    {"status": "RemediationOpen", "count": 1},
+    {"status": "ExtensionGranted", "count": 1},
+    {"status": "Closed", "count": 1}
+  ],
+  "top_attention_items": [
+    {
+      "exception_id": "EXC-DEMO-004",
+      "title": "Expired exception still active",
+      "status": "ExpiredActive",
+      "risk_level": "Critical",
+      "notes": "Expired exception remains active in safe summary and requires urgent remediation."
+    },
+    {
+      "exception_id": "EXC-DEMO-005",
+      "title": "Leaver access cleanup delayed",
+      "status": "RemediationOpen",
+      "risk_level": "Critical",
+      "notes": "Leaver delay exception has an open ServiceOps remediation reference."
+    },
+    {
+      "exception_id": "EXC-DEMO-002",
+      "title": "Emergency production support access over SLA",
+      "status": "OverSLA",
+      "risk_level": "High",
+      "notes": "Emergency access exceeded review SLA."
+    },
+    {
+      "exception_id": "EXC-DEMO-003",
+      "title": "Privileged exception missing review",
+      "status": "ReviewOverdue",
+      "risk_level": "High",
+      "notes": "Privileged exception has an overdue review due date."
+    }
+  ],
+  "recent_exceptions": [
+    {
+      "exception_id": "EXC-DEMO-001",
+      "exception_type": "Temporary Access Exception",
+      "status": "ExpiringSoon",
+      "risk_level": "High",
+      "expiry_date": "2026-06-08"
+    },
+    {
+      "exception_id": "EXC-DEMO-006",
+      "exception_type": "Review Extension Exception",
+      "status": "ExtensionGranted",
+      "risk_level": "Medium",
+      "expiry_date": "2026-06-12"
+    },
+    {
+      "exception_id": "EXC-DEMO-007",
+      "exception_type": "Segregation of Duties Exception",
+      "status": "Closed",
+      "risk_level": "Low",
+      "expiry_date": "2026-06-01"
+    }
+  ],
+  "safety_boundary": {
+    "design_only": true,
+    "read_only": true,
+    "production_data": false,
+    "mutation_allowed": false,
+    "direct_ad_mutation": false,
+    "direct_ldap_mutation": false,
+    "direct_iam_mutation": false,
+    "saas_permission_mutation": false,
+    "approve_reject_action_implemented": false,
+    "upload_control": false,
+    "edit_delete": false,
+    "secrets_included": false,
+    "raw_logs_included": false,
+    "raw_bpm_body_included": false,
+    "raw_attachment_content_included": false,
+    "safe_metadata_only": true
+  }
+}

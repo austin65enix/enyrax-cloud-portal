@@ -1,0 +1,50 @@
+{
+  "schema": "ops271_exception_remediation_queue_v1",
+  "source": "demo_fixture",
+  "mode": "read_only",
+  "product": "271ops",
+  "records": [
+    {
+      "remediation_id": "REM-DEMO-EXC-001",
+      "exception_id": "EXC-DEMO-004",
+      "serviceops_ticket_ref": "SVC-DEMO-EXC-004",
+      "requested_action": "Revoke Access",
+      "target_system_ref": "SaaS-DEMO-CRM",
+      "target_access_ref": "Export Permission",
+      "assigned_team": "business-applications-team",
+      "status": "Open",
+      "due_date": "2026-06-04",
+      "verification_evidence_ref": "EVD-271OPS-EXC-004",
+      "risk_level": "Critical",
+      "notes": "Expired active exception requires access revocation through existing operations workflow."
+    },
+    {
+      "remediation_id": "REM-DEMO-EXC-002",
+      "exception_id": "EXC-DEMO-005",
+      "serviceops_ticket_ref": "SVC-DEMO-EXC-005",
+      "requested_action": "Complete Leaver Cleanup",
+      "target_system_ref": "DIR-DEMO-AD",
+      "target_access_ref": "Leaver Account State",
+      "assigned_team": "identity-operations-team",
+      "status": "Open",
+      "due_date": "2026-06-04",
+      "verification_evidence_ref": "EVD-271OPS-EXC-005",
+      "risk_level": "Critical",
+      "notes": "Leaver delay exception has a remediation reference for cleanup verification."
+    },
+    {
+      "remediation_id": "REM-DEMO-EXC-003",
+      "exception_id": "EXC-DEMO-007",
+      "serviceops_ticket_ref": "SVC-DEMO-EXC-007",
+      "requested_action": "Verify Closure Evidence",
+      "target_system_ref": "SOD-DEMO-CONTROL",
+      "target_access_ref": "Temporary SoD Exception",
+      "assigned_team": "governance-evidence-team",
+      "status": "Verified",
+      "due_date": "2026-06-02",
+      "verification_evidence_ref": "EVD-271OPS-EXC-007",
+      "risk_level": "Low",
+      "notes": "Closed exception remediation is verified with safe evidence reference."
+    }
+  ]
+}
