@@ -1,0 +1,150 @@
+{
+  "schema": "dotnet_runtimeops_dashboard_v1",
+  "source": "fixture",
+  "mode": "read_only",
+  "product": "RuntimeOps",
+  "display_name": ".NET_RuntimeOps Dashboard",
+  "production_data": false,
+  "generated_at": "2026-06-03T20:20:00+08:00",
+  "warnings": [],
+  "summary": {
+    "total_services": 2,
+    "active_diagnosis_runs": 8,
+    "high_risk_findings": 6,
+    "slow_endpoints": 2,
+    "app_pool_warnings": 1,
+    "windows_service_warnings": 1,
+    "counter_evidence_count": 2,
+    "trace_evidence_count": 2,
+    "dump_evidence_count": 1,
+    "remediation_open": 5,
+    "verified_results": 1
+  },
+  "diagnosis_breakdown": [
+    {
+      "diagnosis_type": "ASP.NET API Latency Diagnosis",
+      "count": 2
+    },
+    {
+      "diagnosis_type": "IIS / App Pool Diagnosis",
+      "count": 1
+    },
+    {
+      "diagnosis_type": "Windows Service Diagnosis",
+      "count": 1
+    },
+    {
+      "diagnosis_type": "ThreadPool Diagnosis",
+      "count": 1
+    },
+    {
+      "diagnosis_type": "GC / Memory Diagnosis",
+      "count": 1
+    },
+    {
+      "diagnosis_type": "EF Core / SQL Latency Symptom Diagnosis",
+      "count": 1
+    },
+    {
+      "diagnosis_type": "External Dependency Diagnosis",
+      "count": 1
+    }
+  ],
+  "risk_breakdown": [
+    {
+      "risk_level": "Critical",
+      "count": 1
+    },
+    {
+      "risk_level": "High",
+      "count": 5
+    },
+    {
+      "risk_level": "Medium",
+      "count": 2
+    },
+    {
+      "risk_level": "Low",
+      "count": 0
+    }
+  ],
+  "service_health": [
+    {
+      "service_name": "demo-erp-api",
+      "framework": "ASP.NET Core",
+      "hosting_model": "IIS",
+      "status": "ReviewRequired",
+      "risk_level": "High",
+      "open_items": 7
+    },
+    {
+      "service_name": "demo-mes-worker",
+      "framework": ".NET Worker Service",
+      "hosting_model": "Windows Service",
+      "status": "Warning",
+      "risk_level": "Critical",
+      "open_items": 1
+    }
+  ],
+  "top_attention_items": [
+    {
+      "diagnosis_run_id": "DOTNET-DIAG-DEMO-003",
+      "service_name": "demo-mes-worker",
+      "diagnosis_type": "Windows Service Diagnosis",
+      "symptom": "Windows Service stuck",
+      "risk_level": "Critical",
+      "evidence_ref": "EVD-RUNTIME-DOTNET-003"
+    },
+    {
+      "diagnosis_run_id": "DOTNET-DIAG-DEMO-002",
+      "service_name": "demo-erp-api",
+      "diagnosis_type": "IIS / App Pool Diagnosis",
+      "symptom": "IIS App Pool recycle observed",
+      "risk_level": "High",
+      "evidence_ref": "EVD-RUNTIME-DOTNET-002"
+    },
+    {
+      "diagnosis_run_id": "DOTNET-DIAG-DEMO-004",
+      "service_name": "demo-erp-api",
+      "diagnosis_type": "ThreadPool Diagnosis",
+      "symptom": "request queue wait / thread starvation suspected",
+      "risk_level": "High",
+      "evidence_ref": "EVD-RUNTIME-DOTNET-004"
+    }
+  ],
+  "recent_diagnosis_runs": [
+    {
+      "diagnosis_run_id": "DOTNET-DIAG-DEMO-008",
+      "service_name": "demo-erp-api",
+      "diagnosis_type": "ASP.NET API Latency Diagnosis",
+      "verification_status": "Verified",
+      "risk_level": "Medium"
+    },
+    {
+      "diagnosis_run_id": "DOTNET-DIAG-DEMO-007",
+      "service_name": "demo-erp-api",
+      "diagnosis_type": "External Dependency Diagnosis",
+      "verification_status": "RemediationQueued",
+      "risk_level": "Medium"
+    },
+    {
+      "diagnosis_run_id": "DOTNET-DIAG-DEMO-006",
+      "service_name": "demo-erp-api",
+      "diagnosis_type": "EF Core / SQL Latency Symptom Diagnosis",
+      "verification_status": "RemediationQueued",
+      "risk_level": "High"
+    }
+  ],
+  "safety_boundary": {
+    "safe_metadata_only": true,
+    "production_data": false,
+    "raw_command_output_exposed": false,
+    "raw_dump_exposed": false,
+    "raw_trace_exposed": false,
+    "raw_counter_output_exposed": false,
+    "raw_event_log_full_content_exposed": false,
+    "raw_environment_dump_exposed": false,
+    "credentials_exposed": false,
+    "customer_raw_data_exposed": false
+  }
+}

@@ -1,0 +1,67 @@
+{
+  "schema": "dotnet_runtimeops_rca_findings_v1",
+  "source": "fixture",
+  "mode": "read_only",
+  "product": "RuntimeOps",
+  "display_name": ".NET_RuntimeOps RCA Findings",
+  "production_data": false,
+  "generated_at": "2026-06-03T20:20:00+08:00",
+  "warnings": [],
+  "records": [
+    {
+      "rca_finding_id": "DOTNET-RCA-DEMO-001",
+      "diagnosis_run_id": "DOTNET-DIAG-DEMO-001",
+      "service_name": "demo-erp-api",
+      "finding_type": "slow_endpoint",
+      "finding_summary": "ERP order endpoint exceeded demo latency threshold with SQL timeout contribution.",
+      "confidence": "Medium",
+      "related_evidence_refs": [
+        "EVD-RUNTIME-DOTNET-001",
+        "TRACE-RUNTIME-DOTNET-001"
+      ],
+      "remediation_ref": "REM-RUNTIME-DOTNET-001",
+      "serviceops_ticket_ref": "SVC-RUNTIME-DOTNET-001",
+      "status": "RemediationQueued",
+      "risk_level": "High",
+      "notes": "No raw SQL or request payload is included."
+    },
+    {
+      "rca_finding_id": "DOTNET-RCA-DEMO-002",
+      "diagnosis_run_id": "DOTNET-DIAG-DEMO-003",
+      "service_name": "demo-mes-worker",
+      "finding_type": "windows_service_stuck",
+      "finding_summary": "MES worker service stuck and requires controlled remediation review.",
+      "confidence": "High",
+      "related_evidence_refs": [
+        "EVD-RUNTIME-DOTNET-003",
+        "EVT-RUNTIME-DOTNET-003"
+      ],
+      "remediation_ref": "REM-RUNTIME-DOTNET-003",
+      "serviceops_ticket_ref": "SVC-RUNTIME-DOTNET-003",
+      "status": "RemediationQueued",
+      "risk_level": "Critical",
+      "notes": "No restart action is represented."
+    },
+    {
+      "rca_finding_id": "DOTNET-RCA-DEMO-003",
+      "diagnosis_run_id": "DOTNET-DIAG-DEMO-008",
+      "service_name": "demo-erp-api",
+      "finding_type": "remediation_linked",
+      "finding_summary": ".NET runtime diagnosis created ServiceOps remediation reference and verification trail.",
+      "confidence": "High",
+      "related_evidence_refs": [
+        "EVD-RUNTIME-DOTNET-008"
+      ],
+      "remediation_ref": "REM-RUNTIME-DOTNET-008",
+      "serviceops_ticket_ref": "SVC-RUNTIME-DOTNET-008",
+      "status": "Verified",
+      "risk_level": "Medium",
+      "notes": "Safe remediation reference only."
+    }
+  ],
+  "safety_boundary": {
+    "safe_metadata_only": true,
+    "raw_stack_trace_exposed": false,
+    "credentials_exposed": false
+  }
+}

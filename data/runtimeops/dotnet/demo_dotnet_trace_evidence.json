@@ -1,0 +1,43 @@
+{
+  "schema": "dotnet_runtimeops_trace_evidence_v1",
+  "source": "fixture",
+  "mode": "read_only",
+  "product": "RuntimeOps",
+  "display_name": ".NET_RuntimeOps Trace Evidence",
+  "production_data": false,
+  "generated_at": "2026-06-03T20:20:00+08:00",
+  "warnings": [],
+  "records": [
+    {
+      "trace_ref": "TRACE-RUNTIME-DOTNET-001",
+      "service_name": "demo-erp-api",
+      "diagnosis_run_id": "DOTNET-DIAG-DEMO-001",
+      "trace_type": "dotnet-trace reference",
+      "captured_at": "2026-06-03T19:14:00+08:00",
+      "duration_seconds": 60,
+      "hotspot_summary": "Demo trace indicates request handling and SQL wait contribution.",
+      "evidence_ref": "EVD-RUNTIME-DOTNET-001",
+      "raw_trace_exposed": false,
+      "risk_level": "High",
+      "notes": "Only trace summary and evidence reference are stored."
+    },
+    {
+      "trace_ref": "TRACE-RUNTIME-DOTNET-006",
+      "service_name": "demo-erp-api",
+      "diagnosis_run_id": "DOTNET-DIAG-DEMO-006",
+      "trace_type": "OpenTelemetry reference",
+      "captured_at": "2026-06-03T20:03:00+08:00",
+      "duration_seconds": 45,
+      "hotspot_summary": "Trace summary points to EF Core / SQL timeout symptom.",
+      "evidence_ref": "EVD-RUNTIME-DOTNET-006",
+      "raw_trace_exposed": false,
+      "risk_level": "High",
+      "notes": "No raw SQL or sensitive values are stored."
+    }
+  ],
+  "safety_boundary": {
+    "safe_metadata_only": true,
+    "raw_trace_exposed": false,
+    "raw_stack_trace_exposed": false
+  }
+}

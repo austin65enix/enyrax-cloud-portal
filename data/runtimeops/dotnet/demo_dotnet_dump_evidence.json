@@ -1,0 +1,29 @@
+{
+  "schema": "dotnet_runtimeops_dump_evidence_v1",
+  "source": "fixture",
+  "mode": "read_only",
+  "product": "RuntimeOps",
+  "display_name": ".NET_RuntimeOps Dump Evidence",
+  "production_data": false,
+  "generated_at": "2026-06-03T20:20:00+08:00",
+  "warnings": [],
+  "records": [
+    {
+      "dump_ref": "DUMP-RUNTIME-DOTNET-001",
+      "service_name": "demo-erp-api",
+      "diagnosis_run_id": "DOTNET-DIAG-DEMO-005",
+      "captured_at": "2026-06-03T19:55:00+08:00",
+      "dump_type": "metadata reference",
+      "dump_summary": "Safe dump metadata reference for GC memory pressure review.",
+      "raw_dump_exposed": false,
+      "evidence_ref": "EVD-RUNTIME-DOTNET-005",
+      "risk_level": "High",
+      "notes": "Raw dump content is intentionally excluded."
+    }
+  ],
+  "safety_boundary": {
+    "safe_metadata_only": true,
+    "raw_dump_exposed": false,
+    "raw_environment_variables_exposed": false
+  }
+}

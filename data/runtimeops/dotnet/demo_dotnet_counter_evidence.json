@@ -1,0 +1,45 @@
+{
+  "schema": "dotnet_runtimeops_counter_evidence_v1",
+  "source": "fixture",
+  "mode": "read_only",
+  "product": "RuntimeOps",
+  "display_name": ".NET_RuntimeOps Counter Evidence",
+  "production_data": false,
+  "generated_at": "2026-06-03T20:20:00+08:00",
+  "warnings": [],
+  "records": [
+    {
+      "counter_ref": "COUNTER-RUNTIME-DOTNET-004",
+      "service_name": "demo-erp-api",
+      "diagnosis_run_id": "DOTNET-DIAG-DEMO-004",
+      "captured_at": "2026-06-03T19:44:00+08:00",
+      "duration_seconds": 60,
+      "counter_summary": "Request queue wait and thread pool indicators exceeded demo threshold.",
+      "threadpool_summary": "ThreadPool starvation suspected from queued work item summary.",
+      "gc_summary": "GC pressure not primary signal for this run.",
+      "evidence_ref": "EVD-RUNTIME-DOTNET-004",
+      "raw_counter_output_exposed": false,
+      "risk_level": "High",
+      "notes": "dotnet-counters output is summarized only."
+    },
+    {
+      "counter_ref": "COUNTER-RUNTIME-DOTNET-005",
+      "service_name": "demo-erp-api",
+      "diagnosis_run_id": "DOTNET-DIAG-DEMO-005",
+      "captured_at": "2026-06-03T19:54:00+08:00",
+      "duration_seconds": 90,
+      "counter_summary": "Memory and GC counters exceeded demo warning threshold.",
+      "threadpool_summary": "ThreadPool indicators within demo baseline.",
+      "gc_summary": "GC memory pressure warning observed.",
+      "evidence_ref": "EVD-RUNTIME-DOTNET-005",
+      "raw_counter_output_exposed": false,
+      "risk_level": "High",
+      "notes": "Counter summary only; no raw counter output."
+    }
+  ],
+  "safety_boundary": {
+    "safe_metadata_only": true,
+    "raw_counter_output_exposed": false,
+    "raw_command_output_exposed": false
+  }
+}

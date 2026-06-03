@@ -1,0 +1,31 @@
+{
+  "schema": "dotnet_runtimeops_windows_service_snapshots_v1",
+  "source": "fixture",
+  "mode": "read_only",
+  "product": "RuntimeOps",
+  "display_name": ".NET_RuntimeOps Windows Service Snapshots",
+  "production_data": false,
+  "generated_at": "2026-06-03T20:20:00+08:00",
+  "warnings": [],
+  "records": [
+    {
+      "windows_service_snapshot_id": "DOTNET-WINSVC-SNAP-DEMO-001",
+      "service_name": "demo-mes-worker",
+      "windows_service_ref": "WINSVC-DEMO-MES-001",
+      "windows_service_status": "Stuck / NotResponding",
+      "uptime_summary": "Demo worker was active before entering not responding state.",
+      "restart_count": 0,
+      "not_responding_count": 3,
+      "event_log_ref": "EVT-RUNTIME-DOTNET-003",
+      "risk_level": "Critical",
+      "serviceops_ticket_ref": "SVC-RUNTIME-DOTNET-003",
+      "evidence_ref": "EVD-RUNTIME-DOTNET-003",
+      "notes": "No Windows Service restart action is represented."
+    }
+  ],
+  "safety_boundary": {
+    "safe_metadata_only": true,
+    "raw_service_command_output_exposed": false,
+    "raw_event_log_full_content_exposed": false
+  }
+}

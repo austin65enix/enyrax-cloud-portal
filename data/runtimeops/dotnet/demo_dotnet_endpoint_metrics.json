@@ -1,0 +1,49 @@
+{
+  "schema": "dotnet_runtimeops_endpoint_metrics_v1",
+  "source": "fixture",
+  "mode": "read_only",
+  "product": "RuntimeOps",
+  "display_name": ".NET_RuntimeOps Endpoint Metrics",
+  "production_data": false,
+  "generated_at": "2026-06-03T20:20:00+08:00",
+  "warnings": [],
+  "records": [
+    {
+      "endpoint_metric_id": "DOTNET-ENDPOINT-DEMO-001",
+      "service_name": "demo-erp-api",
+      "endpoint_ref": "/api/demo-erp/orders",
+      "method": "GET",
+      "period": "2026-06-03T19:00:00+08:00/PT15M",
+      "request_count": 420,
+      "p50_ms": 260,
+      "p95_ms": 1850,
+      "p99_ms": 3200,
+      "error_rate_percent": 2.4,
+      "timeout_count": 5,
+      "risk_level": "High",
+      "evidence_ref": "EVD-RUNTIME-DOTNET-001",
+      "notes": "ASP.NET Core endpoint latency spike demo."
+    },
+    {
+      "endpoint_metric_id": "DOTNET-ENDPOINT-DEMO-002",
+      "service_name": "demo-erp-api",
+      "endpoint_ref": "/api/demo-erp/vendor-status",
+      "method": "GET",
+      "period": "2026-06-03T20:00:00+08:00/PT15M",
+      "request_count": 180,
+      "p50_ms": 190,
+      "p95_ms": 920,
+      "p99_ms": 1400,
+      "error_rate_percent": 1.1,
+      "timeout_count": 2,
+      "risk_level": "Medium",
+      "evidence_ref": "EVD-RUNTIME-DOTNET-007",
+      "notes": "External dependency latency symptom demo."
+    }
+  ],
+  "safety_boundary": {
+    "safe_metadata_only": true,
+    "raw_request_body_exposed": false,
+    "customer_raw_data_exposed": false
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "schema": "dotnet_runtimeops_verification_results_v1",
+  "source": "fixture",
+  "mode": "read_only",
+  "product": "RuntimeOps",
+  "display_name": ".NET_RuntimeOps Verification Results",
+  "production_data": false,
+  "generated_at": "2026-06-03T20:20:00+08:00",
+  "warnings": [],
+  "records": [
+    {
+      "verification_id": "DOTNET-VERIFY-DEMO-001",
+      "diagnosis_run_id": "DOTNET-DIAG-DEMO-008",
+      "service_name": "demo-erp-api",
+      "verification_status": "Verified",
+      "verified_at": "2026-06-03T20:28:00+08:00",
+      "before_summary": "Runtime diagnosis was queued for ServiceOps remediation.",
+      "after_summary": "ServiceOps remediation reference and verification evidence were linked.",
+      "evidence_ref": "EVD-RUNTIME-DOTNET-008",
+      "serviceops_ticket_ref": "SVC-RUNTIME-DOTNET-008",
+      "notes": "Verification uses safe metadata only."
+    }
+  ],
+  "safety_boundary": {
+    "safe_metadata_only": true,
+    "production_data": false,
+    "raw_command_output_exposed": false
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "schema": "dotnet_runtimeops_app_pool_snapshots_v1",
+  "source": "fixture",
+  "mode": "read_only",
+  "product": "RuntimeOps",
+  "display_name": ".NET_RuntimeOps App Pool Snapshots",
+  "production_data": false,
+  "generated_at": "2026-06-03T20:20:00+08:00",
+  "warnings": [],
+  "records": [
+    {
+      "app_pool_snapshot_id": "DOTNET-APPPOOL-SNAP-DEMO-001",
+      "service_name": "demo-erp-api",
+      "app_pool_ref": "APPPOOL-DEMO-ERP-001",
+      "app_pool_status": "Recycled / Warning",
+      "recycle_count": 2,
+      "last_recycle_at": "2026-06-03T19:22:00+08:00",
+      "event_log_ref": "EVT-RUNTIME-DOTNET-002",
+      "risk_level": "High",
+      "evidence_ref": "EVD-RUNTIME-DOTNET-002",
+      "notes": "Safe App Pool metadata only; no IIS command output."
+    }
+  ],
+  "safety_boundary": {
+    "safe_metadata_only": true,
+    "raw_iis_config_exposed": false,
+    "raw_command_output_exposed": false
+  }
+}

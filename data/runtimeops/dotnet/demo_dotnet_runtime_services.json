@@ -1,0 +1,54 @@
+{
+  "schema": "dotnet_runtimeops_runtime_services_v1",
+  "source": "fixture",
+  "mode": "read_only",
+  "product": "RuntimeOps",
+  "display_name": ".NET_RuntimeOps Runtime Services",
+  "production_data": false,
+  "generated_at": "2026-06-03T20:20:00+08:00",
+  "warnings": [],
+  "records": [
+    {
+      "service_id": "DOTNET-SVC-DEMO-001",
+      "service_name": "demo-erp-api",
+      "service_type": "ASP.NET Core API",
+      "language_runtime": ".NET",
+      "dotnet_version_label": ".NET 8 demo",
+      "framework": "ASP.NET Core",
+      "hosting_model": "IIS",
+      "environment": "enterprise-demo",
+      "host_ref": "HOST-DEMO-WIN-001",
+      "app_pool_ref": "APPPOOL-DEMO-ERP-001",
+      "windows_service_ref": "",
+      "owner_team": "enterprise-applications",
+      "status": "ReviewRequired",
+      "risk_level": "High",
+      "notes": "Demo ERP API with safe IIS and ASP.NET Core runtime metadata."
+    },
+    {
+      "service_id": "DOTNET-SVC-DEMO-002",
+      "service_name": "demo-mes-worker",
+      "service_type": "Windows Service",
+      "language_runtime": ".NET",
+      "dotnet_version_label": ".NET 8 demo",
+      "framework": ".NET Worker Service",
+      "hosting_model": "Windows Service",
+      "environment": "enterprise-demo",
+      "host_ref": "HOST-DEMO-WIN-002",
+      "app_pool_ref": "",
+      "windows_service_ref": "WINSVC-DEMO-MES-001",
+      "owner_team": "manufacturing-systems",
+      "status": "Warning",
+      "risk_level": "High",
+      "notes": "Demo MES worker with safe Windows Service metadata."
+    }
+  ],
+  "safety_boundary": {
+    "safe_metadata_only": true,
+    "production_data": false,
+    "raw_command_output_exposed": false,
+    "raw_event_log_full_content_exposed": false,
+    "raw_dump_exposed": false,
+    "credentials_exposed": false
+  }
+}
