@@ -182,6 +182,51 @@ RUNTIMEOPS_DOTNET_SAFETY_BOUNDARY = {
         "customer_raw_data",
     ],
 }
+RUNTIMEOPS_PYTHON_FIXTURE_DIR = PROJECT_ROOT / "data" / "runtimeops" / "python"
+RUNTIMEOPS_PYTHON_FIXTURE_FILES = {
+    "services": "demo_python_runtime_services.json",
+    "diagnosis_runs": "demo_python_diagnosis_runs.json",
+    "endpoint_metrics": "demo_python_endpoint_metrics.json",
+    "worker_snapshots": "demo_python_worker_snapshots.json",
+    "background_jobs": "demo_python_background_jobs.json",
+    "profile_evidence": "demo_python_profile_evidence.json",
+    "memory_evidence": "demo_python_memory_evidence.json",
+    "rca_findings": "demo_python_rca_findings.json",
+    "verification_results": "demo_python_verification_results.json",
+    "dashboard": "demo_python_runtime_dashboard.json",
+}
+RUNTIMEOPS_PYTHON_SAFETY_BOUNDARY = {
+    "read_only": True,
+    "mutation_allowed": False,
+    "safe_metadata_only": True,
+    "get_only": True,
+    "no_post_put_patch_delete": True,
+    "no_restart_action": True,
+    "no_kill_process": True,
+    "no_config_change": True,
+    "no_database_write": True,
+    "no_production_diagnostic_command": True,
+    "no_raw_command_output": True,
+    "no_raw_profile_content": True,
+    "no_raw_memory_dump": True,
+    "no_raw_stack_trace": True,
+    "no_raw_environment_variables": True,
+    "no_credential_exposure": True,
+    "no_customer_raw_data": True,
+    "excludes": [
+        "passwords",
+        "credentials",
+        "api_keys",
+        "private_keys",
+        "raw_logs",
+        "raw_command_output",
+        "raw_memory_dump",
+        "raw_profile_content",
+        "raw_stack_trace",
+        "raw_environment_variables",
+        "customer_raw_data",
+    ],
+}
 TEAM_AGENTOPS_FIXTURE_FILENAMES = {
     "demo_agent_runs.json",
     "demo_agent_reviews.json",
@@ -2110,6 +2155,258 @@ def runtimeops_dotnet_detail_response(diagnosis_run_id: str) -> dict:
     return response
 
 
+def runtimeops_python_warning(code: str, fixture_key: Optional[str] = None) -> dict:
+    messages = {
+        "fixture_unavailable": "Python_RuntimeOps fixture is temporarily unavailable.",
+        "fixture_invalid_json": "Python_RuntimeOps fixture JSON is invalid.",
+        "fixture_invalid_schema": "Python_RuntimeOps fixture schema is invalid.",
+        "fixture_empty": "Python_RuntimeOps fixture has no records.",
+        "diagnosis_run_not_found": "Python_RuntimeOps diagnosis run was not found.",
+    }
+    warning = {"code": code, "message": messages.get(code, messages["fixture_unavailable"])}
+    if fixture_key:
+        warning["fixture"] = fixture_key
+    return warning
+
+
+def runtimeops_python_metadata(warnings: Optional[list] = None, source: str = "fixture") -> dict:
+    return {
+        "source": source,
+        "mode": "read_only",
+        "product": "RuntimeOps",
+        "display_name": "Python_RuntimeOps",
+        "production_data": False,
+        "generated_at": now_utc(),
+        "warnings": warnings if warnings is not None else [],
+    }
+
+
+def runtimeops_python_source(warnings: list) -> str:
+    fallback_codes = {"fixture_unavailable", "fixture_invalid_json", "fixture_invalid_schema", "diagnosis_run_not_found"}
+    return "safe_fallback" if any(item.get("code") in fallback_codes for item in warnings if isinstance(item, dict)) else "fixture"
+
+
+def load_runtimeops_python_fixture(fixture_key: str, warnings: list) -> dict:
+    fixture_filename = RUNTIMEOPS_PYTHON_FIXTURE_FILES.get(fixture_key)
+    if fixture_filename is None:
+        append_unique_warning(warnings, runtimeops_python_warning("fixture_unavailable", fixture_key))
+        return {}
+
+    try:
+        data = json.loads((RUNTIMEOPS_PYTHON_FIXTURE_DIR / fixture_filename).read_text())
+    except FileNotFoundError:
+        append_unique_warning(warnings, runtimeops_python_warning("fixture_unavailable", fixture_key))
+        return {}
+    except json.JSONDecodeError:
+        append_unique_warning(warnings, runtimeops_python_warning("fixture_invalid_json", fixture_key))
+        return {}
+    except OSError:
+        append_unique_warning(warnings, runtimeops_python_warning("fixture_unavailable", fixture_key))
+        return {}
+
+    if not isinstance(data, dict):
+        append_unique_warning(warnings, runtimeops_python_warning("fixture_invalid_schema", fixture_key))
+        return {}
+
+    if fixture_key == "dashboard":
+        required_fields = (
+            "summary",
+            "diagnosis_breakdown",
+            "risk_breakdown",
+            "service_health",
+            "top_attention_items",
+            "recent_diagnosis_runs",
+            "safety_boundary",
+        )
+        if any(field not in data for field in required_fields):
+            append_unique_warning(warnings, runtimeops_python_warning("fixture_invalid_schema", fixture_key))
+            return {}
+        return data
+
+    records = data.get("records", [])
+    if not isinstance(records, list):
+        append_unique_warning(warnings, runtimeops_python_warning("fixture_invalid_schema", fixture_key))
+        return {}
+    if not records:
+        append_unique_warning(warnings, runtimeops_python_warning("fixture_empty", fixture_key))
+    return data
+
+
+def runtimeops_python_records(fixture_key: str, warnings: list) -> list:
+    data = load_runtimeops_python_fixture(fixture_key, warnings)
+    records = data.get("records", [])
+    if not isinstance(records, list):
+        return []
+    return [item for item in records if isinstance(item, dict)]
+
+
+def runtimeops_python_list_response(
+    fixture_key: str, records: Optional[list] = None, warnings: Optional[list] = None
+) -> dict:
+    response_warnings = warnings if warnings is not None else []
+    response_records = records if records is not None else runtimeops_python_records(fixture_key, response_warnings)
+    response = runtimeops_python_metadata(response_warnings, runtimeops_python_source(response_warnings))
+    response.update(
+        {
+            "count": len(response_records),
+            "records": response_records,
+            "safety_boundary": dict(RUNTIMEOPS_PYTHON_SAFETY_BOUNDARY),
+        }
+    )
+    return response
+
+
+def runtimeops_python_is_slow_endpoint(item: dict) -> bool:
+    return float(item.get("p95_ms") or 0) > 750 or float(item.get("p99_ms") or 0) > 1000 or int(item.get("timeout_count") or 0) > 0
+
+
+def runtimeops_python_has_status(item: dict, field: str, statuses: set) -> bool:
+    status = str(item.get(field) or "").strip().lower()
+    return any(value.lower() in status for value in statuses)
+
+
+def runtimeops_python_safe_profile_evidence(warnings: list) -> list:
+    return [
+        item for item in runtimeops_python_records("profile_evidence", warnings)
+        if item.get("raw_profile_exposed") is False
+    ]
+
+
+def runtimeops_python_safe_memory_evidence(warnings: list) -> list:
+    return [
+        item for item in runtimeops_python_records("memory_evidence", warnings)
+        if item.get("raw_dump_exposed") is False
+    ]
+
+
+def runtimeops_python_dashboard() -> dict:
+    warnings = []
+    dashboard = load_runtimeops_python_fixture("dashboard", warnings)
+    if dashboard:
+        response = runtimeops_python_metadata(warnings, runtimeops_python_source(warnings))
+        response.update(
+            {
+                "summary": dashboard.get("summary", {}),
+                "diagnosis_breakdown": dashboard.get("diagnosis_breakdown", []),
+                "risk_breakdown": dashboard.get("risk_breakdown", []),
+                "service_health": dashboard.get("service_health", []),
+                "top_attention_items": dashboard.get("top_attention_items", []),
+                "recent_diagnosis_runs": dashboard.get("recent_diagnosis_runs", []),
+                "safety_boundary": dict(RUNTIMEOPS_PYTHON_SAFETY_BOUNDARY),
+            }
+        )
+        return response
+
+    services = runtimeops_python_records("services", warnings)
+    diagnosis_runs = runtimeops_python_records("diagnosis_runs", warnings)
+    endpoint_metrics = runtimeops_python_records("endpoint_metrics", warnings)
+    worker_snapshots = runtimeops_python_records("worker_snapshots", warnings)
+    background_jobs = runtimeops_python_records("background_jobs", warnings)
+    profile_evidence = runtimeops_python_safe_profile_evidence(warnings)
+    memory_evidence = runtimeops_python_safe_memory_evidence(warnings)
+    rca_findings = runtimeops_python_records("rca_findings", warnings)
+    verification_results = runtimeops_python_records("verification_results", warnings)
+    high_risk = {"High", "Critical"}
+    response = runtimeops_python_metadata(warnings, runtimeops_python_source(warnings))
+    response.update(
+        {
+            "summary": {
+                "total_services": len(services),
+                "active_diagnosis_runs": len(diagnosis_runs),
+                "high_risk_findings": sum(1 for item in rca_findings if item.get("risk_level") in high_risk),
+                "slow_endpoints": sum(1 for item in endpoint_metrics if runtimeops_python_is_slow_endpoint(item)),
+                "worker_warnings": sum(1 for item in worker_snapshots if item.get("risk_level") in high_risk),
+                "background_job_failures": sum(
+                    1 for item in background_jobs
+                    if runtimeops_python_has_status(item, "status", {"Timeout", "Delayed", "Failed", "Warning"})
+                ),
+                "profile_evidence_count": len(profile_evidence),
+                "memory_watch_items": len(memory_evidence),
+                "remediation_open": sum(1 for item in diagnosis_runs if item.get("remediation_ref") and item.get("verification_status") != "Verified"),
+                "verified_results": len(verification_results),
+            },
+            "diagnosis_breakdown": count_records_by_field(diagnosis_runs, "diagnosis_type"),
+            "risk_breakdown": count_records_by_field(diagnosis_runs, "risk_level"),
+            "service_health": services,
+            "top_attention_items": [item for item in diagnosis_runs if item.get("risk_level") in high_risk][:6],
+            "recent_diagnosis_runs": sorted(diagnosis_runs, key=lambda item: str(item.get("started_at") or ""), reverse=True)[:6],
+            "safety_boundary": dict(RUNTIMEOPS_PYTHON_SAFETY_BOUNDARY),
+        }
+    )
+    return response
+
+
+def runtimeops_python_detail_response(diagnosis_run_id: str) -> dict:
+    warnings = []
+    diagnosis_runs = runtimeops_python_records("diagnosis_runs", warnings)
+    diagnosis_run = next((item for item in diagnosis_runs if item.get("diagnosis_run_id") == diagnosis_run_id), None)
+    if diagnosis_run is None:
+        append_unique_warning(warnings, runtimeops_python_warning("diagnosis_run_not_found", "diagnosis_runs"))
+
+    def related(records: list) -> list:
+        if diagnosis_run is None:
+            return []
+        refs = {
+            diagnosis_run_id,
+            diagnosis_run.get("endpoint_ref"),
+            diagnosis_run.get("worker_ref"),
+            diagnosis_run.get("process_ref"),
+            diagnosis_run.get("job_ref"),
+            diagnosis_run.get("profile_ref"),
+            diagnosis_run.get("memory_ref"),
+            diagnosis_run.get("trace_ref"),
+            diagnosis_run.get("evidence_ref"),
+            diagnosis_run.get("serviceops_ticket_ref"),
+        }
+        refs = {item for item in refs if item}
+        return [item for item in records if any(value in refs for value in item.values())]
+
+    endpoint_metrics = related(runtimeops_python_records("endpoint_metrics", warnings))
+    worker_snapshots = related(runtimeops_python_records("worker_snapshots", warnings))
+    background_jobs = related(runtimeops_python_records("background_jobs", warnings))
+    profile_evidence = [
+        item for item in runtimeops_python_safe_profile_evidence(warnings)
+        if item.get("diagnosis_run_id") == diagnosis_run_id or item in related([item])
+    ]
+    memory_evidence = [
+        item for item in runtimeops_python_safe_memory_evidence(warnings)
+        if item.get("diagnosis_run_id") == diagnosis_run_id or item in related([item])
+    ]
+    rca_findings = [
+        item for item in runtimeops_python_records("rca_findings", warnings)
+        if item.get("diagnosis_run_id") == diagnosis_run_id
+    ]
+    verification_results = [
+        item for item in runtimeops_python_records("verification_results", warnings)
+        if item.get("diagnosis_run_id") == diagnosis_run_id
+    ]
+    response = runtimeops_python_metadata(warnings, runtimeops_python_source(warnings))
+    response.update(
+        {
+            "diagnosis_run_id": diagnosis_run_id,
+            "diagnosis_run": diagnosis_run,
+            "endpoint_metrics": endpoint_metrics,
+            "worker_snapshots": worker_snapshots,
+            "background_jobs": background_jobs,
+            "profile_evidence": profile_evidence,
+            "memory_evidence": memory_evidence,
+            "rca_findings": rca_findings,
+            "verification_results": verification_results,
+            "summary": {
+                "endpoint_metric_count": len(endpoint_metrics),
+                "worker_snapshot_count": len(worker_snapshots),
+                "background_job_count": len(background_jobs),
+                "profile_evidence_count": len(profile_evidence),
+                "memory_evidence_count": len(memory_evidence),
+                "rca_finding_count": len(rca_findings),
+                "verification_result_count": len(verification_results),
+            },
+            "safety_boundary": dict(RUNTIMEOPS_PYTHON_SAFETY_BOUNDARY),
+        }
+    )
+    return response
+
+
 def load_team_agentops_fixture(filename: str) -> dict:
     if (
         filename not in TEAM_AGENTOPS_FIXTURE_FILENAMES
@@ -3440,6 +3737,76 @@ def runtimeops_dotnet_verification_results():
 @app.get("/api/runtimeops/dotnet/dashboard")
 def runtimeops_dotnet_dashboard_endpoint():
     return runtimeops_dotnet_dashboard()
+
+
+# Python_RuntimeOps fixture API v1 is read-only. It reads safe demo fixtures only.
+# It does not restart workers, kill processes, execute diagnostics, mutate config, or write DB state.
+@app.get("/api/runtimeops/python/services")
+def runtimeops_python_services():
+    return runtimeops_python_list_response("services")
+
+
+@app.get("/api/runtimeops/python/diagnosis-runs")
+def runtimeops_python_diagnosis_runs():
+    return runtimeops_python_list_response("diagnosis_runs")
+
+
+@app.get("/api/runtimeops/python/diagnosis-runs/{diagnosis_run_id}")
+def runtimeops_python_diagnosis_run_detail(diagnosis_run_id: str):
+    return runtimeops_python_detail_response(diagnosis_run_id)
+
+
+@app.get("/api/runtimeops/python/slow-endpoints")
+def runtimeops_python_slow_endpoints():
+    warnings = []
+    metrics = runtimeops_python_records("endpoint_metrics", warnings)
+    records = [item for item in metrics if runtimeops_python_is_slow_endpoint(item)]
+    return runtimeops_python_list_response("endpoint_metrics", records, warnings)
+
+
+@app.get("/api/runtimeops/python/worker-snapshots")
+def runtimeops_python_worker_snapshots():
+    return runtimeops_python_list_response("worker_snapshots")
+
+
+@app.get("/api/runtimeops/python/background-jobs")
+def runtimeops_python_background_jobs():
+    warnings = []
+    jobs = runtimeops_python_records("background_jobs", warnings)
+    records = [
+        item for item in jobs
+        if runtimeops_python_has_status(item, "status", {"Timeout", "Delayed", "Failed", "Warning"})
+    ]
+    return runtimeops_python_list_response("background_jobs", records, warnings)
+
+
+@app.get("/api/runtimeops/python/profile-evidence")
+def runtimeops_python_profile_evidence():
+    warnings = []
+    records = runtimeops_python_safe_profile_evidence(warnings)
+    return runtimeops_python_list_response("profile_evidence", records, warnings)
+
+
+@app.get("/api/runtimeops/python/memory-evidence")
+def runtimeops_python_memory_evidence():
+    warnings = []
+    records = runtimeops_python_safe_memory_evidence(warnings)
+    return runtimeops_python_list_response("memory_evidence", records, warnings)
+
+
+@app.get("/api/runtimeops/python/rca-findings")
+def runtimeops_python_rca_findings():
+    return runtimeops_python_list_response("rca_findings")
+
+
+@app.get("/api/runtimeops/python/verification-results")
+def runtimeops_python_verification_results():
+    return runtimeops_python_list_response("verification_results")
+
+
+@app.get("/api/runtimeops/python/dashboard")
+def runtimeops_python_dashboard_endpoint():
+    return runtimeops_python_dashboard()
 
 
 # Team_AgentOps fixture API v1 is read-only. It reads safe demo fixtures only.
