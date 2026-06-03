@@ -1,0 +1,30 @@
+{
+  "schema": "python_runtimeops_memory_evidence_v1",
+  "source": "fixture",
+  "mode": "read_only",
+  "product": "RuntimeOps",
+  "display_name": "Python_RuntimeOps Memory Evidence",
+  "production_data": false,
+  "generated_at": "2026-06-03T19:55:00+08:00",
+  "warnings": [],
+  "records": [
+    {
+      "memory_ref": "MEM-RUNTIME-PY-001",
+      "service_name": "enyrax-api",
+      "diagnosis_run_id": "PY-DIAG-DEMO-005",
+      "captured_at": "2026-06-03T18:53:00+08:00",
+      "rss_mb": 768,
+      "growth_rate_summary": "RSS increased across the demo observation window; leak not confirmed.",
+      "suspected_area": "response aggregation cache or large JSON generation path",
+      "raw_dump_exposed": false,
+      "evidence_ref": "EVD-RUNTIME-PY-005",
+      "risk_level": "High",
+      "notes": "No raw memory dump or object dump is exposed."
+    }
+  ],
+  "safety_boundary": {
+    "safe_metadata_only": true,
+    "raw_memory_dump_exposed": false,
+    "raw_environment_variables_exposed": false
+  }
+}

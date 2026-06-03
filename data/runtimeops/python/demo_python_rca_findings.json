@@ -1,0 +1,83 @@
+{
+  "schema": "python_runtimeops_rca_findings_v1",
+  "source": "fixture",
+  "mode": "read_only",
+  "product": "RuntimeOps",
+  "display_name": "Python_RuntimeOps RCA Findings",
+  "production_data": false,
+  "generated_at": "2026-06-03T19:55:00+08:00",
+  "warnings": [],
+  "records": [
+    {
+      "rca_finding_id": "PY-RCA-DEMO-001",
+      "diagnosis_run_id": "PY-DIAG-DEMO-001",
+      "service_name": "enyrax-api",
+      "finding_type": "slow_endpoint",
+      "finding_summary": "Identity lifecycle dashboard route exceeded demo latency threshold during aggregation.",
+      "confidence": "Medium",
+      "related_evidence_refs": [
+        "EVD-RUNTIME-PY-001",
+        "TRACE-RUNTIME-PY-001"
+      ],
+      "remediation_ref": "REM-RUNTIME-PY-001",
+      "serviceops_ticket_ref": "SVC-RUNTIME-PY-001",
+      "status": "RemediationQueued",
+      "risk_level": "High",
+      "notes": "RCA summary is safe and does not include raw request data."
+    },
+    {
+      "rca_finding_id": "PY-RCA-DEMO-002",
+      "diagnosis_run_id": "PY-DIAG-DEMO-003",
+      "service_name": "enyrax-sync-worker",
+      "finding_type": "background_job_delay",
+      "finding_summary": "Sync delay likely related to external ingestion dependency timing.",
+      "confidence": "Medium",
+      "related_evidence_refs": [
+        "EVD-RUNTIME-PY-003"
+      ],
+      "remediation_ref": "REM-RUNTIME-PY-003",
+      "serviceops_ticket_ref": "SVC-RUNTIME-PY-003",
+      "status": "RemediationQueued",
+      "risk_level": "Medium",
+      "notes": "No raw log body is included."
+    },
+    {
+      "rca_finding_id": "PY-RCA-DEMO-003",
+      "diagnosis_run_id": "PY-DIAG-DEMO-005",
+      "service_name": "enyrax-api",
+      "finding_type": "memory_growth_suspected",
+      "finding_summary": "Memory growth suspected; requires additional read-only evidence before remediation.",
+      "confidence": "Low",
+      "related_evidence_refs": [
+        "EVD-RUNTIME-PY-005",
+        "MEM-RUNTIME-PY-001"
+      ],
+      "remediation_ref": "",
+      "serviceops_ticket_ref": "SVC-RUNTIME-PY-005",
+      "status": "ReviewRequired",
+      "risk_level": "High",
+      "notes": "Memory dump content is intentionally excluded."
+    },
+    {
+      "rca_finding_id": "PY-RCA-DEMO-004",
+      "diagnosis_run_id": "PY-DIAG-DEMO-008",
+      "service_name": "enyrax-api",
+      "finding_type": "remediation_linked",
+      "finding_summary": "Runtime diagnosis created ServiceOps remediation reference and verification trail.",
+      "confidence": "High",
+      "related_evidence_refs": [
+        "EVD-RUNTIME-PY-008"
+      ],
+      "remediation_ref": "REM-RUNTIME-PY-008",
+      "serviceops_ticket_ref": "SVC-RUNTIME-PY-008",
+      "status": "Verified",
+      "risk_level": "Medium",
+      "notes": "Safe remediation reference only."
+    }
+  ],
+  "safety_boundary": {
+    "safe_metadata_only": true,
+    "raw_stack_trace_exposed": false,
+    "credentials_exposed": false
+  }
+}

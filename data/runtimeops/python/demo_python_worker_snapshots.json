@@ -1,0 +1,47 @@
+{
+  "schema": "python_runtimeops_worker_snapshots_v1",
+  "source": "fixture",
+  "mode": "read_only",
+  "product": "RuntimeOps",
+  "display_name": "Python_RuntimeOps Worker Snapshots",
+  "production_data": false,
+  "generated_at": "2026-06-03T19:55:00+08:00",
+  "warnings": [],
+  "records": [
+    {
+      "worker_snapshot_id": "PY-WORKER-SNAP-DEMO-001",
+      "service_name": "enyrax-api",
+      "worker_ref": "WORKER-DEMO-UVICORN-002",
+      "process_ref": "PROC-DEMO-UVICORN-002",
+      "status": "TimeoutSuspected",
+      "uptime_summary": "Demo worker has been active during the observation window.",
+      "cpu_percent": 72.4,
+      "memory_mb": 512,
+      "restart_count": 0,
+      "timeout_count": 4,
+      "risk_level": "High",
+      "evidence_ref": "EVD-RUNTIME-PY-002",
+      "notes": "No raw process command line is exposed."
+    },
+    {
+      "worker_snapshot_id": "PY-WORKER-SNAP-DEMO-002",
+      "service_name": "enyrax-sync-worker",
+      "worker_ref": "WORKER-DEMO-SYNC-001",
+      "process_ref": "PROC-DEMO-WORKER-001",
+      "status": "Warning",
+      "uptime_summary": "Demo sync worker is reachable but delayed.",
+      "cpu_percent": 38.1,
+      "memory_mb": 284,
+      "restart_count": 0,
+      "timeout_count": 2,
+      "risk_level": "Medium",
+      "evidence_ref": "EVD-RUNTIME-PY-003",
+      "notes": "Safe worker metadata only."
+    }
+  ],
+  "safety_boundary": {
+    "safe_metadata_only": true,
+    "raw_command_output_exposed": false,
+    "raw_process_args_exposed": false
+  }
+}

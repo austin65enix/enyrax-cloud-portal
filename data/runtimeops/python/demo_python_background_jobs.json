@@ -1,0 +1,49 @@
+{
+  "schema": "python_runtimeops_background_jobs_v1",
+  "source": "fixture",
+  "mode": "read_only",
+  "product": "RuntimeOps",
+  "display_name": "Python_RuntimeOps Background Jobs",
+  "production_data": false,
+  "generated_at": "2026-06-03T19:55:00+08:00",
+  "warnings": [],
+  "records": [
+    {
+      "job_event_id": "PY-JOB-EVENT-DEMO-001",
+      "service_name": "enyrax-sync-worker",
+      "job_ref": "JOB-DEMO-WAZUH-GRAYLOG-SYNC-001",
+      "job_type": "sync",
+      "schedule_ref": "SCHED-DEMO-RUNTIME-PY-001",
+      "last_success_at": "2026-06-03T17:42:00+08:00",
+      "last_failure_at": "2026-06-03T18:25:00+08:00",
+      "delay_minutes": 43,
+      "failure_count": 2,
+      "status": "Delayed",
+      "risk_level": "Medium",
+      "serviceops_ticket_ref": "SVC-RUNTIME-PY-003",
+      "evidence_ref": "EVD-RUNTIME-PY-003",
+      "notes": "Wazuh / Graylog ingestion delay demo with safe references only."
+    },
+    {
+      "job_event_id": "PY-JOB-EVENT-DEMO-002",
+      "service_name": "enyrax-sync-worker",
+      "job_ref": "JOB-DEMO-FIXTURE-VERIFY-001",
+      "job_type": "fixture_verification",
+      "schedule_ref": "SCHED-DEMO-RUNTIME-PY-002",
+      "last_success_at": "2026-06-03T18:12:00+08:00",
+      "last_failure_at": "2026-06-03T18:39:00+08:00",
+      "delay_minutes": 0,
+      "failure_count": 4,
+      "status": "Warning",
+      "risk_level": "Medium",
+      "serviceops_ticket_ref": "SVC-RUNTIME-PY-004",
+      "evidence_ref": "EVD-RUNTIME-PY-004",
+      "notes": "Fixture loader warning creates runtime diagnosis."
+    }
+  ],
+  "safety_boundary": {
+    "safe_metadata_only": true,
+    "raw_logs_exposed": false,
+    "raw_command_output_exposed": false
+  }
+}

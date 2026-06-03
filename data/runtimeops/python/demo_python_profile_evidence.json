@@ -1,0 +1,30 @@
+{
+  "schema": "python_runtimeops_profile_evidence_v1",
+  "source": "fixture",
+  "mode": "read_only",
+  "product": "RuntimeOps",
+  "display_name": "Python_RuntimeOps Profile Evidence",
+  "production_data": false,
+  "generated_at": "2026-06-03T19:55:00+08:00",
+  "warnings": [],
+  "records": [
+    {
+      "profile_ref": "PROF-RUNTIME-PY-001",
+      "service_name": "enyrax-api",
+      "diagnosis_run_id": "PY-DIAG-DEMO-006",
+      "profile_type": "py-spy flamegraph reference",
+      "captured_at": "2026-06-03T19:02:00+08:00",
+      "duration_seconds": 60,
+      "hotspot_summary": "Demo profile indicates response serialization and aggregation hotspots.",
+      "evidence_ref": "EVD-RUNTIME-PY-006",
+      "raw_profile_exposed": false,
+      "risk_level": "Low",
+      "notes": "Only profile summary and evidence reference are stored."
+    }
+  ],
+  "safety_boundary": {
+    "safe_metadata_only": true,
+    "raw_profile_content_exposed": false,
+    "raw_stack_trace_exposed": false
+  }
+}

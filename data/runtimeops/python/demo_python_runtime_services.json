@@ -1,0 +1,50 @@
+{
+  "schema": "python_runtimeops_runtime_services_v1",
+  "source": "fixture",
+  "mode": "read_only",
+  "product": "RuntimeOps",
+  "display_name": "Python_RuntimeOps Runtime Services",
+  "production_data": false,
+  "generated_at": "2026-06-03T19:55:00+08:00",
+  "warnings": [],
+  "records": [
+    {
+      "service_id": "PY-SVC-DEMO-001",
+      "service_name": "enyrax-api",
+      "service_type": "FastAPI backend",
+      "language_runtime": "Python",
+      "python_version_label": "Python 3.x",
+      "framework": "FastAPI",
+      "environment": "production-demo",
+      "host_ref": "HOST-DEMO-TOKYO-001",
+      "systemd_unit_ref": "enyrax-api.service",
+      "owner_team": "platform-operations",
+      "status": "ReviewRequired",
+      "risk_level": "High",
+      "notes": "Self-diagnosis demo service using safe metadata only."
+    },
+    {
+      "service_id": "PY-SVC-DEMO-002",
+      "service_name": "enyrax-sync-worker",
+      "service_type": "background worker",
+      "language_runtime": "Python",
+      "python_version_label": "Python 3.x",
+      "framework": "Scheduled Python Worker",
+      "environment": "production-demo",
+      "host_ref": "HOST-DEMO-TOKYO-001",
+      "systemd_unit_ref": "enyrax-sync-worker.service",
+      "owner_team": "platform-operations",
+      "status": "Warning",
+      "risk_level": "Medium",
+      "notes": "Demo worker for Wazuh / Graylog safe ingestion delay scenarios."
+    }
+  ],
+  "safety_boundary": {
+    "safe_metadata_only": true,
+    "production_data": false,
+    "raw_command_output_exposed": false,
+    "raw_memory_dump_exposed": false,
+    "raw_profile_content_exposed": false,
+    "credentials_exposed": false
+  }
+}

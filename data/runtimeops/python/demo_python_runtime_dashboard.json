@@ -1,0 +1,140 @@
+{
+  "schema": "python_runtimeops_dashboard_v1",
+  "source": "fixture",
+  "mode": "read_only",
+  "product": "RuntimeOps",
+  "display_name": "Python_RuntimeOps Dashboard",
+  "production_data": false,
+  "generated_at": "2026-06-03T19:55:00+08:00",
+  "warnings": [],
+  "summary": {
+    "total_services": 2,
+    "active_diagnosis_runs": 8,
+    "high_risk_findings": 3,
+    "slow_endpoints": 2,
+    "worker_warnings": 2,
+    "background_job_failures": 2,
+    "profile_evidence_count": 1,
+    "memory_watch_items": 1,
+    "remediation_open": 5,
+    "verified_results": 2
+  },
+  "diagnosis_breakdown": [
+    {
+      "diagnosis_type": "API Latency Diagnosis",
+      "count": 2
+    },
+    {
+      "diagnosis_type": "Worker / Process Diagnosis",
+      "count": 1
+    },
+    {
+      "diagnosis_type": "Background Job Diagnosis",
+      "count": 1
+    },
+    {
+      "diagnosis_type": "Exception / Error Rate Diagnosis",
+      "count": 1
+    },
+    {
+      "diagnosis_type": "Memory Diagnosis",
+      "count": 1
+    },
+    {
+      "diagnosis_type": "CPU Profile Diagnosis",
+      "count": 1
+    },
+    {
+      "diagnosis_type": "External Dependency Diagnosis",
+      "count": 1
+    }
+  ],
+  "risk_breakdown": [
+    {
+      "risk_level": "High",
+      "count": 3
+    },
+    {
+      "risk_level": "Medium",
+      "count": 4
+    },
+    {
+      "risk_level": "Low",
+      "count": 1
+    }
+  ],
+  "service_health": [
+    {
+      "service_name": "enyrax-api",
+      "status": "ReviewRequired",
+      "risk_level": "High",
+      "open_items": 6
+    },
+    {
+      "service_name": "enyrax-sync-worker",
+      "status": "Warning",
+      "risk_level": "Medium",
+      "open_items": 2
+    }
+  ],
+  "top_attention_items": [
+    {
+      "diagnosis_run_id": "PY-DIAG-DEMO-001",
+      "service_name": "enyrax-api",
+      "diagnosis_type": "API Latency Diagnosis",
+      "symptom": "FastAPI endpoint latency spike",
+      "risk_level": "High",
+      "evidence_ref": "EVD-RUNTIME-PY-001"
+    },
+    {
+      "diagnosis_run_id": "PY-DIAG-DEMO-002",
+      "service_name": "enyrax-api",
+      "diagnosis_type": "Worker / Process Diagnosis",
+      "symptom": "Uvicorn worker timeout suspected",
+      "risk_level": "High",
+      "evidence_ref": "EVD-RUNTIME-PY-002"
+    },
+    {
+      "diagnosis_run_id": "PY-DIAG-DEMO-005",
+      "service_name": "enyrax-api",
+      "diagnosis_type": "Memory Diagnosis",
+      "symptom": "Python memory growth suspected",
+      "risk_level": "High",
+      "evidence_ref": "EVD-RUNTIME-PY-005"
+    }
+  ],
+  "recent_diagnosis_runs": [
+    {
+      "diagnosis_run_id": "PY-DIAG-DEMO-008",
+      "service_name": "enyrax-api",
+      "diagnosis_type": "API Latency Diagnosis",
+      "verification_status": "Verified",
+      "risk_level": "Medium"
+    },
+    {
+      "diagnosis_run_id": "PY-DIAG-DEMO-007",
+      "service_name": "enyrax-api",
+      "diagnosis_type": "External Dependency Diagnosis",
+      "verification_status": "RemediationQueued",
+      "risk_level": "Medium"
+    },
+    {
+      "diagnosis_run_id": "PY-DIAG-DEMO-006",
+      "service_name": "enyrax-api",
+      "diagnosis_type": "CPU Profile Diagnosis",
+      "verification_status": "Verified",
+      "risk_level": "Low"
+    }
+  ],
+  "safety_boundary": {
+    "safe_metadata_only": true,
+    "production_data": false,
+    "raw_command_output_exposed": false,
+    "raw_memory_dump_exposed": false,
+    "raw_profile_content_exposed": false,
+    "raw_stack_trace_exposed": false,
+    "raw_environment_dump_exposed": false,
+    "credentials_exposed": false,
+    "customer_raw_data_exposed": false
+  }
+}
