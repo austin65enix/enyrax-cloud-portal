@@ -141,6 +141,47 @@ OPS271_ACCESS_REVIEW_CAMPAIGN_SAFETY_BOUNDARY = {
         "full_hr_personal_data",
     ],
 }
+RUNTIMEOPS_DOTNET_FIXTURE_DIR = PROJECT_ROOT / "data" / "runtimeops" / "dotnet"
+RUNTIMEOPS_DOTNET_FIXTURE_FILES = {
+    "services": "demo_dotnet_runtime_services.json",
+    "diagnosis_runs": "demo_dotnet_diagnosis_runs.json",
+    "endpoint_metrics": "demo_dotnet_endpoint_metrics.json",
+    "app_pool_snapshots": "demo_dotnet_app_pool_snapshots.json",
+    "windows_service_snapshots": "demo_dotnet_windows_service_snapshots.json",
+    "counter_evidence": "demo_dotnet_counter_evidence.json",
+    "trace_evidence": "demo_dotnet_trace_evidence.json",
+    "dump_evidence": "demo_dotnet_dump_evidence.json",
+    "rca_findings": "demo_dotnet_rca_findings.json",
+    "verification_results": "demo_dotnet_verification_results.json",
+    "dashboard": "demo_dotnet_runtime_dashboard.json",
+}
+RUNTIMEOPS_DOTNET_SAFETY_BOUNDARY = {
+    "read_only": True,
+    "mutation_allowed": False,
+    "safe_metadata_only": True,
+    "no_iis_app_pool_recycle": True,
+    "no_windows_service_restart": True,
+    "no_kill_process": True,
+    "no_config_change": True,
+    "no_database_write": True,
+    "no_production_diagnostic_command": True,
+    "no_windows_iis_sql_connection": True,
+    "excludes": [
+        "passwords",
+        "credentials",
+        "api_keys",
+        "private_keys",
+        "raw_logs",
+        "raw_command_output",
+        "raw_dump_content",
+        "raw_trace_content",
+        "raw_counter_output",
+        "raw_event_log_full_content",
+        "raw_sql_with_sensitive_values",
+        "raw_environment_variables",
+        "customer_raw_data",
+    ],
+}
 TEAM_AGENTOPS_FIXTURE_FILENAMES = {
     "demo_agent_runs.json",
     "demo_agent_reviews.json",
@@ -1840,6 +1881,235 @@ def ops271_access_review_campaign_detail_response(campaign_id: str) -> dict:
     return response
 
 
+def runtimeops_dotnet_warning(code: str, fixture_key: Optional[str] = None) -> dict:
+    messages = {
+        "fixture_unavailable": ".NET_RuntimeOps fixture is temporarily unavailable.",
+        "fixture_invalid_json": ".NET_RuntimeOps fixture JSON is invalid.",
+        "fixture_invalid_schema": ".NET_RuntimeOps fixture schema is invalid.",
+        "fixture_empty": ".NET_RuntimeOps fixture has no records.",
+        "diagnosis_run_not_found": ".NET_RuntimeOps diagnosis run was not found.",
+    }
+    warning = {"code": code, "message": messages.get(code, messages["fixture_unavailable"])}
+    if fixture_key:
+        warning["fixture"] = fixture_key
+    return warning
+
+
+def runtimeops_dotnet_metadata(warnings: Optional[list] = None) -> dict:
+    return {
+        "source": "fixture",
+        "mode": "read_only",
+        "product": "RuntimeOps",
+        "display_name": ".NET_RuntimeOps",
+        "production_data": False,
+        "generated_at": now_utc(),
+        "warnings": warnings if warnings is not None else [],
+    }
+
+
+def load_runtimeops_dotnet_fixture(fixture_key: str, warnings: list) -> dict:
+    fixture_filename = RUNTIMEOPS_DOTNET_FIXTURE_FILES.get(fixture_key)
+    if fixture_filename is None:
+        append_unique_warning(warnings, runtimeops_dotnet_warning("fixture_unavailable", fixture_key))
+        return {}
+
+    try:
+        data = json.loads((RUNTIMEOPS_DOTNET_FIXTURE_DIR / fixture_filename).read_text())
+    except FileNotFoundError:
+        append_unique_warning(warnings, runtimeops_dotnet_warning("fixture_unavailable", fixture_key))
+        return {}
+    except json.JSONDecodeError:
+        append_unique_warning(warnings, runtimeops_dotnet_warning("fixture_invalid_json", fixture_key))
+        return {}
+    except OSError:
+        append_unique_warning(warnings, runtimeops_dotnet_warning("fixture_unavailable", fixture_key))
+        return {}
+
+    if not isinstance(data, dict):
+        append_unique_warning(warnings, runtimeops_dotnet_warning("fixture_invalid_schema", fixture_key))
+        return {}
+
+    if fixture_key == "dashboard":
+        required_fields = (
+            "summary",
+            "diagnosis_breakdown",
+            "risk_breakdown",
+            "service_health",
+            "top_attention_items",
+            "recent_diagnosis_runs",
+            "safety_boundary",
+        )
+        if any(field not in data for field in required_fields):
+            append_unique_warning(warnings, runtimeops_dotnet_warning("fixture_invalid_schema", fixture_key))
+            return {}
+        return data
+
+    records = data.get("records", [])
+    if not isinstance(records, list):
+        append_unique_warning(warnings, runtimeops_dotnet_warning("fixture_invalid_schema", fixture_key))
+        return {}
+    if not records:
+        append_unique_warning(warnings, runtimeops_dotnet_warning("fixture_empty", fixture_key))
+    return data
+
+
+def runtimeops_dotnet_records(fixture_key: str, warnings: list) -> list:
+    data = load_runtimeops_dotnet_fixture(fixture_key, warnings)
+    records = data.get("records", [])
+    if not isinstance(records, list):
+        return []
+    return [item for item in records if isinstance(item, dict)]
+
+
+def runtimeops_dotnet_list_response(
+    fixture_key: str, records: Optional[list] = None, warnings: Optional[list] = None
+) -> dict:
+    response_warnings = warnings if warnings is not None else []
+    response_records = records if records is not None else runtimeops_dotnet_records(fixture_key, response_warnings)
+    response = runtimeops_dotnet_metadata(response_warnings)
+    response.update(
+        {
+            "count": len(response_records),
+            "records": response_records,
+            "safety_boundary": dict(RUNTIMEOPS_DOTNET_SAFETY_BOUNDARY),
+        }
+    )
+    return response
+
+
+def runtimeops_dotnet_is_slow_endpoint(item: dict) -> bool:
+    return float(item.get("p95_ms") or 0) > 750 or float(item.get("p99_ms") or 0) > 1000 or int(item.get("timeout_count") or 0) > 0
+
+
+def runtimeops_dotnet_has_status(item: dict, field: str, statuses: set) -> bool:
+    status = str(item.get(field) or "").strip().lower()
+    return any(value.lower() in status for value in statuses)
+
+
+def runtimeops_dotnet_dashboard() -> dict:
+    warnings = []
+    dashboard = load_runtimeops_dotnet_fixture("dashboard", warnings)
+    if dashboard:
+        response = runtimeops_dotnet_metadata(warnings)
+        response.update(
+            {
+                "summary": dashboard.get("summary", {}),
+                "diagnosis_breakdown": dashboard.get("diagnosis_breakdown", []),
+                "risk_breakdown": dashboard.get("risk_breakdown", []),
+                "service_health": dashboard.get("service_health", []),
+                "top_attention_items": dashboard.get("top_attention_items", []),
+                "recent_diagnosis_runs": dashboard.get("recent_diagnosis_runs", []),
+                "safety_boundary": dict(RUNTIMEOPS_DOTNET_SAFETY_BOUNDARY),
+            }
+        )
+        return response
+
+    services = runtimeops_dotnet_records("services", warnings)
+    diagnosis_runs = runtimeops_dotnet_records("diagnosis_runs", warnings)
+    endpoint_metrics = runtimeops_dotnet_records("endpoint_metrics", warnings)
+    app_pools = runtimeops_dotnet_records("app_pool_snapshots", warnings)
+    windows_services = runtimeops_dotnet_records("windows_service_snapshots", warnings)
+    counter_evidence = runtimeops_dotnet_records("counter_evidence", warnings)
+    trace_evidence = runtimeops_dotnet_records("trace_evidence", warnings)
+    dump_evidence = runtimeops_dotnet_records("dump_evidence", warnings)
+    rca_findings = runtimeops_dotnet_records("rca_findings", warnings)
+    verification_results = runtimeops_dotnet_records("verification_results", warnings)
+    high_risk = {"High", "Critical"}
+    response = runtimeops_dotnet_metadata(warnings)
+    response.update(
+        {
+            "summary": {
+                "total_services": len(services),
+                "active_diagnosis_runs": len(diagnosis_runs),
+                "high_risk_findings": sum(1 for item in rca_findings if item.get("risk_level") in high_risk),
+                "slow_endpoints": sum(1 for item in endpoint_metrics if runtimeops_dotnet_is_slow_endpoint(item)),
+                "app_pool_warnings": sum(1 for item in app_pools if item.get("risk_level") in high_risk),
+                "windows_service_warnings": sum(1 for item in windows_services if item.get("risk_level") in high_risk),
+                "counter_evidence_count": len(counter_evidence),
+                "trace_evidence_count": len(trace_evidence),
+                "dump_evidence_count": len(dump_evidence),
+                "remediation_open": sum(1 for item in diagnosis_runs if item.get("remediation_ref") and item.get("verification_status") != "Verified"),
+                "verified_results": len(verification_results),
+            },
+            "diagnosis_breakdown": count_records_by_field(diagnosis_runs, "diagnosis_type"),
+            "risk_breakdown": count_records_by_field(diagnosis_runs, "risk_level"),
+            "service_health": services,
+            "top_attention_items": [item for item in diagnosis_runs if item.get("risk_level") in high_risk][:6],
+            "recent_diagnosis_runs": sorted(diagnosis_runs, key=lambda item: str(item.get("started_at") or ""), reverse=True)[:6],
+            "safety_boundary": dict(RUNTIMEOPS_DOTNET_SAFETY_BOUNDARY),
+        }
+    )
+    return response
+
+
+def runtimeops_dotnet_detail_response(diagnosis_run_id: str) -> dict:
+    warnings = []
+    diagnosis_runs = runtimeops_dotnet_records("diagnosis_runs", warnings)
+    diagnosis_run = next((item for item in diagnosis_runs if item.get("diagnosis_run_id") == diagnosis_run_id), None)
+    if diagnosis_run is None:
+        append_unique_warning(warnings, runtimeops_dotnet_warning("diagnosis_run_not_found", "diagnosis_runs"))
+
+    def related(records: list) -> list:
+        if diagnosis_run is None:
+            return []
+        refs = {
+            diagnosis_run_id,
+            diagnosis_run.get("endpoint_ref"),
+            diagnosis_run.get("app_pool_ref"),
+            diagnosis_run.get("windows_service_ref"),
+            diagnosis_run.get("event_log_ref"),
+            diagnosis_run.get("trace_ref"),
+            diagnosis_run.get("counter_ref"),
+            diagnosis_run.get("dump_ref"),
+            diagnosis_run.get("evidence_ref"),
+            diagnosis_run.get("serviceops_ticket_ref"),
+        }
+        refs = {item for item in refs if item}
+        return [item for item in records if any(value in refs for value in item.values())]
+
+    endpoint_metrics = related(runtimeops_dotnet_records("endpoint_metrics", warnings))
+    app_pool_snapshots = related(runtimeops_dotnet_records("app_pool_snapshots", warnings))
+    windows_service_snapshots = related(runtimeops_dotnet_records("windows_service_snapshots", warnings))
+    counter_evidence = related(runtimeops_dotnet_records("counter_evidence", warnings))
+    trace_evidence = related(runtimeops_dotnet_records("trace_evidence", warnings))
+    dump_evidence = related(runtimeops_dotnet_records("dump_evidence", warnings))
+    rca_findings = [
+        item for item in runtimeops_dotnet_records("rca_findings", warnings)
+        if item.get("diagnosis_run_id") == diagnosis_run_id
+    ]
+    verification_results = [
+        item for item in runtimeops_dotnet_records("verification_results", warnings)
+        if item.get("diagnosis_run_id") == diagnosis_run_id
+    ]
+    response = runtimeops_dotnet_metadata(warnings)
+    response.update(
+        {
+            "diagnosis_run_id": diagnosis_run_id,
+            "diagnosis_run": diagnosis_run,
+            "endpoint_metrics": endpoint_metrics,
+            "app_pool_snapshots": app_pool_snapshots,
+            "windows_service_snapshots": windows_service_snapshots,
+            "counter_evidence": counter_evidence,
+            "trace_evidence": trace_evidence,
+            "dump_evidence": dump_evidence,
+            "rca_findings": rca_findings,
+            "verification_results": verification_results,
+            "summary": {
+                "endpoint_metric_count": len(endpoint_metrics),
+                "app_pool_snapshot_count": len(app_pool_snapshots),
+                "windows_service_snapshot_count": len(windows_service_snapshots),
+                "counter_evidence_count": len(counter_evidence),
+                "trace_evidence_count": len(trace_evidence),
+                "dump_evidence_count": len(dump_evidence),
+                "rca_finding_count": len(rca_findings),
+                "verification_result_count": len(verification_results),
+            },
+            "safety_boundary": dict(RUNTIMEOPS_DOTNET_SAFETY_BOUNDARY),
+        }
+    )
+    return response
+
+
 def load_team_agentops_fixture(filename: str) -> dict:
     if (
         filename not in TEAM_AGENTOPS_FIXTURE_FILENAMES
@@ -3088,6 +3358,88 @@ def ops271_access_review_campaign_items(campaign_id: str):
     items = ops271_access_review_campaign_records("items", warnings)
     records = [item for item in items if item.get("campaign_id") == campaign_id]
     return ops271_access_review_campaign_list_response("items", records, warnings)
+
+
+# .NET_RuntimeOps fixture API v1 is read-only. It reads safe demo fixtures only.
+# It does not connect to Windows, IIS, SQL Server, execute diagnostics, or mutate systems.
+@app.get("/api/runtimeops/dotnet/services")
+def runtimeops_dotnet_services():
+    return runtimeops_dotnet_list_response("services")
+
+
+@app.get("/api/runtimeops/dotnet/diagnosis-runs")
+def runtimeops_dotnet_diagnosis_runs():
+    return runtimeops_dotnet_list_response("diagnosis_runs")
+
+
+@app.get("/api/runtimeops/dotnet/diagnosis-runs/{diagnosis_run_id}")
+def runtimeops_dotnet_diagnosis_run_detail(diagnosis_run_id: str):
+    return runtimeops_dotnet_detail_response(diagnosis_run_id)
+
+
+@app.get("/api/runtimeops/dotnet/slow-endpoints")
+def runtimeops_dotnet_slow_endpoints():
+    warnings = []
+    metrics = runtimeops_dotnet_records("endpoint_metrics", warnings)
+    records = [item for item in metrics if runtimeops_dotnet_is_slow_endpoint(item)]
+    return runtimeops_dotnet_list_response("endpoint_metrics", records, warnings)
+
+
+@app.get("/api/runtimeops/dotnet/app-pools")
+def runtimeops_dotnet_app_pools():
+    warnings = []
+    app_pools = runtimeops_dotnet_records("app_pool_snapshots", warnings)
+    records = [
+        item for item in app_pools
+        if runtimeops_dotnet_has_status(item, "app_pool_status", {"Recycled", "Warning", "CrashLoop", "Stopped"})
+    ]
+    return runtimeops_dotnet_list_response("app_pool_snapshots", records, warnings)
+
+
+@app.get("/api/runtimeops/dotnet/windows-services")
+def runtimeops_dotnet_windows_services():
+    warnings = []
+    services = runtimeops_dotnet_records("windows_service_snapshots", warnings)
+    records = [
+        item for item in services
+        if runtimeops_dotnet_has_status(item, "windows_service_status", {"Stuck", "NotResponding", "Stopped", "CrashLoop"})
+    ]
+    return runtimeops_dotnet_list_response("windows_service_snapshots", records, warnings)
+
+
+@app.get("/api/runtimeops/dotnet/counter-evidence")
+def runtimeops_dotnet_counter_evidence():
+    return runtimeops_dotnet_list_response("counter_evidence")
+
+
+@app.get("/api/runtimeops/dotnet/trace-evidence")
+def runtimeops_dotnet_trace_evidence():
+    return runtimeops_dotnet_list_response("trace_evidence")
+
+
+@app.get("/api/runtimeops/dotnet/dump-evidence")
+def runtimeops_dotnet_dump_evidence():
+    warnings = []
+    records = [
+        item for item in runtimeops_dotnet_records("dump_evidence", warnings)
+        if item.get("raw_dump_exposed") is False
+    ]
+    return runtimeops_dotnet_list_response("dump_evidence", records, warnings)
+
+
+@app.get("/api/runtimeops/dotnet/rca-findings")
+def runtimeops_dotnet_rca_findings():
+    return runtimeops_dotnet_list_response("rca_findings")
+
+
+@app.get("/api/runtimeops/dotnet/verification-results")
+def runtimeops_dotnet_verification_results():
+    return runtimeops_dotnet_list_response("verification_results")
+
+
+@app.get("/api/runtimeops/dotnet/dashboard")
+def runtimeops_dotnet_dashboard_endpoint():
+    return runtimeops_dotnet_dashboard()
 
 
 # Team_AgentOps fixture API v1 is read-only. It reads safe demo fixtures only.
