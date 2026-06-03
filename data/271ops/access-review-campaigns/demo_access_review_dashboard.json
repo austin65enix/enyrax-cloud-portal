@@ -1,0 +1,163 @@
+{
+  "schema": "ops271_access_review_campaign_dashboard_v1",
+  "source": "demo_fixture",
+  "mode": "read_only",
+  "product": "271ops",
+  "display_name": "271Ops Access Review Campaign",
+  "production_data": false,
+  "generated_at": "2026-06-03T10:20:00+08:00",
+  "warnings": [],
+  "summary": {
+    "total_campaigns": 4,
+    "active_campaigns": 3,
+    "overdue_items": 2,
+    "high_risk_items": 3,
+    "exception_items": 2,
+    "remediation_open": 2,
+    "evidence_packages_completed": 1
+  },
+  "campaign_breakdown": [
+    {
+      "campaign_type": "Quarterly Access Review",
+      "campaign_count": 1,
+      "active_count": 1,
+      "completed_count": 0
+    },
+    {
+      "campaign_type": "Privileged Access Review",
+      "campaign_count": 1,
+      "active_count": 1,
+      "completed_count": 0
+    },
+    {
+      "campaign_type": "Exception Access Review",
+      "campaign_count": 1,
+      "active_count": 1,
+      "completed_count": 0
+    },
+    {
+      "campaign_type": "Leaver Follow-up Review",
+      "campaign_count": 1,
+      "active_count": 0,
+      "completed_count": 1
+    }
+  ],
+  "risk_breakdown": [
+    {
+      "risk_level": "Low",
+      "item_count": 2
+    },
+    {
+      "risk_level": "Medium",
+      "item_count": 1
+    },
+    {
+      "risk_level": "High",
+      "item_count": 4
+    },
+    {
+      "risk_level": "Critical",
+      "item_count": 0
+    }
+  ],
+  "reviewer_progress": [
+    {
+      "reviewer": "Demo Reviewer A",
+      "assigned_items": 1,
+      "completed_items": 1,
+      "overdue_items": 0,
+      "status": "Completed"
+    },
+    {
+      "reviewer": "Demo Reviewer B",
+      "assigned_items": 1,
+      "completed_items": 0,
+      "overdue_items": 1,
+      "status": "Overdue"
+    },
+    {
+      "reviewer": "Demo Reviewer F",
+      "assigned_items": 1,
+      "completed_items": 0,
+      "overdue_items": 0,
+      "status": "ReviewRequired"
+    },
+    {
+      "reviewer": "Demo Reviewer G",
+      "assigned_items": 1,
+      "completed_items": 1,
+      "overdue_items": 0,
+      "status": "Completed"
+    }
+  ],
+  "top_attention_items": [
+    {
+      "review_item_id": "ARI-DEMO-002",
+      "campaign_id": "ARC-DEMO-2026Q2-002",
+      "title": "Privileged admin access review overdue",
+      "risk_level": "High",
+      "status": "Overdue",
+      "notes": "Admin / privileged access is pending reviewer decision."
+    },
+    {
+      "review_item_id": "ARI-DEMO-003",
+      "campaign_id": "ARC-DEMO-2026Q2-001",
+      "title": "Department transfer stale access review",
+      "risk_level": "High",
+      "status": "RemediationOpen",
+      "notes": "Role mismatch after transfer has a ServiceOps remediation reference."
+    },
+    {
+      "review_item_id": "ARI-DEMO-006",
+      "campaign_id": "ARC-DEMO-2026Q2-003",
+      "title": "Exception access review expiring soon",
+      "risk_level": "High",
+      "status": "ReviewRequired",
+      "notes": "Exception access needs renewal or removal decision."
+    }
+  ],
+  "recent_campaigns": [
+    {
+      "campaign_id": "ARC-DEMO-2026Q2-001",
+      "campaign_name": "2026 Q2 Quarterly Access Review",
+      "campaign_type": "Quarterly Access Review",
+      "status": "Review Open",
+      "risk_level": "Medium",
+      "due_date": "2026-06-21"
+    },
+    {
+      "campaign_id": "ARC-DEMO-2026Q2-002",
+      "campaign_name": "2026 Q2 Privileged Admin Access Review",
+      "campaign_type": "Privileged Access Review",
+      "status": "Overdue",
+      "risk_level": "High",
+      "due_date": "2026-05-31"
+    },
+    {
+      "campaign_id": "ARC-DEMO-2026Q2-004",
+      "campaign_name": "2026 Q2 Completed Evidence Campaign",
+      "campaign_type": "Leaver Follow-up Review",
+      "status": "Completed",
+      "risk_level": "Low",
+      "due_date": "2026-06-02"
+    }
+  ],
+  "safety_boundary": {
+    "design_only": true,
+    "read_only": true,
+    "production_data": false,
+    "mutation_allowed": false,
+    "direct_ad_mutation": false,
+    "direct_ldap_mutation": false,
+    "direct_iam_mutation": false,
+    "saas_permission_mutation": false,
+    "approve_reject_action_implemented": false,
+    "upload_control": false,
+    "edit_delete": false,
+    "secrets_included": false,
+    "raw_logs_included": false,
+    "raw_bpm_body_included": false,
+    "raw_attachment_content_included": false,
+    "safe_metadata_only": true
+  }
+}

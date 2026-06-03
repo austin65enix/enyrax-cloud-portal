@@ -1,0 +1,68 @@
+{
+  "schema": "ops271_access_review_evidence_packages_v1",
+  "source": "demo_fixture",
+  "mode": "read_only",
+  "product": "271ops",
+  "records": [
+    {
+      "evidence_package_ref": "EVD-271OPS-ARC-001",
+      "campaign_id": "ARC-DEMO-2026Q2-001",
+      "audit_report_ref": "AUD-271OPS-ARC-001",
+      "package_status": "InProgress",
+      "generated_at": "2026-06-03T10:00:00+08:00",
+      "included_items": 7,
+      "completed_items": 3,
+      "pending_items": 4,
+      "remediation_ticket_count": 2,
+      "exception_count": 1,
+      "reviewer_decision_count": 5,
+      "safety_summary": "Safe campaign metadata, review decisions, remediation references, and evidence references only.",
+      "notes": "Quarterly campaign package is still collecting reviewer decisions and remediation verification."
+    },
+    {
+      "evidence_package_ref": "EVD-271OPS-ARC-002",
+      "campaign_id": "ARC-DEMO-2026Q2-002",
+      "audit_report_ref": null,
+      "package_status": "Partial",
+      "generated_at": "2026-06-03T10:05:00+08:00",
+      "included_items": 3,
+      "completed_items": 1,
+      "pending_items": 2,
+      "remediation_ticket_count": 1,
+      "exception_count": 0,
+      "reviewer_decision_count": 1,
+      "safety_summary": "Privileged access review package contains safe aliases and no raw account data.",
+      "notes": "Package remains partial because privileged review items are overdue."
+    },
+    {
+      "evidence_package_ref": "EVD-271OPS-ARC-003",
+      "campaign_id": "ARC-DEMO-2026Q2-003",
+      "audit_report_ref": null,
+      "package_status": "ReviewRequired",
+      "generated_at": "2026-06-03T10:10:00+08:00",
+      "included_items": 2,
+      "completed_items": 0,
+      "pending_items": 2,
+      "remediation_ticket_count": 0,
+      "exception_count": 2,
+      "reviewer_decision_count": 0,
+      "safety_summary": "Exception review package contains exception references and short expiry summaries only.",
+      "notes": "Exception package is waiting for renewal or removal decisions."
+    },
+    {
+      "evidence_package_ref": "EVD-271OPS-ARC-004",
+      "campaign_id": "ARC-DEMO-2026Q2-004",
+      "audit_report_ref": "AUD-271OPS-ARC-004",
+      "package_status": "Completed",
+      "generated_at": "2026-06-03T10:15:00+08:00",
+      "included_items": 2,
+      "completed_items": 2,
+      "pending_items": 0,
+      "remediation_ticket_count": 1,
+      "exception_count": 0,
+      "reviewer_decision_count": 2,
+      "safety_summary": "Completed package includes safe campaign, remediation, verification, and audit report references only.",
+      "notes": "Evidence package completed for demo leaver follow-up review."
+    }
+  ]
+}
