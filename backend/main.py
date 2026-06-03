@@ -109,6 +109,38 @@ OPS271_IDENTITY_LIFECYCLE_SAFETY_BOUNDARY = {
         "full_hr_personal_data",
     ],
 }
+OPS271_ACCESS_REVIEW_CAMPAIGN_FIXTURE_DIR = (
+    OPS271_FIXTURE_DIR / "access-review-campaigns"
+)
+OPS271_ACCESS_REVIEW_CAMPAIGN_FIXTURE_FILES = {
+    "campaigns": "demo_access_review_campaigns.json",
+    "items": "demo_access_review_items.json",
+    "remediation_queue": "demo_access_review_remediation_queue.json",
+    "evidence_packages": "demo_access_review_evidence_packages.json",
+    "dashboard": "demo_access_review_dashboard.json",
+}
+OPS271_ACCESS_REVIEW_CAMPAIGN_SAFETY_BOUNDARY = {
+    "read_only": True,
+    "mutation_allowed": False,
+    "safe_metadata_only": True,
+    "no_ad_mutation": True,
+    "no_ldap_mutation": True,
+    "no_iam_mutation": True,
+    "no_saas_permission_mutation": True,
+    "no_approve_reject_action": True,
+    "no_upload": True,
+    "no_edit_delete": True,
+    "excludes": [
+        "passwords",
+        "credentials",
+        "api_keys",
+        "private_keys",
+        "raw_logs",
+        "raw_bpm_form_body",
+        "raw_attachment_content",
+        "full_hr_personal_data",
+    ],
+}
 TEAM_AGENTOPS_FIXTURE_FILENAMES = {
     "demo_agent_runs.json",
     "demo_agent_reviews.json",
@@ -1572,6 +1604,242 @@ def ops271_identity_attention_rank(item: dict) -> tuple:
     )
 
 
+def ops271_access_review_campaign_warning(code: str, fixture_key: Optional[str] = None) -> dict:
+    messages = {
+        "fixture_unavailable": "271ops access review campaign fixture is temporarily unavailable.",
+        "fixture_invalid_json": "271ops access review campaign fixture JSON is invalid.",
+        "fixture_invalid_schema": "271ops access review campaign fixture schema is invalid.",
+        "fixture_empty": "271ops access review campaign fixture has no records.",
+        "campaign_not_found": "271ops access review campaign was not found.",
+    }
+    warning = {"code": code, "message": messages.get(code, messages["fixture_unavailable"])}
+    if fixture_key:
+        warning["fixture"] = fixture_key
+    return warning
+
+
+def ops271_access_review_campaign_metadata(warnings: Optional[list] = None) -> dict:
+    return {
+        "source": "fixture",
+        "mode": "read_only",
+        "product": "271ops",
+        "display_name": "271Ops Access Review Campaign",
+        "production_data": False,
+        "generated_at": now_utc(),
+        "warnings": warnings if warnings is not None else [],
+    }
+
+
+def load_ops271_access_review_campaign_fixture(fixture_key: str, warnings: list) -> dict:
+    fixture_filename = OPS271_ACCESS_REVIEW_CAMPAIGN_FIXTURE_FILES.get(fixture_key)
+    if fixture_filename is None:
+        append_unique_warning(
+            warnings, ops271_access_review_campaign_warning("fixture_unavailable", fixture_key)
+        )
+        return {}
+
+    try:
+        data = json.loads(
+            (OPS271_ACCESS_REVIEW_CAMPAIGN_FIXTURE_DIR / fixture_filename).read_text()
+        )
+    except FileNotFoundError:
+        append_unique_warning(
+            warnings, ops271_access_review_campaign_warning("fixture_unavailable", fixture_key)
+        )
+        return {}
+    except json.JSONDecodeError:
+        append_unique_warning(
+            warnings, ops271_access_review_campaign_warning("fixture_invalid_json", fixture_key)
+        )
+        return {}
+    except OSError:
+        append_unique_warning(
+            warnings, ops271_access_review_campaign_warning("fixture_unavailable", fixture_key)
+        )
+        return {}
+
+    if not isinstance(data, dict):
+        append_unique_warning(
+            warnings, ops271_access_review_campaign_warning("fixture_invalid_schema", fixture_key)
+        )
+        return {}
+
+    if fixture_key == "dashboard":
+        required_fields = (
+            "summary",
+            "campaign_breakdown",
+            "risk_breakdown",
+            "reviewer_progress",
+            "top_attention_items",
+            "recent_campaigns",
+            "safety_boundary",
+        )
+        if any(field not in data for field in required_fields):
+            append_unique_warning(
+                warnings,
+                ops271_access_review_campaign_warning("fixture_invalid_schema", fixture_key),
+            )
+            return {}
+        return data
+
+    records = data.get("records", [])
+    if not isinstance(records, list):
+        append_unique_warning(
+            warnings, ops271_access_review_campaign_warning("fixture_invalid_schema", fixture_key)
+        )
+        return {}
+    if not records:
+        append_unique_warning(
+            warnings, ops271_access_review_campaign_warning("fixture_empty", fixture_key)
+        )
+    return data
+
+
+def ops271_access_review_campaign_records(fixture_key: str, warnings: list) -> list:
+    data = load_ops271_access_review_campaign_fixture(fixture_key, warnings)
+    records = data.get("records", [])
+    if not isinstance(records, list):
+        return []
+    return [item for item in records if isinstance(item, dict)]
+
+
+def ops271_access_review_campaign_list_response(
+    fixture_key: str, records: Optional[list] = None, warnings: Optional[list] = None
+) -> dict:
+    response_warnings = warnings if warnings is not None else []
+    response_records = (
+        records
+        if records is not None
+        else ops271_access_review_campaign_records(fixture_key, response_warnings)
+    )
+    response = ops271_access_review_campaign_metadata(response_warnings)
+    response.update(
+        {
+            "count": len(response_records),
+            "records": response_records,
+            "safety_boundary": dict(OPS271_ACCESS_REVIEW_CAMPAIGN_SAFETY_BOUNDARY),
+        }
+    )
+    return response
+
+
+def ops271_access_review_campaign_is_active(campaign: dict) -> bool:
+    status = str(campaign.get("status") or "").strip().lower()
+    return status in {"active", "review open", "in progress", "overdue", "reviewrequired"}
+
+
+def ops271_access_review_campaign_is_overdue_item(item: dict) -> bool:
+    return str(item.get("status") or "").strip().lower() == "overdue"
+
+
+def ops271_access_review_campaign_attention_rank(item: dict) -> tuple:
+    risk_order = {"Critical": 0, "High": 1, "Medium": 2, "Low": 3}
+    status_order = {"Overdue": 0, "RemediationOpen": 1, "ReviewRequired": 2, "Completed": 9}
+    return (
+        risk_order.get(item.get("risk_level"), 9),
+        status_order.get(item.get("status"), 9),
+        str(item.get("decision_date") or "9999-12-31"),
+    )
+
+
+def ops271_access_review_campaign_dashboard() -> dict:
+    warnings = []
+    campaigns = ops271_access_review_campaign_records("campaigns", warnings)
+    items = ops271_access_review_campaign_records("items", warnings)
+    remediation_queue = ops271_access_review_campaign_records("remediation_queue", warnings)
+    evidence_packages = ops271_access_review_campaign_records("evidence_packages", warnings)
+    dashboard_fixture = load_ops271_access_review_campaign_fixture("dashboard", warnings)
+
+    top_attention_items = sorted(
+        [
+            item
+            for item in items
+            if item.get("risk_level") in {"Critical", "High"}
+            or item.get("status") in {"Overdue", "RemediationOpen", "ReviewRequired"}
+        ],
+        key=ops271_access_review_campaign_attention_rank,
+    )[:6]
+    recent_campaigns = sorted(
+        campaigns, key=lambda item: str(item.get("start_date") or item.get("due_date") or ""), reverse=True
+    )[:6]
+
+    response = ops271_access_review_campaign_metadata(warnings)
+    response.update(
+        {
+            "summary": {
+                "total_campaigns": len(campaigns),
+                "active_campaigns": sum(1 for item in campaigns if ops271_access_review_campaign_is_active(item)),
+                "overdue_items": sum(1 for item in items if ops271_access_review_campaign_is_overdue_item(item)),
+                "high_risk_items": sum(1 for item in items if item.get("risk_level") in {"High", "Critical"}),
+                "exception_items": sum(1 for item in items if item.get("exception_ref")),
+                "remediation_open": sum(1 for item in remediation_queue if item.get("status") == "Open"),
+                "evidence_packages_completed": sum(
+                    1 for item in evidence_packages if item.get("package_status") == "Completed"
+                ),
+            },
+            "campaign_breakdown": dashboard_fixture.get(
+                "campaign_breakdown", count_records_by_field(campaigns, "campaign_type")
+            ),
+            "risk_breakdown": dashboard_fixture.get(
+                "risk_breakdown", count_records_by_field(items, "risk_level")
+            ),
+            "reviewer_progress": dashboard_fixture.get("reviewer_progress", []),
+            "top_attention_items": dashboard_fixture.get("top_attention_items", top_attention_items),
+            "recent_campaigns": dashboard_fixture.get("recent_campaigns", recent_campaigns),
+            "safety_boundary": dict(OPS271_ACCESS_REVIEW_CAMPAIGN_SAFETY_BOUNDARY),
+        }
+    )
+    return response
+
+
+def ops271_access_review_campaign_detail_response(campaign_id: str) -> dict:
+    warnings = []
+    campaigns = ops271_access_review_campaign_records("campaigns", warnings)
+    items = ops271_access_review_campaign_records("items", warnings)
+    remediation_queue = ops271_access_review_campaign_records("remediation_queue", warnings)
+    evidence_packages = ops271_access_review_campaign_records("evidence_packages", warnings)
+
+    campaign = next((item for item in campaigns if item.get("campaign_id") == campaign_id), None)
+    review_items = [item for item in items if item.get("campaign_id") == campaign_id]
+    remediation_records = [
+        item for item in remediation_queue if item.get("campaign_id") == campaign_id
+    ]
+    evidence_records = [
+        item for item in evidence_packages if item.get("campaign_id") == campaign_id
+    ]
+
+    if campaign is None:
+        append_unique_warning(
+            warnings, ops271_access_review_campaign_warning("campaign_not_found", "campaigns")
+        )
+
+    response = ops271_access_review_campaign_metadata(warnings)
+    response.update(
+        {
+            "campaign_id": campaign_id,
+            "campaign": campaign,
+            "review_items": review_items,
+            "remediation_queue": remediation_records,
+            "evidence_packages": evidence_records,
+            "summary": {
+                "item_count": len(review_items),
+                "completed_count": sum(1 for item in review_items if item.get("status") == "Completed"),
+                "overdue_count": sum(1 for item in review_items if item.get("status") == "Overdue"),
+                "high_risk_count": sum(
+                    1 for item in review_items if item.get("risk_level") in {"High", "Critical"}
+                ),
+                "exception_count": sum(1 for item in review_items if item.get("exception_ref")),
+                "remediation_open": sum(1 for item in remediation_records if item.get("status") == "Open"),
+                "evidence_packages_completed": sum(
+                    1 for item in evidence_records if item.get("package_status") == "Completed"
+                ),
+            },
+            "safety_boundary": dict(OPS271_ACCESS_REVIEW_CAMPAIGN_SAFETY_BOUNDARY),
+        }
+    )
+    return response
+
+
 def load_team_agentops_fixture(filename: str) -> dict:
     if (
         filename not in TEAM_AGENTOPS_FIXTURE_FILENAMES
@@ -2768,6 +3036,58 @@ def ops271_identity_lifecycle_dashboard():
         }
     )
     return response
+
+
+# 271ops Access Review Campaign APIs are fixture-backed and read-only. They
+# present campaign, review item, remediation, evidence package, and dashboard
+# metadata without mutating AD, LDAP, IAM, SaaS, BPM, ServiceOps, or production systems.
+@app.get("/api/271ops/access-review-campaigns")
+def ops271_access_review_campaigns():
+    return ops271_access_review_campaign_list_response("campaigns")
+
+
+@app.get("/api/271ops/access-review-campaigns/active")
+def ops271_access_review_campaigns_active():
+    warnings = []
+    campaigns = ops271_access_review_campaign_records("campaigns", warnings)
+    records = [item for item in campaigns if ops271_access_review_campaign_is_active(item)]
+    return ops271_access_review_campaign_list_response("campaigns", records, warnings)
+
+
+@app.get("/api/271ops/access-review-campaigns/overdue-items")
+def ops271_access_review_campaigns_overdue_items():
+    warnings = []
+    items = ops271_access_review_campaign_records("items", warnings)
+    records = [item for item in items if ops271_access_review_campaign_is_overdue_item(item)]
+    return ops271_access_review_campaign_list_response("items", records, warnings)
+
+
+@app.get("/api/271ops/access-review-campaigns/remediation-queue")
+def ops271_access_review_campaigns_remediation_queue():
+    return ops271_access_review_campaign_list_response("remediation_queue")
+
+
+@app.get("/api/271ops/access-review-campaigns/evidence-packages")
+def ops271_access_review_campaigns_evidence_packages():
+    return ops271_access_review_campaign_list_response("evidence_packages")
+
+
+@app.get("/api/271ops/access-review-campaigns/dashboard")
+def ops271_access_review_campaigns_dashboard():
+    return ops271_access_review_campaign_dashboard()
+
+
+@app.get("/api/271ops/access-review-campaigns/{campaign_id}")
+def ops271_access_review_campaign_detail(campaign_id: str):
+    return ops271_access_review_campaign_detail_response(campaign_id)
+
+
+@app.get("/api/271ops/access-review-campaigns/{campaign_id}/items")
+def ops271_access_review_campaign_items(campaign_id: str):
+    warnings = []
+    items = ops271_access_review_campaign_records("items", warnings)
+    records = [item for item in items if item.get("campaign_id") == campaign_id]
+    return ops271_access_review_campaign_list_response("items", records, warnings)
 
 
 # Team_AgentOps fixture API v1 is read-only. It reads safe demo fixtures only.
